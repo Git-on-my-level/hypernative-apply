@@ -65,6 +65,58 @@ export interface Alert {
 }
 
 // Watchlist related types
+export interface ApiWatchlistAsset {
+  chain: string;
+  type: string;
+  address: string;
+  name?: string;
+  symbol?: string;
+  tags?: string[];
+}
+
+export interface ApiWatchlist {
+  id: string;
+  name: string;
+  description?: string;
+  asset_count: number;
+  alert_policy?: string;
+  enabled: boolean;
+  created_at: string;
+  updated_at?: string;
+  assets?: ApiWatchlistAsset[];
+}
+
+export interface ApiWatchlistCreatePayload {
+  name: string;
+  description?: string;
+  assets: ApiWatchlistAsset[];
+  alert_policy_id?: string;
+}
+
+export interface ApiWatchlistUpdatePayload {
+  name?: string;
+  description?: string;
+  alert_policy_id?: string;
+  assets_to_add?: ApiWatchlistAsset[];
+  assets_to_remove?: Omit<ApiWatchlistAsset, 'name' | 'symbol' | 'tags'>[];
+}
+
+export interface CsvUploadResult {
+  imported: number;
+  failed: number;
+  total: number;
+  errors?: string[];
+}
+
+export interface AssetReconciliationResult {
+  current_count: number;
+  desired_count: number;
+  assets_to_add: ApiWatchlistAsset[];
+  assets_to_remove: ApiWatchlistAsset[];
+  no_change_count: number;
+}
+
+// Legacy interface for backward compatibility
 export interface Watchlist {
   id: string;
   name: string;

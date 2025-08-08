@@ -1,0 +1,23 @@
+# Valid notification channel configuration
+name: "Valid Webhook Channel"
+description: "A valid webhook channel for testing"
+type: "webhook"
+enabled: true
+
+tags:
+  environment: "test"
+  team: "qa"
+
+configuration:
+  url: "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX"
+  api_key: "sk-test-secret-key-12345"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+  timeout: 30
+  
+  retry_config:
+    max_retries: 3
+    retry_delay: 5
+    exponential_backoff: true
+    max_delay: 60

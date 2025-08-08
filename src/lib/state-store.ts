@@ -446,4 +446,24 @@ export class StateStore {
   getStateFilePath(): string {
     return this.stateFilePath;
   }
+
+  /**
+   * Acquire a lock for the given operation (convenience method)
+   */
+  async acquireLock(operation: 'plan' | 'apply'): Promise<void> {
+    const result = await this.createLock(operation);
+    if (!result.success) {
+      throw new Error(result.message || 'Failed to acquire lock');
+    }
+  }
+
+  /**
+   * Release the current lock (convenience method)
+   */
+  async releaseLock(): Promise<void> {
+    const result = await this.removeLock();
+    if (!result.success) {
+      throw new Error(result.message || 'Failed to release lock');
+    }
+  }
 }

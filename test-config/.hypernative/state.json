@@ -1,0 +1,58 @@
+{
+  "version": "1.0.0",
+  "last_sync": "2025-01-01T10:00:00.000Z",
+  "resources": {
+    "valid-channel-valid-webhook-channel": {
+      "kind": "notification_channel",
+      "name": "valid-channel-valid-webhook-channel",
+      "remote_id": "channel_12345",
+      "last_applied_hash": "d20c250ad3b14143bd23aaadc8efa803ac3729d41978ec19fb27a16ff163c2f8",
+      "last_seen_remote_hash": "d20c250ad3b14143bd23aaadc8efa803ac3729d41978ec19fb27a16ff163c2f8",
+      "metadata": {
+        "created_at": "2025-01-01T10:00:00.000Z",
+        "updated_at": "2025-01-01T10:00:00.000Z",
+        "created_by": "cli",
+        "cli_version": "0.1.0",
+        "config_file": "hypernative/notification-channels/valid-channel.yaml"
+      }
+    },
+    "valid-watchlist-test-watchlist": {
+      "kind": "watchlist",
+      "name": "valid-watchlist-test-watchlist",
+      "remote_id": "watchlist_67890",
+      "last_applied_hash": "8aa836121ed1a4c76c22b5d6c5e383ae663a6061ab760908403c480d162d66cd",
+      "last_seen_remote_hash": "8aa836121ed1a4c76c22b5d6c5e383ae663a6061ab760908403c480d162d66cd",
+      "metadata": {
+        "created_at": "2025-01-01T10:00:00.000Z",
+        "updated_at": "2025-01-01T10:00:00.000Z",
+        "created_by": "cli",
+        "cli_version": "0.1.0",
+        "config_file": "hypernative/watchlists/valid-watchlist.yaml"
+      }
+    },
+    "valid-agent-test-balance-monitor": {
+      "kind": "custom_agent",
+      "name": "valid-agent-test-balance-monitor",
+      "remote_id": "agent_11111",
+      "last_applied_hash": "042f721349dd037db66421ea52a5ee2c00f918f7e828878c7b5c9a93a4d19261",
+      "last_seen_remote_hash": "042f721349dd037db66421ea52a5ee2c00f918f7e828878c7b5c9a93a4d19261",
+      "metadata": {
+        "created_at": "2025-01-01T10:00:00.000Z",
+        "updated_at": "2025-01-01T10:00:00.000Z",
+        "created_by": "cli",
+        "cli_version": "0.1.0",
+        "config_file": "hypernative/custom-agents/valid-agent.yaml"
+      }
+    }
+  },
+  "metadata": {
+    "created_at": "2025-01-01T10:00:00.000Z",
+    "created_by_version": "0.1.0",
+    "total_resources": 3,
+    "resource_counts": {
+      "watchlists": 1,
+      "custom_agents": 1,
+      "notification_channels": 1
+    }
+  }
+}

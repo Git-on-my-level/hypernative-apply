@@ -1,0 +1,30 @@
+name: test-treasury-monitor
+description: Test treasury wallet monitoring
+enabled: true
+
+assets:
+  - chain: ethereum
+    type: Wallet
+    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    name: "USDC Contract"
+  - chain: ethereum
+    type: Wallet
+    address: "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+    name: "DAI Contract"
+
+alert_config:
+  severity_threshold: medium
+  enabled: true
+  rules:
+    - conditions:
+        - type: balance_change
+          threshold: 1000000
+          direction: both
+          timeframe: 1h
+      enabled: true
+
+options:
+  priority: high
+  thresholds:
+    balance_change_major: 5000000
+    balance_change_critical: 10000000

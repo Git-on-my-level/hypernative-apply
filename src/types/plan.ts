@@ -217,3 +217,68 @@ export interface PlanDisplayOptions {
   /** Whether to compact array diffs */
   compact_arrays?: boolean;
 }
+
+// Execution types
+export interface ExecutionOptions {
+  /** Whether to include no-change resources in execution */
+  includeNoChange?: boolean;
+  /** Continue execution even if some resources fail */
+  continueOnError?: boolean;
+  /** Maximum number of resources to execute in parallel */
+  parallelism?: number;
+}
+
+export interface ResourceExecutionResult {
+  /** Name of the resource */
+  resource_name: string;
+  /** Kind of the resource */
+  resource_kind: string;
+  /** Type of change that was attempted */
+  change_type: ChangeType;
+  /** Whether the execution was successful */
+  success: boolean;
+  /** Remote ID of the resource (if applicable) */
+  remote_id?: string;
+  /** Error message if execution failed */
+  error?: string;
+  /** Time taken to execute this resource change */
+  duration_ms: number;
+  /** Raw result from the provider */
+  result?: any;
+}
+
+export interface ExecutionSummary {
+  /** Total number of resources processed */
+  total_resources: number;
+  /** Number of successful operations */
+  successful: number;
+  /** Number of failed operations */
+  failed: number;
+  /** Total execution time */
+  duration_ms: number;
+  /** Breakdown by change type */
+  by_change_type: {
+    created: number;
+    updated: number;
+    replaced: number;
+    deleted: number;
+  };
+  /** Breakdown by resource type */
+  by_resource_type: Record<string, {
+    successful: number;
+    failed: number;
+  }>;
+}
+
+export interface ExecutionResult {
+  /** Whether the entire execution was successful */
+  success: boolean;
+  /** Results for each resource */
+  results: ResourceExecutionResult[];
+  /** Summary statistics */
+  summary: ExecutionSummary;
+  /** ID of the plan that was executed */
+  plan_id: string;
+  /** Resources that were rolled back due to failures */
+  rolled_back?: string[];
+}

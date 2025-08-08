@@ -1,0 +1,465 @@
+/**
+ * Executor module for the Hypernative Apply CLI
+ * 
+ * Handles the execution of planned changes by:
+ * - Coordinating with resource providers (watchlists, custom agents, notification channels)
+ * - Managing execution order based on dependencies
+ * - Updating state after successful operations
+ * - Rolling back changes on failure
+ * - Providing detailed progress reporting
+ */
+
+import { ApiClient } from './api-client.js';
+import { StateStore } from './state-store.js';
+import { log } from './logger.js';
+import { WatchlistProvider } from '../providers/watchlist.provider.js';
+import { generateFingerprint } from './fingerprint.js';
+import type { ParsedConfig } from '../schemas/config.schema.js';
+import type { WatchlistConfig } from '../schemas/watchlist.schema.js';
+import type { StateFile, StateEntry } from '../types/state.js';
+import type {
+  ExecutionPlan,
+  ResourceChange,
+  ExecutionResult,
+  ExecutionOptions,
+  ResourceExecutionResult,
+  ExecutionSummary
+} from '../types/plan.js';
+import { ChangeType } from '../types/plan.js';
+import type { ApiWatchlist } from '../types/api.js';
+
+export interface ExecutorOptions {
+  apiClient: ApiClient;
+  baseDir?: string;
+  dryRun?: boolean;
+  parallelism?: number;
+  continueOnError?: boolean;
+}
+
+export interface ProviderContext {
+  watchlistProvider: WatchlistProvider;
+}
+
+export class Executor {
+  private apiClient: ApiClient;
+  private stateStore: StateStore;
+  private dryRun: boolean;
+  private parallelism: number;
+  private continueOnError: boolean;
+  private providers: ProviderContext;
+
+  constructor(options: ExecutorOptions) {
+    this.apiClient = options.apiClient;
+    this.stateStore = new StateStore(options.baseDir);
+    this.dryRun = options.dryRun ?? false;
+    this.parallelism = options.parallelism ?? 1;
+    this.continueOnError = options.continueOnError ?? false;
+
+    // Initialize providers
+    this.providers = {
+      watchlistProvider: new WatchlistProvider({ 
+        apiClient: this.apiClient, 
+        dryRun: this.dryRun 
+      })
+    };
+  }
+
+  /**
+   * Execute the entire execution plan
+   */
+  async execute(plan: ExecutionPlan, config: ParsedConfig, options: ExecutionOptions = {}): Promise<ExecutionResult> {
+    const startTime = Date.now();
+    const results: ResourceExecutionResult[] = [];
+    const rolledBack: string[] = [];
+    let acquiredLock = false;
+
+    try {
+      // Acquire execution lock
+      log.debug('Acquiring execution lock');
+      await this.stateStore.acquireLock('apply');
+      acquiredLock = true;
+
+      // Filter out no-change resources unless requested
+      const changesToExecute = plan.changes.filter(change => 
+        change.change_type !== ChangeType.NO_CHANGE || options.includeNoChange
+      );
+
+      if (changesToExecute.length === 0) {
+        log.info('No changes to execute');
+        return {
+          success: true,
+          results: [],
+          summary: this.createExecutionSummary([], startTime),
+          plan_id: plan.metadata.plan_id
+        };
+      }
+
+      log.info(`Executing ${changesToExecute.length} changes...`);
+      
+      // Load current state
+      let currentState = await this.stateStore.loadState();
+
+      // Execute changes in dependency order
+      for (let i = 0; i < changesToExecute.length; i++) {
+        const change = changesToExecute[i];
+        const progress = `(${i + 1}/${changesToExecute.length})`;
+        
+        try {
+          log.info(`${progress} Executing: ${change.change_type} ${change.kind}.${change.name}`);
+          
+          const result = await this.executeChange(change, config, currentState);
+          results.push(result);
+
+          // Update state on successful operations
+          if (result.success && (result.remote_id || change.change_type === ChangeType.DELETE)) {
+            currentState = await this.updateStateAfterChange(change, result, config, currentState);
+          }
+
+          log.info(`${progress} Completed: ${change.kind}.${change.name}`);
+
+        } catch (error) {
+          log.error(`${progress} Failed: ${change.kind}.${change.name}`, error);
+          
+          const failureResult: ResourceExecutionResult = {
+            resource_name: change.name,
+            resource_kind: change.kind,
+            change_type: change.change_type,
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+            duration_ms: 0
+          };
+          results.push(failureResult);
+
+          if (!this.continueOnError) {
+            // Rollback previous successful changes
+            log.warn('Failure detected, rolling back previous changes...');
+            await this.rollbackChanges(results.filter(r => r.success), currentState);
+            
+            throw new Error(`Execution failed at ${change.kind}.${change.name}: ${error}`);
+          }
+        }
+      }
+
+      // Save final state
+      await this.stateStore.saveState(currentState);
+
+      const summary = this.createExecutionSummary(results, startTime);
+      const success = results.every(r => r.success);
+
+      if (success) {
+        log.success(`All ${results.length} changes executed successfully`);
+      } else {
+        const failureCount = results.filter(r => !r.success).length;
+        log.warn(`${results.length - failureCount}/${results.length} changes executed successfully (${failureCount} failures)`);
+      }
+
+      return {
+        success,
+        results,
+        summary,
+        plan_id: plan.metadata.plan_id,
+        rolled_back: rolledBack
+      };
+
+    } finally {
+      if (acquiredLock) {
+        await this.stateStore.releaseLock();
+      }
+    }
+  }
+
+  /**
+   * Execute a single resource change
+   */
+  private async executeChange(
+    change: ResourceChange,
+    config: ParsedConfig,
+    currentState: StateFile
+  ): Promise<ResourceExecutionResult> {
+    const startTime = Date.now();
+    
+    try {
+      let remoteId: string | undefined;
+      let result: any;
+
+      switch (change.kind) {
+        case 'watchlist':
+          result = await this.executeWatchlistChange(change, config, currentState);
+          remoteId = result?.id;
+          break;
+
+        case 'notification_channel':
+          // TODO: Implement notification channel provider
+          throw new Error('Notification channel provider not implemented');
+
+        case 'custom_agent':
+          // TODO: Implement custom agent provider
+          throw new Error('Custom agent provider not implemented');
+
+        default:
+          throw new Error(`Unknown resource kind: ${change.kind}`);
+      }
+
+      return {
+        resource_name: change.name,
+        resource_kind: change.kind,
+        change_type: change.change_type,
+        success: true,
+        remote_id: remoteId,
+        duration_ms: Date.now() - startTime,
+        result
+      };
+
+    } catch (error) {
+      return {
+        resource_name: change.name,
+        resource_kind: change.kind,
+        change_type: change.change_type,
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        duration_ms: Date.now() - startTime
+      };
+    }
+  }
+
+  /**
+   * Execute a watchlist change
+   */
+  private async executeWatchlistChange(
+    change: ResourceChange,
+    config: ParsedConfig,
+    currentState: StateFile
+  ): Promise<ApiWatchlist | null> {
+    const watchlistConfig = config.watchlists[change.name];
+    if (!watchlistConfig) {
+      throw new Error(`Watchlist configuration not found: ${change.name}`);
+    }
+
+    switch (change.change_type) {
+      case ChangeType.CREATE:
+        return await this.providers.watchlistProvider.create(watchlistConfig);
+
+      case ChangeType.UPDATE:
+        if (!change.remote_id) {
+          throw new Error(`Remote ID not found for watchlist update: ${change.name}`);
+        }
+        
+        // Get current remote state for asset reconciliation
+        const currentRemoteState = await this.providers.watchlistProvider.getById(change.remote_id);
+        return await this.providers.watchlistProvider.update(change.remote_id, watchlistConfig, currentRemoteState || undefined);
+
+      case ChangeType.DELETE:
+        if (!change.remote_id) {
+          throw new Error(`Remote ID not found for watchlist deletion: ${change.name}`);
+        }
+        await this.providers.watchlistProvider.delete(change.remote_id);
+        return null;
+
+      case ChangeType.REPLACE:
+        // Replace: delete and recreate
+        if (change.remote_id) {
+          await this.providers.watchlistProvider.delete(change.remote_id);
+        }
+        return await this.providers.watchlistProvider.create(watchlistConfig);
+
+      default:
+        throw new Error(`Unsupported change type: ${change.change_type}`);
+    }
+  }
+
+  /**
+   * Update state after a successful change
+   */
+  private async updateStateAfterChange(
+    change: ResourceChange,
+    result: ResourceExecutionResult,
+    config: ParsedConfig,
+    currentState: StateFile
+  ): Promise<StateFile> {
+    const newState = { ...currentState };
+
+    if (change.change_type === ChangeType.DELETE) {
+      // Remove from state
+      delete newState.resources[change.name];
+    } else {
+      // Add or update state entry
+      const resourceConfig = this.getResourceConfig(change.name, change.kind, config);
+      const configHash = generateFingerprint(resourceConfig);
+
+      const now = new Date().toISOString();
+      const existingEntry = currentState.resources[change.name];
+      
+      const stateEntry: StateEntry = {
+        kind: change.kind,
+        name: change.name,
+        remote_id: result.remote_id || change.remote_id || '',
+        last_applied_hash: configHash,
+        last_seen_remote_hash: configHash, // For now, assume they match
+        metadata: {
+          created_at: existingEntry?.metadata.created_at || now,
+          updated_at: now,
+          created_by: 'cli',
+          cli_version: '0.1.0' // TODO: Import from package.json
+        }
+      };
+
+      newState.resources[change.name] = stateEntry;
+    }
+
+    newState.last_sync = new Date().toISOString();
+    return newState;
+  }
+
+  /**
+   * Get resource configuration by name and kind
+   */
+  private getResourceConfig(name: string, kind: string, config: ParsedConfig): any {
+    switch (kind) {
+      case 'watchlist':
+        return config.watchlists[name];
+      case 'notification_channel':
+        return config.notification_channels[name];
+      case 'custom_agent':
+        return config.custom_agents[name];
+      default:
+        throw new Error(`Unknown resource kind: ${kind}`);
+    }
+  }
+
+  /**
+   * Rollback successful changes
+   */
+  private async rollbackChanges(
+    successfulResults: ResourceExecutionResult[],
+    currentState: StateFile
+  ): Promise<void> {
+    log.info(`Rolling back ${successfulResults.length} successful changes...`);
+
+    // Rollback in reverse order
+    for (let i = successfulResults.length - 1; i >= 0; i--) {
+      const result = successfulResults[i];
+      
+      try {
+        switch (result.resource_kind) {
+          case 'watchlist':
+            if (result.change_type === ChangeType.CREATE && result.remote_id) {
+              await this.providers.watchlistProvider.delete(result.remote_id);
+              log.debug(`Rolled back created watchlist: ${result.resource_name}`);
+            }
+            // TODO: Handle UPDATE rollback (would need to restore previous state)
+            break;
+        }
+      } catch (error) {
+        log.error(`Failed to rollback ${result.resource_kind}.${result.resource_name}:`, error);
+      }
+    }
+  }
+
+  /**
+   * Create execution summary
+   */
+  private createExecutionSummary(
+    results: ResourceExecutionResult[],
+    startTime: number
+  ): ExecutionSummary {
+    const successful = results.filter(r => r.success);
+    const failed = results.filter(r => !r.success);
+
+    const summary: ExecutionSummary = {
+      total_resources: results.length,
+      successful: successful.length,
+      failed: failed.length,
+      duration_ms: Date.now() - startTime,
+      by_change_type: {
+        created: 0,
+        updated: 0,
+        replaced: 0,
+        deleted: 0
+      },
+      by_resource_type: {}
+    };
+
+    // Count by change type and resource type
+    for (const result of successful) {
+      switch (result.change_type) {
+        case ChangeType.CREATE:
+          summary.by_change_type.created++;
+          break;
+        case ChangeType.UPDATE:
+          summary.by_change_type.updated++;
+          break;
+        case ChangeType.REPLACE:
+          summary.by_change_type.replaced++;
+          break;
+        case ChangeType.DELETE:
+          summary.by_change_type.deleted++;
+          break;
+      }
+
+      if (!summary.by_resource_type[result.resource_kind]) {
+        summary.by_resource_type[result.resource_kind] = {
+          successful: 0,
+          failed: 0
+        };
+      }
+      summary.by_resource_type[result.resource_kind].successful++;
+    }
+
+    for (const result of failed) {
+      if (!summary.by_resource_type[result.resource_kind]) {
+        summary.by_resource_type[result.resource_kind] = {
+          successful: 0,
+          failed: 0
+        };
+      }
+      summary.by_resource_type[result.resource_kind].failed++;
+    }
+
+    return summary;
+  }
+
+  /**
+   * Check if execution can proceed
+   */
+  async canExecute(): Promise<{ canExecute: boolean; reason?: string }> {
+    // Check if state is locked by another operation
+    const lockCheck = await this.stateStore.isLocked();
+    if (lockCheck.locked) {
+      return {
+        canExecute: false,
+        reason: `Another operation is in progress (PID: ${lockCheck.lockInfo?.pid})`
+      };
+    }
+
+    // Check API connectivity
+    try {
+      // TODO: Add health check endpoint
+      return { canExecute: true };
+    } catch (error) {
+      return {
+        canExecute: false,
+        reason: `API connectivity check failed: ${error}`
+      };
+    }
+  }
+}
+
+/**
+ * Convenience function to create an executor
+ */
+export function createExecutor(options: ExecutorOptions): Executor {
+  return new Executor(options);
+}
+
+/**
+ * Convenience function to execute a plan
+ */
+export async function executePlan(
+  plan: ExecutionPlan,
+  config: ParsedConfig,
+  executorOptions: ExecutorOptions,
+  executionOptions?: ExecutionOptions
+): Promise<ExecutionResult> {
+  const executor = createExecutor(executorOptions);
+  return executor.execute(plan, config, executionOptions);
+}

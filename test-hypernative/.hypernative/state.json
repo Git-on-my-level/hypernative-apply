@@ -1,0 +1,29 @@
+{
+  "version": "1.0.0",
+  "resources": {
+    "test-watchlist-test-treasury-monitor": {
+      "kind": "watchlist",
+      "name": "test-watchlist-test-treasury-monitor",
+      "remote_id": "mock_1754671445495",
+      "last_applied_hash": "4090e3b2b3c68d0ff13db61176f42ab0ee91e3cb032bad10de71f8ed4bb8bb55",
+      "last_seen_remote_hash": "4090e3b2b3c68d0ff13db61176f42ab0ee91e3cb032bad10de71f8ed4bb8bb55",
+      "metadata": {
+        "created_at": "2025-08-08T16:44:05.495Z",
+        "updated_at": "2025-08-08T16:44:05.495Z",
+        "created_by": "cli",
+        "cli_version": "0.1.0"
+      }
+    }
+  },
+  "metadata": {
+    "created_at": "2025-08-08T16:44:05.495Z",
+    "created_by_version": "0.1.0",
+    "total_resources": 1,
+    "resource_counts": {
+      "watchlists": 1,
+      "custom_agents": 0,
+      "notification_channels": 0
+    }
+  },
+  "last_sync": "2025-08-08T16:44:05.495Z"
+}
