@@ -6,6 +6,7 @@ const baseChannelSchema = z.object({
   description: z.string().optional(),
   enabled: z.boolean().default(true),
   tags: z.record(z.string()).optional(),
+  validate: z.boolean().default(false).optional(),
 });
 
 // Webhook specific configuration

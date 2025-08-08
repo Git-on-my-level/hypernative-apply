@@ -1,0 +1,35 @@
+# Email Notification Channel
+name: "Security Team Email"
+description: "Email notifications for security team"
+type: "email"
+enabled: true
+validate: false
+
+tags:
+  environment: "production"
+  team: "security"
+
+configuration:
+  smtp:
+    host: "smtp.company.com"
+    port: 587
+    secure: true
+    auth:
+      user: "alerts@company.com"
+      pass: "${SMTP_PASSWORD}"
+  
+  recipients:
+    to: ["security@company.com", "compliance@company.com"]
+    cc: ["management@company.com"]
+  
+  template:
+    subject: "[ALERT] Hypernative Security Alert - {{alert.severity}}"
+    text_body: |
+      Alert: {{alert.title}}
+      Severity: {{alert.severity}}
+      Chain: {{alert.chain}}
+      Time: {{alert.timestamp}}
+      
+      Description: {{alert.description}}
+      
+      View full details: {{alert.url}}

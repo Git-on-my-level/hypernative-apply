@@ -14,9 +14,11 @@ import { StateStore } from './state-store.js';
 import { log } from './logger.js';
 import { WatchlistProvider } from '../providers/watchlist.provider.js';
 import { CustomAgentProvider } from '../providers/custom-agent.provider.js';
+import { NotificationChannelProvider } from '../providers/notification-channel.provider.js';
 import { generateFingerprint } from './fingerprint.js';
 import type { ParsedConfig } from '../schemas/config.schema.js';
 import type { WatchlistConfig } from '../schemas/watchlist.schema.js';
+import type { NotificationChannelConfig } from '../schemas/notification-channel.schema.js';
 import type { StateFile, StateEntry } from '../types/state.js';
 import type {
   ExecutionPlan,
@@ -27,7 +29,7 @@ import type {
   ExecutionSummary
 } from '../types/plan.js';
 import { ChangeType } from '../types/plan.js';
-import type { ApiWatchlist, CustomAgent } from '../types/api.js';
+import type { ApiWatchlist, CustomAgent, NotificationChannel } from '../types/api.js';
 import type { CustomAgentConfig } from '../schemas/custom-agent.schema.js';
 
 export interface ExecutorOptions {
@@ -41,6 +43,7 @@ export interface ExecutorOptions {
 export interface ProviderContext {
   watchlistProvider: WatchlistProvider;
   customAgentProvider: CustomAgentProvider;
+  notificationChannelProvider: NotificationChannelProvider;
 }
 
 export class Executor {
@@ -67,6 +70,10 @@ export class Executor {
       customAgentProvider: new CustomAgentProvider({ 
         apiClient: this.apiClient, 
         dryRun: this.dryRun 
+      }),
+      notificationChannelProvider: new NotificationChannelProvider({
+        apiClient: this.apiClient,
+        dryRun: this.dryRun
       })
     };
   }
@@ -196,8 +203,9 @@ export class Executor {
           break;
 
         case 'notification_channel':
-          // TODO: Implement notification channel provider
-          throw new Error('Notification channel provider not implemented');
+          result = await this.executeNotificationChannelChange(change, config, currentState);
+          remoteId = result?.id;
+          break;
 
         case 'custom_agent':
           result = await this.executeCustomAgentChange(change, config, currentState);
@@ -413,6 +421,14 @@ export class Executor {
             }
             // TODO: Handle UPDATE rollback (would need to restore previous state)
             break;
+          
+          case 'notification_channel':
+            if (result.change_type === ChangeType.CREATE && result.remote_id) {
+              await this.providers.notificationChannelProvider.delete(result.remote_id);
+              log.debug(`Rolled back created notification channel: ${result.resource_name}`);
+            }
+            // TODO: Handle UPDATE rollback (would need to restore previous state)
+            break;
         }
       } catch (error) {
         log.error(`Failed to rollback ${result.resource_kind}.${result.resource_name}:`, error);
@@ -481,6 +497,61 @@ export class Executor {
     }
 
     return summary;
+  }
+
+  /**
+   * Execute a notification channel change
+   */
+  private async executeNotificationChannelChange(
+    change: ResourceChange,
+    config: ParsedConfig,
+    currentState: StateFile
+  ): Promise<NotificationChannel | null> {
+    const channelConfig = config.notification_channels[change.name];
+    if (!channelConfig) {
+      throw new Error(`Notification channel configuration not found: ${change.name}`);
+    }
+
+    // Check if validation is requested
+    const testOptions = channelConfig.validate ? { validate: channelConfig.validate } : {};
+
+    switch (change.change_type) {
+      case ChangeType.CREATE:
+        return await this.providers.notificationChannelProvider.create(channelConfig, testOptions);
+        
+      case ChangeType.UPDATE:
+        if (!change.remote_id) {
+          throw new Error(`Remote ID not found for notification channel update: ${change.name}`);
+        }
+        
+        // Get current remote state for comparison
+        const currentRemoteState = await this.providers.notificationChannelProvider.getById(change.remote_id);
+        return await this.providers.notificationChannelProvider.update(
+          change.remote_id, 
+          channelConfig, 
+          currentRemoteState || undefined, 
+          testOptions
+        );
+        
+      case ChangeType.REPLACE:
+        if (!change.remote_id) {
+          throw new Error(`Remote ID not found for notification channel replacement: ${change.name}`);
+        }
+        
+        // Delete the old channel and create a new one
+        await this.providers.notificationChannelProvider.delete(change.remote_id);
+        return await this.providers.notificationChannelProvider.create(channelConfig, testOptions);
+        
+      case ChangeType.DELETE:
+        if (!change.remote_id) {
+          throw new Error(`Remote ID not found for notification channel deletion: ${change.name}`);
+        }
+        await this.providers.notificationChannelProvider.delete(change.remote_id);
+        return null;
+        
+      default:
+        throw new Error(`Unsupported change type: ${change.change_type}`);
+    }
   }
 
   /**

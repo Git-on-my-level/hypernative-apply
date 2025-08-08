@@ -1,0 +1,30 @@
+# Development Discord Channel
+name: "Dev Team Discord"
+description: "Development alerts on Discord"
+type: "discord"
+enabled: true
+validate: false
+
+tags:
+  environment: "development"
+  team: "engineering"
+
+configuration:
+  webhook_url: "${TEST_DISCORD_WEBHOOK}"
+  
+  embed:
+    title: "Hypernative Alert"
+    color: "#FF6B6B"
+    footer:
+      text: "Hypernative Security Platform"
+    
+    fields:
+      - name: "Severity"
+        value: "{{alert.severity}}"
+        inline: true
+      - name: "Chain"
+        value: "{{alert.chain}}"
+        inline: true
+  
+  mentions:
+    critical_severity: ["@developers"]

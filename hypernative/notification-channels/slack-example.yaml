@@ -1,0 +1,38 @@
+# Slack Notification Channel Example
+name: "Security Team Slack"
+description: "Slack notifications for security team"
+type: "slack"
+enabled: true
+validate: false  # Skip validation during apply
+
+tags:
+  environment: "production"
+  team: "security"
+
+configuration:
+  # Slack webhook URL from environment
+  webhook_url: "${SLACK_WEBHOOK_URL}"
+  channel: "#security-alerts"
+  username: "Hypernative Security Bot"
+  icon_emoji: ":shield:"
+  
+  # Custom message template
+  message_template:
+    text: "Security Alert from Hypernative"
+    blocks:
+      - type: "section"
+        text:
+          type: "mrkdwn"
+          text: "*Alert:* {{alert.title}}\n*Severity:* {{alert.severity}}\n*Chain:* {{alert.chain}}"
+  
+  # Mention specific users based on severity
+  mentions:
+    critical_severity: ["@security-oncall", "@channel"]
+    high_severity: ["@security-team"]
+    medium_severity: []
+    low_severity: []
+  
+  # Threading configuration
+  threading:
+    group_by: "alert_type"
+    thread_timeout: "1h"

@@ -1,0 +1,41 @@
+# Comprehensive Notification Channel Examples
+# This file demonstrates all the features implemented for notification channels
+
+# Webhook channel with environment variable substitution
+name: "Production Webhook"
+description: "Production webhook with secrets from environment variables"
+type: "webhook"
+enabled: true
+validate: true  # Test the channel after creation/update
+
+tags:
+  environment: "production"
+  team: "security"
+  priority: "high"
+
+configuration:
+  # Environment variable substitution with ${ENV_NAME} syntax
+  url: "${PRODUCTION_WEBHOOK_URL}"
+  method: "POST"
+  headers:
+    Content-Type: "application/json"
+    Authorization: "Bearer ${WEBHOOK_TOKEN}"
+    X-Custom-Header: "${CUSTOM_HEADER:default-value}"
+  
+  # Secret handling - this will be redacted in logs
+  secret: "${WEBHOOK_SECRET}"
+  
+  timeout: 30
+  
+  retry_config:
+    max_retries: 3
+    retry_delay: 5
+    exponential_backoff: true
+    max_delay: 60
+  
+  # Custom payload template
+  payload_template:
+    service: "hypernative"
+    environment: "production"
+    timestamp: "{{timestamp}}"
+    alert: "{{alert}}"

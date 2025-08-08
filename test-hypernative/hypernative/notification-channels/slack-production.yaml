@@ -1,0 +1,25 @@
+# Production Slack Channel
+name: "Production Alerts"
+description: "Critical alerts for production environment"
+type: "slack"
+enabled: true
+validate: true
+
+tags:
+  environment: "production"
+  team: "devops"
+  severity: "critical"
+
+configuration:
+  webhook_url: "${TEST_SLACK_WEBHOOK}"
+  channel: "#production-alerts"
+  username: "Hypernative Bot"
+  icon_emoji: ":warning:"
+  
+  mentions:
+    critical_severity: ["@oncall", "@channel"]
+    high_severity: ["@devops-team"]
+  
+  threading:
+    group_by: "alert_type"
+    thread_timeout: "30m"

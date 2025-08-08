@@ -244,11 +244,48 @@ export interface RiskInsightQueryParams extends ListQueryParams {
 export interface NotificationChannel {
   id: string;
   name: string;
-  type: 'webhook' | 'slack' | 'email' | 'telegram';
+  type: 'webhook' | 'slack' | 'email' | 'telegram' | 'discord' | 'pagerduty' | 'msteams';
   enabled: boolean;
   configuration: Record<string, any>;
   created_at: string;
   updated_at: string;
+  description?: string;
+  tags?: Record<string, string>;
+  last_test_result?: {
+    success: boolean;
+    message: string;
+    tested_at: string;
+  };
+}
+
+export interface NotificationChannelCreatePayload {
+  name: string;
+  type: 'webhook' | 'slack' | 'email' | 'telegram' | 'discord' | 'pagerduty' | 'msteams';
+  description?: string;
+  enabled?: boolean;
+  configuration: Record<string, any>;
+  tags?: Record<string, string>;
+}
+
+export interface NotificationChannelUpdatePayload {
+  name?: string;
+  description?: string;
+  enabled?: boolean;
+  configuration?: Record<string, any>;
+  tags?: Record<string, string>;
+}
+
+export interface NotificationChannelTestResponse {
+  success: boolean;
+  message: string;
+  delivered_at: string;
+  error_details?: string;
+}
+
+// Query parameters for notification channels
+export interface NotificationChannelQueryParams extends ListQueryParams {
+  enabled?: boolean;
+  type?: NotificationChannel['type'];
 }
 
 // Pool toxicity response (from screener API)
