@@ -9,6 +9,7 @@ import { applyCommand } from './commands/apply.js';
 import { initCommand } from './commands/init.js';
 import { doctorCommand } from './commands/doctor.js';
 import { versionCommand } from './commands/version.js';
+import { updateGlobalFlags } from './lib/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -23,7 +24,11 @@ program
   .name('hypernative')
   .description('Hypernative configuration management CLI')
   .option('--profile <name>', 'Configuration profile to use')
-  .option('--base-url <url>', 'Override base API URL');
+  .option('--base-url <url>', 'Override base API URL')
+  .option('--json', 'Output in JSON format for machine parsing')
+  .option('--quiet', 'Suppress non-essential output')
+  .option('--debug', 'Enable debug output including HTTP timings')
+  .option('--no-colors', 'Disable colored output');
 
 // Register commands
 program.addCommand(planCommand);
@@ -39,6 +44,17 @@ program.on('command:*', () => {
     program.args.join(' ')
   );
   process.exit(1);
+});
+
+// Set up global flags before parsing
+program.hook('preAction', (thisCommand) => {
+  const opts = thisCommand.parent?.opts() || thisCommand.opts();
+  updateGlobalFlags({
+    json: opts.json,
+    quiet: opts.quiet,
+    debug: opts.debug,
+    noColors: opts.noColors
+  });
 });
 
 // Parse command line arguments

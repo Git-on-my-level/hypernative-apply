@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError, AxiosRequestConfig } from 'axios';
+import { v4 as uuidv4 } from 'uuid';
 import { ResolvedConfig } from './config.js';
 import { log } from './logger.js';
 import { RateLimiter, createRateLimiter, RateLimitConfig } from './rate-limiter.js';
@@ -66,13 +67,18 @@ export class ApiClient {
       },
     });
 
-    // Setup request interceptor for logging
+    // Setup request interceptor for logging and timing
     this.axiosInstance.interceptors.request.use(
       (request) => {
+        // Add request timing metadata
+        (request as any).__requestId = uuidv4();
+        (request as any).__startTime = Date.now();
+        
         log.debug('Making API request', {
           method: request.method?.toUpperCase(),
           url: request.url,
           params: request.params,
+          requestId: (request as any).__requestId,
           // Don't log sensitive data in request body
           hasData: !!request.data,
         });
@@ -87,42 +93,91 @@ export class ApiClient {
     // Setup response interceptor for logging and rate limit tracking
     this.axiosInstance.interceptors.response.use(
       (response) => {
+        // Calculate request timing
+        const startTime = (response.config as any).__startTime;
+        const requestId = (response.config as any).__requestId;
+        const duration = startTime ? Date.now() - startTime : undefined;
+        
         // Extract rate limit headers
         const rateLimit = this.extractRateLimitHeaders(response);
         if (rateLimit) {
           this.rateLimiter.updateFromHeaders(rateLimit.remaining, rateLimit.reset);
+          
+          // Log rate limit info using the new method
+          log.rateLimit(
+            rateLimit.limit, 
+            rateLimit.remaining, 
+            new Date(rateLimit.reset * 1000),
+            requestId
+          );
         }
 
+        // Log HTTP request timing using the new method
+        if (duration !== undefined && response.config.method && response.config.url) {
+          log.httpRequest(
+            response.config.method.toUpperCase(),
+            response.config.url,
+            duration,
+            response.status,
+            requestId
+          );
+        }
+
+        // Legacy debug log for additional context
         log.debug('API response received', {
           status: response.status,
           url: response.config.url,
-          rateLimit,
           hasData: !!response.data,
-          requestId: (response.data as any)?.request_id,
+          requestId: requestId || (response.data as any)?.request_id,
         });
 
         return response;
       },
       (error: AxiosError) => {
+        // Calculate request timing for errors too
+        const startTime = (error.config as any)?.__startTime;
+        const requestId = (error.config as any)?.__requestId;
+        const duration = startTime ? Date.now() - startTime : undefined;
+        
         // Handle rate limit headers in error responses too
         if (error.response) {
           const rateLimit = this.extractRateLimitHeaders(error.response);
           if (rateLimit) {
             this.rateLimiter.updateFromHeaders(rateLimit.remaining, rateLimit.reset);
+            
+            // Log rate limit info using the new method
+            log.rateLimit(
+              rateLimit.limit, 
+              rateLimit.remaining, 
+              new Date(rateLimit.reset * 1000),
+              requestId
+            );
           }
 
           // Handle 429 specifically
           if (error.response.status === 429) {
             this.rateLimiter.handle429(rateLimit?.reset);
           }
+          
+          // Log HTTP request timing for errors using the new method
+          if (duration !== undefined && error.config?.method && error.config?.url) {
+            log.httpRequest(
+              error.config.method.toUpperCase(),
+              error.config.url,
+              duration,
+              error.response.status,
+              requestId
+            );
+          }
         }
 
+        // Legacy debug log for additional context
         log.debug('API response error', {
           status: error.response?.status,
           statusText: error.response?.statusText,
           url: error.config?.url,
           message: error.message,
-          requestId: (error.response?.data as any)?.request_id,
+          requestId: requestId || (error.response?.data as any)?.request_id,
         });
 
         return Promise.reject(error);
