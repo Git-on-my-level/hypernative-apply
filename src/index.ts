@@ -8,6 +8,7 @@ import { planCommand } from './commands/plan.js';
 import { applyCommand } from './commands/apply.js';
 import { initCommand } from './commands/init.js';
 import { doctorCommand } from './commands/doctor.js';
+import { versionCommand } from './commands/version.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -21,13 +22,15 @@ const program = new Command();
 program
   .name('hypernative')
   .description('Hypernative configuration management CLI')
-  .version(packageJson.version);
+  .option('--profile <name>', 'Configuration profile to use')
+  .option('--base-url <url>', 'Override base API URL');
 
 // Register commands
 program.addCommand(planCommand);
 program.addCommand(applyCommand);
 program.addCommand(initCommand);
 program.addCommand(doctorCommand);
+program.addCommand(versionCommand);
 
 // Handle unknown commands
 program.on('command:*', () => {

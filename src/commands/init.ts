@@ -140,7 +140,11 @@ export const initCommand = new Command()
 
     log.success('Hypernative project initialized successfully!');
     log.info('\nNext steps:');
-    log.info('1. Edit the configuration files in hypernative/ directory');
-    log.info('2. Run "hypernative plan" to preview changes');
-    log.info('3. Run "hypernative apply" to deploy your configuration');
+    log.info('1. Set up authentication:');
+    log.info('   - Set environment variables: HN_CLIENT_ID, HN_CLIENT_SECRET');
+    log.info('   - Or configure profiles in ~/.hypernative/config.yaml');
+    log.info('   - Run "hypernative version --debug" to verify configuration');
+    log.info('2. Edit the configuration files in hypernative/ directory');
+    log.info('3. Run "hypernative plan" to preview changes');
+    log.info('4. Run "hypernative apply" to deploy your configuration');
   });
