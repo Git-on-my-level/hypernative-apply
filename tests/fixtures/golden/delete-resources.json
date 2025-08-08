@@ -1,0 +1,86 @@
+{
+  "metadata": {
+    "plan_id": "[NORMALIZED]",
+    "created_at": "[NORMALIZED]",
+    "cli_version": "0.1.0",
+    "config_hash": "44b7977c379d128bcd01af1b36fc5338fb4120df86b995fe0253a600859db115",
+    "content_hash": "e38b1098d6699ac93cc449394659249f1c7a7f0579c5de33c419d5e946e86e0f",
+    "base_directory": "[NORMALIZED]",
+    "config_files": [
+      "hypernative/notification-channels/*.yaml"
+    ]
+  },
+  "changes": [
+    {
+      "kind": "notification_channel",
+      "name": "keep-me",
+      "remote_id": "nc_keep",
+      "change_type": "UPDATE",
+      "current_hash": "keep_hash",
+      "desired_hash": "hash_6f",
+      "field_diffs": [
+        {
+          "path": "config",
+          "old_value": "[Previous configuration]",
+          "new_value": "[New configuration]",
+          "change_type": "changed"
+        }
+      ],
+      "dependencies": [],
+      "dependents": [],
+      "risk_level": "low"
+    },
+    {
+      "kind": "watchlist",
+      "name": "delete-me",
+      "remote_id": "wl_delete",
+      "change_type": "DELETE",
+      "current_hash": "delete_hash",
+      "dependencies": [],
+      "dependents": [],
+      "risk_level": "medium"
+    },
+    {
+      "kind": "custom_agent",
+      "name": "also-delete",
+      "remote_id": "ca_delete",
+      "change_type": "DELETE",
+      "current_hash": "delete_hash_2",
+      "dependencies": [],
+      "dependents": [],
+      "risk_level": "medium"
+    }
+  ],
+  "summary": {
+    "total_resources": 3,
+    "to_create": 0,
+    "to_update": 1,
+    "to_replace": 0,
+    "to_delete": 2,
+    "no_change": 0,
+    "by_resource_type": {
+      "notification_channel": {
+        "to_create": 0,
+        "to_update": 1,
+        "to_replace": 0,
+        "to_delete": 0,
+        "no_change": 0
+      },
+      "watchlist": {
+        "to_create": 0,
+        "to_update": 0,
+        "to_replace": 0,
+        "to_delete": 1,
+        "no_change": 0
+      },
+      "custom_agent": {
+        "to_create": 0,
+        "to_update": 0,
+        "to_replace": 0,
+        "to_delete": 1,
+        "no_change": 0
+      }
+    }
+  },
+  "dependencies": []
+}

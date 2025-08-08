@@ -14,10 +14,21 @@
     "dev": "tsx src/index.ts",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:unit": "vitest run --exclude '**/e2e/**'",
+    "test:unit:watch": "vitest --exclude '**/e2e/**'",
+    "test:coverage": "vitest run --coverage --exclude '**/e2e/**'",
+    "test:golden": "vitest run tests/golden/",
+    "test:e2e": "E2E=1 vitest run tests/e2e/ --config vitest.config.ts",
+    "test:e2e:smoke": "E2E=1 vitest run tests/e2e/smoke.test.ts",
+    "test:ci": "npm run test:unit && npm run test:coverage",
+    "test:all": "npm run test:unit && npm run test:e2e",
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
-    "format": "prettier --write src",
-    "format:check": "prettier --check src"
+    "format": "prettier --write src tests",
+    "format:check": "prettier --check src tests",
+    "prebuild": "npm run lint && npm run format:check",
+    "prepare": "npm run build",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "@types/uuid": "^10.0.0",
@@ -35,12 +46,13 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@types/node": "^20.10.4",
+    "@types/node": "^20.19.10",
     "@typescript-eslint/eslint-plugin": "^6.13.1",
     "@typescript-eslint/parser": "^6.13.1",
     "eslint": "^8.54.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.1",
+    "nock": "^14.0.9",
     "prettier": "^3.1.0",
     "tsx": "^4.6.2",
     "typescript": "^5.3.3",

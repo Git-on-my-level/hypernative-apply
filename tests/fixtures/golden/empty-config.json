@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "plan_id": "[NORMALIZED]",
+    "created_at": "[NORMALIZED]",
+    "cli_version": "0.1.0",
+    "config_hash": "8f62009d303e064a9899b92dd099726b2c5e11021d0fd015a7eeed7875f135e2",
+    "content_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "base_directory": "[NORMALIZED]",
+    "config_files": []
+  },
+  "changes": [],
+  "summary": {
+    "total_resources": 0,
+    "to_create": 0,
+    "to_update": 0,
+    "to_replace": 0,
+    "to_delete": 0,
+    "no_change": 0,
+    "by_resource_type": {}
+  },
+  "dependencies": []
+}
