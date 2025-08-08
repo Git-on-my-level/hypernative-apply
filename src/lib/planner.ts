@@ -1,6 +1,6 @@
 /**
  * Planner module for the Hypernative Apply CLI
- * 
+ *
  * This module provides the core planning functionality:
  * - Resource dependency graph building and topological sorting
  * - CRUD classification (Create, Update, Replace, Delete, No-op)
@@ -13,7 +13,6 @@ import { createHash } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { log } from './logger.js';
 import { generateFingerprint } from './fingerprint.js';
-import { deepCompare, formatDiffSummary, type DiffOptions } from './diff-engine.js';
 import { StateStore } from './state-store.js';
 import type { ParsedConfig } from '../schemas/config.schema.js';
 import type { StateFile, StateEntry } from '../types/state.js';
@@ -30,7 +29,7 @@ import {
   type DependencyGraph,
   type DependencyNode,
   type PlannerOptions,
-  type PlanFile
+  type PlanFile,
 } from '../types/plan.js';
 
 // Current CLI version - should be imported from package.json in real implementation
@@ -48,34 +47,27 @@ export class Planner {
   /**
    * Generate a comprehensive execution plan
    */
-  async generatePlan(
-    config: ParsedConfig, 
-    options: PlannerOptions = {}
-  ): Promise<ExecutionPlan> {
+  async generatePlan(config: ParsedConfig, options: PlannerOptions = {}): Promise<ExecutionPlan> {
     const startTime = Date.now();
-    
+
     const opts: Required<PlannerOptions> = {
       include_field_diffs: options.include_field_diffs ?? true,
       check_drift: options.check_drift ?? false,
       redact_secrets: options.redact_secrets ?? true,
       include_dependencies: options.include_dependencies ?? true,
-      max_diff_depth: options.max_diff_depth ?? 10
+      max_diff_depth: options.max_diff_depth ?? 10,
     };
 
     log.debug('Generating execution plan with options:', opts);
 
     // Load current state
     const currentState = await this.stateStore.loadState();
-    
+
     // Build resource dependency graph
     const dependencyGraph = this.buildDependencyGraph(config);
-    
+
     // Detect changes for each resource
-    const resourceChanges = await this.detectResourceChanges(
-      config, 
-      currentState, 
-      opts
-    );
+    const resourceChanges = await this.detectResourceChanges(config, currentState, opts);
 
     // Check for drift if requested
     let driftResult: DriftDetectionResult | undefined;
@@ -100,7 +92,7 @@ export class Planner {
       changes: orderedChanges,
       summary,
       dependencies: this.extractDependencyList(dependencyGraph),
-      warnings: warnings.length > 0 ? warnings : undefined
+      warnings: warnings.length > 0 ? warnings : undefined,
     };
 
     const planTime = Date.now() - startTime;
@@ -114,7 +106,7 @@ export class Planner {
    */
   private buildDependencyGraph(config: ParsedConfig): DependencyGraph {
     const nodes: Record<string, DependencyNode> = {};
-    
+
     // Create nodes for all resources
     for (const [name] of Object.entries(config.notification_channels)) {
       nodes[name] = {
@@ -122,7 +114,7 @@ export class Planner {
         kind: 'notification_channel',
         dependencies: [],
         dependents: [],
-        depth: 0
+        depth: 0,
       };
     }
 
@@ -132,7 +124,7 @@ export class Planner {
         kind: 'watchlist',
         dependencies: [],
         dependents: [],
-        depth: 0
+        depth: 0,
       };
     }
 
@@ -142,7 +134,7 @@ export class Planner {
         kind: 'custom_agent',
         dependencies: [],
         dependents: [],
-        depth: 0
+        depth: 0,
       };
     }
 
@@ -156,7 +148,7 @@ export class Planner {
       nodes,
       execution_order: executionOrder,
       has_cycles: hasCycles,
-      cycles
+      cycles,
     };
   }
 
@@ -222,7 +214,7 @@ export class Planner {
 
       visiting.add(nodeName);
       const node = nodes[nodeName];
-      
+
       if (node) {
         let hasCycle = false;
         for (const depName of node.dependencies) {
@@ -230,12 +222,13 @@ export class Planner {
             hasCycle = true;
           }
         }
-        
+
         // Calculate depth (maximum dependency depth + 1)
-        node.depth = Math.max(0, ...node.dependencies.map(dep => 
-          nodes[dep] ? nodes[dep].depth + 1 : 0
-        ));
-        
+        node.depth = Math.max(
+          0,
+          ...node.dependencies.map((dep) => (nodes[dep] ? nodes[dep].depth + 1 : 0))
+        );
+
         if (hasCycle) {
           return true;
         }
@@ -260,11 +253,11 @@ export class Planner {
     executionOrder.sort((a, b) => {
       const depthA = nodes[a]?.depth || 0;
       const depthB = nodes[b]?.depth || 0;
-      
+
       if (depthA !== depthB) {
         return depthA - depthB;
       }
-      
+
       return a.localeCompare(b);
     });
 
@@ -281,13 +274,13 @@ export class Planner {
   ): Promise<ResourceChange[]> {
     const changes: ResourceChange[] = [];
     const desiredResources = new Map<string, { kind: string; config: any; hash: string }>();
-    
+
     // Collect all desired resources
     for (const [name, channelConfig] of Object.entries(config.notification_channels)) {
       desiredResources.set(name, {
         kind: 'notification_channel',
         config: channelConfig,
-        hash: generateFingerprint(channelConfig)
+        hash: generateFingerprint(channelConfig),
       });
     }
 
@@ -295,7 +288,7 @@ export class Planner {
       desiredResources.set(name, {
         kind: 'watchlist',
         config: watchlistConfig,
-        hash: generateFingerprint(watchlistConfig)
+        hash: generateFingerprint(watchlistConfig),
       });
     }
 
@@ -303,19 +296,14 @@ export class Planner {
       desiredResources.set(name, {
         kind: 'custom_agent',
         config: agentConfig,
-        hash: generateFingerprint(agentConfig)
+        hash: generateFingerprint(agentConfig),
       });
     }
 
     // Analyze each desired resource
     for (const [name, desired] of desiredResources) {
       const existingState = currentState.resources[name];
-      const change = await this.analyzeResourceChange(
-        name,
-        desired,
-        existingState,
-        options
-      );
+      const change = await this.analyzeResourceChange(name, desired, existingState, options);
       changes.push(change);
     }
 
@@ -330,7 +318,7 @@ export class Planner {
           current_hash: stateEntry.last_applied_hash,
           dependencies: [],
           dependents: [],
-          risk_level: 'medium' // Deletions are generally medium risk
+          risk_level: 'medium', // Deletions are generally medium risk
         });
       }
     }
@@ -356,7 +344,7 @@ export class Planner {
         desired_hash: desired.hash,
         dependencies: this.getResourceDependencies(name, desired.config, desired.kind),
         dependents: [],
-        risk_level: 'low' // Creates are generally low risk
+        risk_level: 'low', // Creates are generally low risk
       };
     }
 
@@ -371,21 +359,21 @@ export class Planner {
         desired_hash: desired.hash,
         dependencies: this.getResourceDependencies(name, desired.config, desired.kind),
         dependents: [],
-        risk_level: 'low'
+        risk_level: 'low',
       };
     }
 
     // Check for type changes in custom agents (requires REPLACE instead of UPDATE)
     let changeType = ChangeType.UPDATE;
     let requiresReplace = false;
-    
+
     if (desired.kind === 'custom_agent') {
       requiresReplace = await this.requiresCustomAgentReplace(
-        name, 
-        desired.config, 
+        name,
+        desired.config,
         existingState.remote_id
       );
-      
+
       if (requiresReplace) {
         changeType = ChangeType.REPLACE;
         log.debug(`Custom agent '${name}' type changed, marking as REPLACE`);
@@ -399,18 +387,16 @@ export class Planner {
     if (options.include_field_diffs) {
       // We don't have the old config here, but we can note that diffs are available
       // In a real implementation, we might store the last applied config
-      const diffOptions: DiffOptions = {
-        redactSecrets: options.redact_secrets,
-        maxDepth: options.max_diff_depth
-      };
-      
+
       // For now, we'll create a placeholder since we don't have old config stored
-      fieldDiffs = [{
-        path: 'config',
-        old_value: '[Previous configuration]',
-        new_value: '[New configuration]', 
-        change_type: 'changed'
-      }];
+      fieldDiffs = [
+        {
+          path: 'config',
+          old_value: '[Previous configuration]',
+          new_value: '[New configuration]',
+          change_type: 'changed',
+        },
+      ];
 
       // Add specific field diff for type change if it's a replace
       if (requiresReplace) {
@@ -419,7 +405,7 @@ export class Planner {
           old_value: '[Previous type]',
           new_value: desired.config.type,
           change_type: 'changed',
-          is_sensitive: false
+          is_sensitive: false,
         });
       }
 
@@ -437,7 +423,7 @@ export class Planner {
       field_diffs: fieldDiffs,
       dependencies: this.getResourceDependencies(name, desired.config, desired.kind),
       dependents: [],
-      risk_level: riskLevel
+      risk_level: riskLevel,
     };
   }
 
@@ -469,16 +455,11 @@ export class Planner {
       /condition/i,
       /webhook/i,
       /api_key/i,
-      /secret/i
+      /secret/i,
     ];
 
-    // Medium-risk changes  
-    const mediumRiskPatterns = [
-      /name/i,
-      /description/i,
-      /assets/i,
-      /channels/i
-    ];
+    // Medium-risk changes
+    const mediumRiskPatterns = [/name/i, /description/i, /assets/i, /channels/i];
 
     let hasHighRisk = false;
     let hasMediumRisk = false;
@@ -489,12 +470,12 @@ export class Planner {
         break;
       }
 
-      if (highRiskPatterns.some(pattern => pattern.test(diff.path))) {
+      if (highRiskPatterns.some((pattern) => pattern.test(diff.path))) {
         hasHighRisk = true;
         break;
       }
 
-      if (mediumRiskPatterns.some(pattern => pattern.test(diff.path))) {
+      if (mediumRiskPatterns.some((pattern) => pattern.test(diff.path))) {
         hasMediumRisk = true;
       }
     }
@@ -511,7 +492,7 @@ export class Planner {
     changes: ResourceChange[],
     dependencyGraph: DependencyGraph
   ): ResourceChange[] {
-    const changeMap = new Map(changes.map(change => [change.name, change]));
+    const changeMap = new Map(changes.map((change) => [change.name, change]));
     const orderedChanges: ResourceChange[] = [];
 
     // Process in dependency order
@@ -529,7 +510,7 @@ export class Planner {
 
     // Add any changes not in the dependency graph (shouldn't happen normally)
     for (const change of changes) {
-      if (!orderedChanges.some(c => c.name === change.name)) {
+      if (!orderedChanges.some((c) => c.name === change.name)) {
         orderedChanges.push(change);
       }
     }
@@ -541,18 +522,18 @@ export class Planner {
    * Detect drift from remote state (placeholder implementation)
    */
   private async detectDrift(
-    currentState: StateFile,
-    options: Required<PlannerOptions>
+    _currentState: StateFile,
+    _options: Required<PlannerOptions>
   ): Promise<DriftDetectionResult> {
     // This is a placeholder - in a real implementation, this would:
     // 1. Fetch current remote state for all resources
     // 2. Compare with expected state based on last_applied_hash
     // 3. Generate field-level diffs for any drift detected
-    
+
     return {
       has_drift: false,
       drifted_resources: [],
-      detected_at: new Date().toISOString()
+      detected_at: new Date().toISOString(),
     };
   }
 
@@ -570,9 +551,9 @@ export class Planner {
     if (dependencyGraph.has_cycles) {
       warnings.push({
         type: 'dependency_cycle',
-        message: `Dependency cycles detected: ${dependencyGraph.cycles.map(cycle => cycle.join(' -> ')).join(', ')}`,
+        message: `Dependency cycles detected: ${dependencyGraph.cycles.map((cycle) => cycle.join(' -> ')).join(', ')}`,
         affected_resources: dependencyGraph.cycles.flat(),
-        severity: 'error'
+        severity: 'error',
       });
     }
 
@@ -585,20 +566,20 @@ export class Planner {
             type: 'missing_dependency',
             message: `Resource '${change.name}' depends on '${dep}' which is not defined`,
             affected_resources: [change.name],
-            severity: 'error'
+            severity: 'error',
           });
         }
       }
     }
 
     // Check for high-risk changes
-    const highRiskChanges = changes.filter(c => c.risk_level === 'high');
+    const highRiskChanges = changes.filter((c) => c.risk_level === 'high');
     if (highRiskChanges.length > 0) {
       warnings.push({
         type: 'high_risk_change',
         message: `${highRiskChanges.length} high-risk change${highRiskChanges.length === 1 ? '' : 's'} detected`,
-        affected_resources: highRiskChanges.map(c => c.name),
-        severity: 'warning'
+        affected_resources: highRiskChanges.map((c) => c.name),
+        severity: 'warning',
       });
     }
 
@@ -607,8 +588,8 @@ export class Planner {
       warnings.push({
         type: 'configuration_drift',
         message: `Configuration drift detected in ${driftResult.drifted_resources.length} resource${driftResult.drifted_resources.length === 1 ? '' : 's'}`,
-        affected_resources: driftResult.drifted_resources.map(r => r.name),
-        severity: 'warning'
+        affected_resources: driftResult.drifted_resources.map((r) => r.name),
+        severity: 'warning',
       });
     }
 
@@ -629,7 +610,7 @@ export class Planner {
       config_hash: configHash,
       content_hash: contentHash,
       base_directory: this.baseDir,
-      config_files: this.getConfigFiles(config)
+      config_files: this.getConfigFiles(config),
     };
   }
 
@@ -639,20 +620,35 @@ export class Planner {
   private generateConfigHash(config: ParsedConfig): string {
     // Generate a stable hash of the entire configuration
     const configString = JSON.stringify({
-      notification_channels: Object.keys(config.notification_channels).sort().reduce((acc, key) => {
-        acc[key] = generateFingerprint(config.notification_channels[key]);
-        return acc;
-      }, {} as Record<string, string>),
-      watchlists: Object.keys(config.watchlists).sort().reduce((acc, key) => {
-        acc[key] = generateFingerprint(config.watchlists[key]);
-        return acc;
-      }, {} as Record<string, string>),
-      custom_agents: Object.keys(config.custom_agents).sort().reduce((acc, key) => {
-        acc[key] = generateFingerprint(config.custom_agents[key]);
-        return acc;
-      }, {} as Record<string, string>)
+      notification_channels: Object.keys(config.notification_channels)
+        .sort()
+        .reduce(
+          (acc, key) => {
+            acc[key] = generateFingerprint(config.notification_channels[key]);
+            return acc;
+          },
+          {} as Record<string, string>
+        ),
+      watchlists: Object.keys(config.watchlists)
+        .sort()
+        .reduce(
+          (acc, key) => {
+            acc[key] = generateFingerprint(config.watchlists[key]);
+            return acc;
+          },
+          {} as Record<string, string>
+        ),
+      custom_agents: Object.keys(config.custom_agents)
+        .sort()
+        .reduce(
+          (acc, key) => {
+            acc[key] = generateFingerprint(config.custom_agents[key]);
+            return acc;
+          },
+          {} as Record<string, string>
+        ),
     });
-    
+
     return createHash('sha256').update(configString).digest('hex');
   }
 
@@ -661,15 +657,17 @@ export class Planner {
    */
   private generateContentHash(changes: ResourceChange[]): string {
     const contentString = JSON.stringify(
-      changes.map(change => ({
-        name: change.name,
-        kind: change.kind,
-        change_type: change.change_type,
-        current_hash: change.current_hash,
-        desired_hash: change.desired_hash
-      })).sort((a, b) => a.name.localeCompare(b.name))
+      changes
+        .map((change) => ({
+          name: change.name,
+          kind: change.kind,
+          change_type: change.change_type,
+          current_hash: change.current_hash,
+          desired_hash: change.desired_hash,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name))
     );
-    
+
     return createHash('sha256').update(contentString).digest('hex');
   }
 
@@ -679,7 +677,7 @@ export class Planner {
   private getConfigFiles(config: ParsedConfig): string[] {
     // In a real implementation, this would track which files were loaded
     const files: string[] = [];
-    
+
     if (Object.keys(config.notification_channels).length > 0) {
       files.push('hypernative/notification-channels/*.yaml');
     }
@@ -689,7 +687,7 @@ export class Planner {
     if (Object.keys(config.custom_agents).length > 0) {
       files.push('hypernative/custom-agents/*.yaml');
     }
-    
+
     return files;
   }
 
@@ -704,7 +702,7 @@ export class Planner {
       to_replace: 0,
       to_delete: 0,
       no_change: 0,
-      by_resource_type: {} as Record<string, any>
+      by_resource_type: {} as Record<string, any>,
     };
 
     const typeCounters: Record<string, any> = {};
@@ -717,7 +715,7 @@ export class Planner {
           to_update: 0,
           to_replace: 0,
           to_delete: 0,
-          no_change: 0
+          no_change: 0,
         };
       }
 
@@ -755,7 +753,7 @@ export class Planner {
    */
   private extractDependencyList(dependencyGraph: DependencyGraph): ResourceDependency[] {
     const dependencies: ResourceDependency[] = [];
-    
+
     for (const [resourceName, node] of Object.entries(dependencyGraph.nodes)) {
       for (const depName of node.dependencies) {
         const depNode = dependencyGraph.nodes[depName];
@@ -765,12 +763,12 @@ export class Planner {
             resource_kind: node.kind,
             depends_on_name: depName,
             depends_on_kind: depNode.kind,
-            dependency_type: 'references' // This could be more sophisticated
+            dependency_type: 'references', // This could be more sophisticated
           });
         }
       }
     }
-    
+
     return dependencies;
   }
 
@@ -791,7 +789,7 @@ export class Planner {
       // Check if we have the previous type stored in state metadata
       const currentState = await this.stateStore.loadState();
       const existingState = currentState.resources[name];
-      
+
       if (!existingState || !existingState.metadata) {
         return false; // No previous state to compare
       }
@@ -799,10 +797,12 @@ export class Planner {
       // Look for stored agent type in metadata
       const storedType = (existingState.metadata as any).agent_type;
       if (storedType && storedType !== desiredConfig.type) {
-        log.debug(`Custom agent '${name}' type changed from '${storedType}' to '${desiredConfig.type}', marking as REPLACE`);
+        log.debug(
+          `Custom agent '${name}' type changed from '${storedType}' to '${desiredConfig.type}', marking as REPLACE`
+        );
         return true;
       }
-      
+
       return false;
     } catch (error) {
       log.warn(`Failed to check type change for custom agent '${name}':`, error);
@@ -820,7 +820,7 @@ export class Planner {
     return {
       version: '1.0.0',
       plan,
-      signature
+      signature,
     };
   }
 }
@@ -840,9 +840,7 @@ export async function generateExecutionPlan(
 /**
  * Convenience function to create a plan file
  */
-export async function createPlanFile(
-  plan: ExecutionPlan
-): Promise<PlanFile> {
+export async function createPlanFile(plan: ExecutionPlan): Promise<PlanFile> {
   const planner = new Planner();
   return planner.createPlanFile(plan);
 }

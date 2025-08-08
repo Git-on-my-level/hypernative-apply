@@ -9,7 +9,7 @@ import nock from 'nock';
 beforeAll(() => {
   // Don't allow real HTTP requests during tests
   nock.disableNetConnect();
-  
+
   // Allow local connections for the CLI itself
   nock.enableNetConnect('127.0.0.1');
 });

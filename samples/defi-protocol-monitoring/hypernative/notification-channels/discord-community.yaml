@@ -1,0 +1,21 @@
+name: discord-community  
+type: discord
+description: Community notifications for transparency
+config:
+  webhook_url: ${DISCORD_WEBHOOK_URL}
+  username: "Protocol Monitor"
+  avatar_url: "https://your-protocol.com/logo.png"
+  
+  # Embed configuration for rich messages
+  embed_config:
+    color: 0x00ff00  # Green for normal alerts
+    footer_text: "Hypernative Security Monitoring"
+    footer_icon: "https://hypernative.io/favicon.ico"
+    
+  # Only send certain types of alerts to community
+  filters:
+    alert_types: ["governance", "token_events", "major_transactions"]
+    min_amount_usd: 100000  # Only major transactions
+    exclude_severity: ["low"]
+    
+enabled: true

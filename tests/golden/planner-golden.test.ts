@@ -106,7 +106,7 @@ describe('Golden Tests - Planner Output', () => {
 
       // Verify plan structure
       expect(plan.changes).toHaveLength(4); // 2 channels + 1 watchlist + 1 agent
-      expect(plan.changes.every(c => c.change_type === ChangeType.CREATE)).toBe(true);
+      expect(plan.changes.every((c) => c.change_type === ChangeType.CREATE)).toBe(true);
       expect(plan.summary.to_create).toBe(4);
       expect(plan.summary.to_update).toBe(0);
 
@@ -172,12 +172,12 @@ describe('Golden Tests - Planner Output', () => {
 
       // Verify dependency ordering - channels should come first
       const channelIndices = plan.changes
-        .filter(c => c.kind === 'notification_channel')
-        .map(c => plan.changes.indexOf(c));
-      const watchlistIndex = plan.changes.findIndex(c => c.kind === 'watchlist');
-      const agentIndex = plan.changes.findIndex(c => c.kind === 'custom_agent');
+        .filter((c) => c.kind === 'notification_channel')
+        .map((c) => plan.changes.indexOf(c));
+      const watchlistIndex = plan.changes.findIndex((c) => c.kind === 'watchlist');
+      const agentIndex = plan.changes.findIndex((c) => c.kind === 'custom_agent');
 
-      channelIndices.forEach(idx => {
+      channelIndices.forEach((idx) => {
         expect(idx).toBeLessThan(watchlistIndex);
         expect(idx).toBeLessThan(agentIndex);
       });
@@ -268,7 +268,7 @@ describe('Golden Tests - Planner Output', () => {
       const normalizedPlan = normalizePlan(plan);
 
       // Should have updates for both existing resources
-      const updates = plan.changes.filter(c => c.change_type === ChangeType.UPDATE);
+      const updates = plan.changes.filter((c) => c.change_type === ChangeType.UPDATE);
       expect(updates).toHaveLength(2);
 
       const isMatch = golden.compareWithGolden('update-resources', normalizedPlan);
@@ -354,7 +354,7 @@ describe('Golden Tests - Planner Output', () => {
       const plan = await planner.generatePlan(config);
       const normalizedPlan = normalizePlan(plan);
 
-      const deletes = plan.changes.filter(c => c.change_type === ChangeType.DELETE);
+      const deletes = plan.changes.filter((c) => c.change_type === ChangeType.DELETE);
       expect(deletes).toHaveLength(2); // delete-me and also-delete
 
       const isMatch = golden.compareWithGolden('delete-resources', normalizedPlan);
@@ -452,20 +452,20 @@ describe('Golden Tests - Planner Output', () => {
       const normalizedPlan = normalizePlan(plan);
 
       // Should have mixed operations
-      const creates = plan.changes.filter(c => c.change_type === ChangeType.CREATE);
-      const updates = plan.changes.filter(c => c.change_type === ChangeType.UPDATE);
-      const deletes = plan.changes.filter(c => c.change_type === ChangeType.DELETE);
+      const creates = plan.changes.filter((c) => c.change_type === ChangeType.CREATE);
+      const updates = plan.changes.filter((c) => c.change_type === ChangeType.UPDATE);
+      const deletes = plan.changes.filter((c) => c.change_type === ChangeType.DELETE);
 
       expect(creates).toHaveLength(3); // new channel, watchlist, agent
       expect(updates).toHaveLength(1); // updated channel
       expect(deletes).toHaveLength(1); // delete watchlist
 
       // Verify dependency ordering still works with mixed operations
-      const updateChannelIndex = plan.changes.findIndex(c => 
-        c.name === 'update-channel' && c.change_type === ChangeType.UPDATE
+      const updateChannelIndex = plan.changes.findIndex(
+        (c) => c.name === 'update-channel' && c.change_type === ChangeType.UPDATE
       );
-      const createAgentIndex = plan.changes.findIndex(c => c.name === 'create-agent');
-      
+      const createAgentIndex = plan.changes.findIndex((c) => c.name === 'create-agent');
+
       expect(updateChannelIndex).toBeLessThan(createAgentIndex);
 
       const isMatch = golden.compareWithGolden('mixed-operations', normalizedPlan);
@@ -477,7 +477,7 @@ describe('Golden Tests - Planner Output', () => {
     it('should generate consistent plan with no changes', async () => {
       // Mock state that exactly matches config
       const matchingState = TestFixture.createMockState();
-      
+
       // Mock fingerprint generation to return consistent hashes
       vi.mock('../../src/lib/fingerprint.js', () => ({
         generateFingerprint: vi.fn((obj) => {
@@ -494,7 +494,7 @@ describe('Golden Tests - Planner Output', () => {
       const normalizedPlan = normalizePlan(plan);
 
       // Should be mostly no-change operations
-      const noChanges = plan.changes.filter(c => c.change_type === ChangeType.NO_CHANGE);
+      const noChanges = plan.changes.filter((c) => c.change_type === ChangeType.NO_CHANGE);
       expect(noChanges.length).toBeGreaterThan(0);
 
       const isMatch = golden.compareWithGolden('no-changes', normalizedPlan);

@@ -1,0 +1,29 @@
+name: slack-critical
+type: slack
+description: Critical alerts requiring immediate attention
+config:
+  webhook_url: ${SLACK_CRITICAL_WEBHOOK}
+  channel: "#security-critical"
+  username: "🚨 Hypernative Critical"
+  icon_emoji: ":rotating_light:"
+  mention_channel: true  # @channel for critical alerts
+  mention_users: ["@security-team", "@cto"]
+  
+  # Customize message format
+  message_template: |
+    🚨 *CRITICAL SECURITY ALERT* 🚨
+    
+    *Protocol:* {{protocol_name}}
+    *Severity:* {{severity}}
+    *Time:* {{timestamp}}
+    
+    *Alert:* {{alert_title}}
+    *Details:* {{alert_description}}
+    
+    *Transaction:* {{tx_hash}}
+    *Address:* {{address}}
+    *Chain:* {{chain}}
+    
+    <!channel> - Immediate action required
+    
+enabled: true

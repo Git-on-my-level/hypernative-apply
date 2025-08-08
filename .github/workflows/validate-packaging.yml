@@ -1,0 +1,197 @@
+name: Validate Packaging
+
+on:
+  pull_request:
+    paths:
+      - 'package.json'
+      - '.releaserc.json'
+      - 'Dockerfile'
+      - '.github/workflows/release.yml'
+      - 'src/**'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18.x'
+
+jobs:
+  validate-pkg-config:
+    name: Validate PKG Configuration
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build project
+      run: npm run build
+    
+    - name: Test PKG build (Linux)
+      run: npm run pkg:linux
+    
+    - name: Test binary execution
+      run: |
+        chmod +x build/index-linux
+        ./build/index-linux --version
+        ./build/index-linux --help
+    
+    - name: Check binary size
+      run: |
+        ls -lh build/
+        size=$(stat -c%s build/index-linux)
+        echo "Binary size: $size bytes"
+        if [ $size -gt 104857600 ]; then # 100MB limit
+          echo "❌ Binary too large: $size bytes (>100MB)"
+          exit 1
+        fi
+        echo "✅ Binary size acceptable: $size bytes"
+
+  validate-docker-build:
+    name: Validate Docker Build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        tags: hypernative/cli:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Test Docker image
+      run: |
+        docker run --rm hypernative/cli:test --version
+        docker run --rm hypernative/cli:test --help
+    
+    - name: Check image size
+      run: |
+        size=$(docker image inspect hypernative/cli:test --format='{{.Size}}')
+        echo "Image size: $size bytes"
+        if [ $size -gt 524288000 ]; then # 500MB limit
+          echo "❌ Image too large: $size bytes (>500MB)"
+          exit 1
+        fi
+        echo "✅ Image size acceptable: $size bytes"
+    
+    - name: Run security scan on image
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'hypernative/cli:test'
+        format: 'table'
+        exit-code: '1'
+        severity: 'CRITICAL,HIGH'
+
+  validate-semantic-release:
+    name: Validate Semantic Release Config
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Validate semantic-release config
+      run: npx semantic-release --dry-run --no-ci
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  validate-npm-package:
+    name: Validate NPM Package
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build project
+      run: npm run build
+    
+    - name: Create package
+      run: npm pack
+    
+    - name: Test package installation
+      run: |
+        PACKAGE=$(ls *.tgz)
+        echo "Testing package: $PACKAGE"
+        
+        # Install globally in a temporary directory
+        mkdir test-install
+        cd test-install
+        npm init -y
+        npm install -g "../$PACKAGE"
+        
+        # Test CLI works
+        hypernative --version
+        hypernative --help
+        hn --version
+        hn --help
+        
+        echo "✅ Package installation test passed"
+    
+    - name: Validate package metadata
+      run: |
+        # Check package.json structure
+        node -e "
+          const pkg = require('./package.json');
+          
+          // Required fields
+          const required = ['name', 'version', 'description', 'bin', 'files', 'keywords', 'repository'];
+          for (const field of required) {
+            if (!pkg[field]) throw new Error(\`Missing required field: \${field}\`);
+          }
+          
+          // Validate name
+          if (!pkg.name.startsWith('@hypernative/')) {
+            throw new Error('Package name must be scoped to @hypernative/');
+          }
+          
+          // Validate bin
+          if (!pkg.bin.hypernative || !pkg.bin.hn) {
+            throw new Error('Missing required bin entries');
+          }
+          
+          // Validate files
+          const requiredFiles = ['dist', 'bin'];
+          for (const file of requiredFiles) {
+            if (!pkg.files.includes(file)) {
+              throw new Error(\`Missing file in files array: \${file}\`);
+            }
+          }
+          
+          console.log('✅ Package metadata validation passed');
+        "

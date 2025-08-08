@@ -1,0 +1,15 @@
+# Basic Monitoring Configuration
+version: 1
+api:
+  endpoint: "https://api.hypernative.com"
+  timeout: 30000
+
+# Global settings that apply to all resources
+global:
+  default_severity: medium
+  enable_notifications: true
+
+# Resource lists (populated by individual files)
+watchlists: []
+notification_channels: []
+custom_agents: []

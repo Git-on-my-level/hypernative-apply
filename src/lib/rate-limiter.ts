@@ -10,7 +10,7 @@ export class TokenBucket {
 
   constructor(
     private maxTokens: number,
-    private refillRate: number, // tokens per second
+    private refillRate: number // tokens per second
   ) {
     this.tokens = maxTokens;
     this.lastRefillTime = Date.now();
@@ -23,12 +23,12 @@ export class TokenBucket {
    */
   consume(tokensNeeded: number = 1): boolean {
     this.refill();
-    
+
     if (this.tokens >= tokensNeeded) {
       this.tokens -= tokensNeeded;
       return true;
     }
-    
+
     return false;
   }
 
@@ -39,14 +39,14 @@ export class TokenBucket {
    */
   timeUntilAvailable(tokensNeeded: number = 1): number {
     this.refill();
-    
+
     if (this.tokens >= tokensNeeded) {
       return 0;
     }
-    
+
     const tokensShort = tokensNeeded - this.tokens;
     const timeToRefill = (tokensShort / this.refillRate) * 1000;
-    
+
     return Math.ceil(timeToRefill);
   }
 
@@ -65,7 +65,7 @@ export class TokenBucket {
     const now = Date.now();
     const timePassed = now - this.lastRefillTime;
     const tokensToAdd = (timePassed / 1000) * this.refillRate;
-    
+
     this.tokens = Math.min(this.maxTokens, this.tokens + tokensToAdd);
     this.lastRefillTime = now;
   }
@@ -94,10 +94,10 @@ export class RateLimiter {
   constructor(private config: RateLimitConfig) {
     const burstSize = config.burstSize || config.requestsPerMinute;
     const refillRate = config.requestsPerMinute / 60; // tokens per second
-    
+
     this.tokenBucket = new TokenBucket(burstSize, refillRate);
     this.concurrencyLimit = pLimit(config.maxConcurrent);
-    
+
     log.debug('Rate limiter initialized', {
       requestsPerMinute: config.requestsPerMinute,
       maxConcurrent: config.maxConcurrent,
@@ -114,7 +114,7 @@ export class RateLimiter {
   async execute<T>(fn: () => Promise<T>): Promise<T> {
     return this.concurrencyLimit(async () => {
       await this.waitForTokens();
-      
+
       try {
         const result = await fn();
         log.debug('Rate-limited request completed successfully', {
@@ -138,12 +138,12 @@ export class RateLimiter {
     // If we have a reset time from a 429 response and it's in the future, wait until then
     if (this.resetTime && Date.now() < this.resetTime) {
       const waitTime = this.resetTime - Date.now();
-      log.debug('Waiting for rate limit reset', { 
+      log.debug('Waiting for rate limit reset', {
         waitTimeMs: waitTime,
         resetTime: new Date(this.resetTime).toISOString(),
       });
-      
-      await new Promise(resolve => setTimeout(resolve, waitTime));
+
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
       this.resetTime = null; // Clear the reset time after waiting
       return;
     }
@@ -155,15 +155,15 @@ export class RateLimiter {
 
     // No tokens available, wait for refill
     const waitTime = this.tokenBucket.timeUntilAvailable();
-    
+
     if (waitTime > 0) {
-      log.debug('Rate limit reached, waiting for token refill', { 
+      log.debug('Rate limit reached, waiting for token refill', {
         waitTimeMs: waitTime,
         currentTokens: this.tokenBucket.getTokenCount(),
       });
-      
-      await new Promise(resolve => setTimeout(resolve, waitTime));
-      
+
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
+
       // Consume token after waiting
       if (!this.tokenBucket.consume()) {
         throw new Error('Failed to consume token after waiting');
@@ -181,9 +181,10 @@ export class RateLimiter {
       remaining,
       resetTime: new Date(resetTime * 1000).toISOString(),
     });
-    
+
     // If remaining is 0 or very low, set the reset time
-    if (remaining <= 5) { // Leave some buffer
+    if (remaining <= 5) {
+      // Leave some buffer
       this.resetTime = resetTime * 1000; // Convert to milliseconds
       log.debug('Rate limit approaching, will wait until reset', {
         resetTime: new Date(this.resetTime).toISOString(),

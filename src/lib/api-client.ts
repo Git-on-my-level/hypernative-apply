@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ResolvedConfig } from './config.js';
 import { log } from './logger.js';
 import { RateLimiter, createRateLimiter, RateLimitConfig } from './rate-limiter.js';
-import { ApiResponse, ApiError, RateLimitHeaders } from '../types/api.js';
+import { ApiError, RateLimitHeaders } from '../types/api.js';
 
 /**
  * Configuration for the API client
@@ -47,7 +47,7 @@ export class ApiClient {
 
   constructor(config: ApiClientConfig) {
     this.rateLimiter = createRateLimiter(config.rateLimitConfig);
-    
+
     this.backoffConfig = {
       maxRetries: config.maxRetries || 5,
       baseDelay: config.retryDelayBase || 1000,
@@ -73,7 +73,7 @@ export class ApiClient {
         // Add request timing metadata
         (request as any).__requestId = uuidv4();
         (request as any).__startTime = Date.now();
-        
+
         log.debug('Making API request', {
           method: request.method?.toUpperCase(),
           url: request.url,
@@ -97,16 +97,16 @@ export class ApiClient {
         const startTime = (response.config as any).__startTime;
         const requestId = (response.config as any).__requestId;
         const duration = startTime ? Date.now() - startTime : undefined;
-        
+
         // Extract rate limit headers
         const rateLimit = this.extractRateLimitHeaders(response);
         if (rateLimit) {
           this.rateLimiter.updateFromHeaders(rateLimit.remaining, rateLimit.reset);
-          
+
           // Log rate limit info using the new method
           log.rateLimit(
-            rateLimit.limit, 
-            rateLimit.remaining, 
+            rateLimit.limit,
+            rateLimit.remaining,
             new Date(rateLimit.reset * 1000),
             requestId
           );
@@ -138,17 +138,17 @@ export class ApiClient {
         const startTime = (error.config as any)?.__startTime;
         const requestId = (error.config as any)?.__requestId;
         const duration = startTime ? Date.now() - startTime : undefined;
-        
+
         // Handle rate limit headers in error responses too
         if (error.response) {
           const rateLimit = this.extractRateLimitHeaders(error.response);
           if (rateLimit) {
             this.rateLimiter.updateFromHeaders(rateLimit.remaining, rateLimit.reset);
-            
+
             // Log rate limit info using the new method
             log.rateLimit(
-              rateLimit.limit, 
-              rateLimit.remaining, 
+              rateLimit.limit,
+              rateLimit.remaining,
               new Date(rateLimit.reset * 1000),
               requestId
             );
@@ -158,7 +158,7 @@ export class ApiClient {
           if (error.response.status === 429) {
             this.rateLimiter.handle429(rateLimit?.reset);
           }
-          
+
           // Log HTTP request timing for errors using the new method
           if (duration !== undefined && error.config?.method && error.config?.url) {
             log.httpRequest(
@@ -264,7 +264,7 @@ export class ApiClient {
       } catch (error) {
         const axiosError = error as AxiosError;
         const apiError = this.createApiError(axiosError);
-        
+
         lastError = apiError;
 
         // Don't retry on final attempt
@@ -284,7 +284,7 @@ export class ApiClient {
 
         // Calculate backoff delay with jitter
         const delay = this.calculateBackoffDelay(attempt);
-        
+
         log.debug('Request failed, retrying with backoff', {
           attempt: attempt + 1,
           maxRetries: this.backoffConfig.maxRetries,
@@ -294,7 +294,7 @@ export class ApiClient {
           requestId: (axiosError.response?.data as any)?.request_id,
         });
 
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
@@ -326,25 +326,25 @@ export class ApiClient {
   private createApiError(axiosError: AxiosError): Error {
     const response = axiosError.response;
     const requestId = (response?.data as any)?.request_id;
-    
+
     if ((response?.data as any)?.error && response) {
       // API returned structured error
       const apiError = (response.data as any).error as ApiError;
       const message = `${apiError.message}${requestId ? ` (request_id: ${requestId})` : ''}`;
-      
+
       const error = new Error(message);
       (error as any).code = apiError.code;
       (error as any).status = response.status;
       (error as any).requestId = requestId;
       (error as any).details = apiError.details;
-      
+
       return error;
     }
 
     // Handle axios/network errors
     let message: string;
     let code: string;
-    
+
     if (response) {
       // HTTP error response
       code = `HTTP_${response.status}`;
@@ -386,7 +386,7 @@ export class ApiClient {
     }
 
     const status = error.response.status;
-    
+
     // Retry on these HTTP status codes
     const retryableStatuses = [
       429, // Rate limited
@@ -405,14 +405,14 @@ export class ApiClient {
   private calculateBackoffDelay(attempt: number): number {
     // Exponential backoff: baseDelay * 2^attempt
     const exponentialDelay = this.backoffConfig.baseDelay * Math.pow(2, attempt);
-    
+
     // Cap at maximum delay
     const cappedDelay = Math.min(exponentialDelay, this.backoffConfig.maxDelay);
-    
+
     // Add jitter to prevent thundering herd
     const jitter = cappedDelay * (this.backoffConfig.jitterPercent / 100);
     const jitterOffset = (Math.random() * 2 - 1) * jitter; // ±jitter
-    
+
     return Math.max(0, cappedDelay + jitterOffset);
   }
 

@@ -25,7 +25,7 @@ export class OutputManager {
       useSpinners: options.useSpinners ?? true,
       useColors: options.useColors ?? true,
       quiet: options.quiet ?? false,
-      json: options.json ?? false
+      json: options.json ?? false,
     };
   }
 
@@ -50,7 +50,7 @@ export class OutputManager {
 
     this.activeSpinner = ora({
       text,
-      color: this.options.useColors ? 'cyan' : undefined
+      color: this.options.useColors ? 'cyan' : undefined,
     }).start();
   }
 
@@ -123,13 +123,15 @@ export class OutputManager {
     if (progress && this.options.useSpinners && !this.options.json && !this.options.quiet) {
       const percentage = Math.round((progress.current / progress.total) * 100);
       const progressBar = this.createProgressBar(progress.current, progress.total);
-      this.updateSpinner(`${options.text} ${progressBar} ${percentage}% (${progress.current}/${progress.total})`);
+      this.updateSpinner(
+        `${options.text} ${progressBar} ${percentage}% (${progress.current}/${progress.total})`
+      );
     } else if (this.options.json) {
       log.info('Progress update', {
         operation: id,
         text: options.text,
         current: options.current,
-        total: options.total
+        total: options.total,
       });
     } else {
       this.updateSpinner(options.text);
@@ -143,15 +145,17 @@ export class OutputManager {
     const percentage = current / total;
     const filled = Math.round(width * percentage);
     const empty = width - filled;
-    
+
     if (!this.options.useColors) {
       return `[${'='.repeat(filled)}${' '.repeat(empty)}]`;
     }
-    
-    return chalk.gray('[') + 
-           chalk.green('='.repeat(filled)) + 
-           chalk.gray(' '.repeat(empty)) + 
-           chalk.gray(']');
+
+    return (
+      chalk.gray('[') +
+      chalk.green('='.repeat(filled)) +
+      chalk.gray(' '.repeat(empty)) +
+      chalk.gray(']')
+    );
   }
 
   /**
@@ -167,23 +171,23 @@ export class OutputManager {
 
     // Calculate column widths
     const columnWidths = headers.map((header, index) => {
-      const maxContentWidth = Math.max(...rows.map(row => (row[index] || '').length));
+      const maxContentWidth = Math.max(...rows.map((row) => (row[index] || '').length));
       return Math.max(header.length, maxContentWidth);
     });
 
     // Display header
-    const headerRow = headers.map((header, index) => 
-      header.padEnd(columnWidths[index])
-    ).join(' | ');
-    
+    const headerRow = headers
+      .map((header, index) => header.padEnd(columnWidths[index]))
+      .join(' | ');
+
     console.log(this.options.useColors ? chalk.bold(headerRow) : headerRow);
     console.log('-'.repeat(headerRow.length));
 
     // Display rows
-    rows.forEach(row => {
-      const formattedRow = row.map((cell, index) => 
-        (cell || '').padEnd(columnWidths[index])
-      ).join(' | ');
+    rows.forEach((row) => {
+      const formattedRow = row
+        .map((cell, index) => (cell || '').padEnd(columnWidths[index]))
+        .join(' | ');
       console.log(formattedRow);
     });
   }
@@ -191,12 +195,14 @@ export class OutputManager {
   /**
    * Display a resource summary with proper formatting
    */
-  displayResourceSummary(resources: Array<{
-    name: string;
-    type: string;
-    status: 'create' | 'update' | 'delete' | 'no-change';
-    details?: string;
-  }>): void {
+  displayResourceSummary(
+    resources: Array<{
+      name: string;
+      type: string;
+      status: 'create' | 'update' | 'delete' | 'no-change';
+      details?: string;
+    }>
+  ): void {
     if (this.options.json) {
       log.info('Resource summary', { resources });
       return;
@@ -205,12 +211,11 @@ export class OutputManager {
     if (this.options.quiet) return;
 
     console.log('\n' + (this.options.useColors ? chalk.bold('Resources:') : 'Resources:'));
-    
-    resources.forEach(resource => {
+
+    resources.forEach((resource) => {
       const statusIcon = this.getStatusIcon(resource.status);
-      const statusText = this.getStatusText(resource.status);
       const details = resource.details ? ` (${resource.details})` : '';
-      
+
       console.log(`  ${statusIcon} ${resource.type}.${resource.name}${details}`);
     });
   }
@@ -220,20 +225,24 @@ export class OutputManager {
    */
   private getStatusIcon(status: string): string {
     if (!this.options.useColors) {
-      return {
-        'create': '+',
-        'update': '~',
-        'delete': '-',
-        'no-change': '='
-      }[status] || '?';
+      return (
+        {
+          create: '+',
+          update: '~',
+          delete: '-',
+          'no-change': '=',
+        }[status] || '?'
+      );
     }
 
-    return {
-      'create': chalk.green('+'),
-      'update': chalk.yellow('~'),
-      'delete': chalk.red('-'),
-      'no-change': chalk.gray('=')
-    }[status] || chalk.gray('?');
+    return (
+      {
+        create: chalk.green('+'),
+        update: chalk.yellow('~'),
+        delete: chalk.red('-'),
+        'no-change': chalk.gray('='),
+      }[status] || chalk.gray('?')
+    );
   }
 
   /**
@@ -244,12 +253,14 @@ export class OutputManager {
       return status.toUpperCase();
     }
 
-    return {
-      'create': chalk.green('CREATE'),
-      'update': chalk.yellow('UPDATE'),
-      'delete': chalk.red('DELETE'),
-      'no-change': chalk.gray('NO CHANGE')
-    }[status] || chalk.gray('UNKNOWN');
+    return (
+      {
+        create: chalk.green('CREATE'),
+        update: chalk.yellow('UPDATE'),
+        delete: chalk.red('DELETE'),
+        'no-change': chalk.gray('NO CHANGE'),
+      }[status] || chalk.gray('UNKNOWN')
+    );
   }
 
   /**
@@ -263,21 +274,21 @@ export class OutputManager {
 
     if (this.options.quiet) return;
 
-    const maxWidth = Math.max(title.length, ...content.map(line => line.length)) + 4;
+    const maxWidth = Math.max(title.length, ...content.map((line) => line.length)) + 4;
     const border = '─'.repeat(maxWidth);
-    
+
     const coloredBorder = this.options.useColors ? chalk.gray(border) : border;
     const coloredTitle = this.options.useColors ? chalk.bold(title) : title;
-    
+
     console.log(`┌${coloredBorder}┐`);
     console.log(`│ ${coloredTitle}${' '.repeat(maxWidth - title.length - 1)}│`);
     console.log(`├${coloredBorder}┤`);
-    
-    content.forEach(line => {
+
+    content.forEach((line) => {
       const padding = ' '.repeat(Math.max(0, maxWidth - line.length - 1));
       console.log(`│ ${line}${padding}│`);
     });
-    
+
     console.log(`└${coloredBorder}┘`);
   }
 

@@ -1,6 +1,6 @@
 /**
  * State store module for managing local state and preventing concurrent operations
- * 
+ *
  * This module handles:
  * - Loading and saving state to .hypernative/state.json
  * - Lock file management to prevent concurrent apply operations
@@ -9,7 +9,7 @@
 
 import { promises as fs } from 'fs';
 import { existsSync } from 'fs';
-import { join, dirname } from 'path';
+import { join } from 'path';
 import { log } from './logger.js';
 import {
   StateFile,
@@ -19,7 +19,6 @@ import {
   ResourceWithHash,
   StateOperationResult,
   StateEntryMetadata,
-  StateFileMetadata,
 } from '../types/state.js';
 import { generateFingerprint, fingerprintsEqual } from './fingerprint.js';
 import type { ParsedConfig } from '../schemas/config.schema.js';
@@ -74,7 +73,9 @@ export class StateStore {
     try {
       await fs.mkdir(this.stateDir, { recursive: true });
     } catch (error) {
-      throw new Error(`Failed to create state directory: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to create state directory: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -83,7 +84,7 @@ export class StateStore {
    */
   private createInitialState(): StateFile {
     const now = new Date().toISOString();
-    
+
     return {
       version: STATE_VERSION,
       resources: {},
@@ -115,7 +116,9 @@ export class StateStore {
 
       // Validate state file version
       if (state.version !== STATE_VERSION) {
-        throw new Error(`Unsupported state file version: ${state.version}. Expected: ${STATE_VERSION}`);
+        throw new Error(
+          `Unsupported state file version: ${state.version}. Expected: ${STATE_VERSION}`
+        );
       }
 
       log.debug(`Loaded state with ${state.metadata.total_resources} resources`);
@@ -124,7 +127,9 @@ export class StateStore {
       if (error instanceof SyntaxError) {
         throw new Error('State file is corrupted (invalid JSON)');
       }
-      throw new Error(`Failed to load state: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to load state: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -134,12 +139,12 @@ export class StateStore {
   async saveState(state: StateFile): Promise<StateOperationResult> {
     try {
       await this.ensureStateDirectory();
-      
+
       // Update metadata
       const now = new Date().toISOString();
       state.last_sync = now;
       state.metadata.total_resources = Object.keys(state.resources).length;
-      
+
       // Count resources by type
       const counts = { watchlists: 0, custom_agents: 0, notification_channels: 0 };
       for (const resource of Object.values(state.resources)) {
@@ -159,13 +164,17 @@ export class StateStore {
 
       const content = JSON.stringify(state, null, 2);
       await fs.writeFile(this.stateFilePath, content, 'utf-8');
-      
+
       log.debug(`Saved state with ${state.metadata.total_resources} resources`);
       return { success: true };
     } catch (error) {
       const message = `Failed to save state: ${error instanceof Error ? error.message : String(error)}`;
       log.error(message);
-      return { success: false, message, error: error instanceof Error ? error : new Error(String(error)) };
+      return {
+        success: false,
+        message,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
     }
   }
 
@@ -203,11 +212,15 @@ export class StateStore {
       };
 
       state.resources[name] = entry;
-      
+
       return await this.saveState(state);
     } catch (error) {
       const message = `Failed to update resource ${name}: ${error instanceof Error ? error.message : String(error)}`;
-      return { success: false, message, error: error instanceof Error ? error : new Error(String(error)) };
+      return {
+        success: false,
+        message,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
     }
   }
 
@@ -217,17 +230,21 @@ export class StateStore {
   async removeResource(name: string): Promise<StateOperationResult> {
     try {
       const state = await this.loadState();
-      
+
       if (!state.resources[name]) {
         return { success: true, message: `Resource ${name} not found in state` };
       }
 
       delete state.resources[name];
-      
+
       return await this.saveState(state);
     } catch (error) {
       const message = `Failed to remove resource ${name}: ${error instanceof Error ? error.message : String(error)}`;
-      return { success: false, message, error: error instanceof Error ? error : new Error(String(error)) };
+      return {
+        success: false,
+        message,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
     }
   }
 
@@ -260,19 +277,23 @@ export class StateStore {
       // Check if lock is stale
       const lockAge = Date.now() - new Date(lockInfo.created_at).getTime();
       const isStale = lockAge > LOCK_MAX_AGE_MS;
-      
+
       // Check if process is still running
       const processRunning = this.isProcessRunning(lockInfo.pid);
 
       if (isStale || !processRunning) {
-        log.debug(`Lock file is stale (age: ${lockAge}ms, process running: ${processRunning}), removing`);
+        log.debug(
+          `Lock file is stale (age: ${lockAge}ms, process running: ${processRunning}), removing`
+        );
         await this.removeLock();
         return { locked: false, lockInfo, stale: true };
       }
 
       return { locked: true, lockInfo };
     } catch (error) {
-      log.debug(`Error checking lock file: ${error instanceof Error ? error.message : String(error)}`);
+      log.debug(
+        `Error checking lock file: ${error instanceof Error ? error.message : String(error)}`
+      );
       return { locked: false };
     }
   }
@@ -299,12 +320,16 @@ export class StateStore {
       };
 
       await fs.writeFile(this.lockFilePath, JSON.stringify(lock, null, 2), 'utf-8');
-      
+
       log.debug(`Created lock for ${operation} operation (PID: ${process.pid})`);
       return { success: true };
     } catch (error) {
       const message = `Failed to create lock: ${error instanceof Error ? error.message : String(error)}`;
-      return { success: false, message, error: error instanceof Error ? error : new Error(String(error)) };
+      return {
+        success: false,
+        message,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
     }
   }
 
@@ -320,7 +345,11 @@ export class StateStore {
       return { success: true };
     } catch (error) {
       const message = `Failed to remove lock: ${error instanceof Error ? error.message : String(error)}`;
-      return { success: false, message, error: error instanceof Error ? error : new Error(String(error)) };
+      return {
+        success: false,
+        message,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
     }
   }
 
@@ -369,7 +398,7 @@ export class StateStore {
   async compareState(config: ParsedConfig): Promise<StateComparison> {
     const state = await this.loadState();
     const desiredResources = this.configToResourcesWithHash(config);
-    
+
     const comparison: StateComparison = {
       to_create: [],
       to_update: [],
@@ -380,7 +409,7 @@ export class StateStore {
     // Check desired resources against current state
     for (const desired of desiredResources) {
       const existing = state.resources[desired.name];
-      
+
       if (!existing) {
         // Resource doesn't exist in state - needs to be created
         comparison.to_create.push({
@@ -409,7 +438,7 @@ export class StateStore {
     }
 
     // Check for resources in state but not in desired configuration (to delete)
-    const desiredNames = new Set(desiredResources.map(r => r.name));
+    const desiredNames = new Set(desiredResources.map((r) => r.name));
     for (const [name, stateEntry] of Object.entries(state.resources)) {
       if (!desiredNames.has(name)) {
         comparison.to_delete.push({
@@ -428,9 +457,11 @@ export class StateStore {
    */
   async isNoOp(config: ParsedConfig): Promise<boolean> {
     const comparison = await this.compareState(config);
-    return comparison.to_create.length === 0 && 
-           comparison.to_update.length === 0 && 
-           comparison.to_delete.length === 0;
+    return (
+      comparison.to_create.length === 0 &&
+      comparison.to_update.length === 0 &&
+      comparison.to_delete.length === 0
+    );
   }
 
   /**

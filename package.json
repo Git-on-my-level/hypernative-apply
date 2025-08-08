@@ -1,13 +1,14 @@
 {
-  "name": "hypernative",
+  "name": "@hypernative/cli",
   "version": "0.1.0",
-  "description": "Hypernative configuration management CLI",
+  "description": "Hypernative configuration management CLI for monitoring and security workflows",
   "type": "module",
   "engines": {
     "node": ">=18.0.0"
   },
   "bin": {
-    "hypernative": "bin/hypernative"
+    "hypernative": "bin/hypernative",
+    "hn": "bin/hypernative"
   },
   "scripts": {
     "build": "tsc",
@@ -28,7 +29,14 @@
     "format:check": "prettier --check src tests",
     "prebuild": "npm run lint && npm run format:check",
     "prepare": "npm run build",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "pkg:build": "npm run build && npm run pkg:all",
+    "pkg:all": "pkg dist/index.js --targets node18-linux-x64,node18-macos-x64,node18-macos-arm64,node18-win-x64 --out-path build",
+    "pkg:linux": "pkg dist/index.js --targets node18-linux-x64 --out-path build",
+    "pkg:macos": "pkg dist/index.js --targets node18-macos-x64,node18-macos-arm64 --out-path build",
+    "pkg:windows": "pkg dist/index.js --targets node18-win-x64 --out-path build",
+    "semantic-release": "semantic-release",
+    "semantic-release:dry-run": "semantic-release --dry-run"
   },
   "dependencies": {
     "@types/uuid": "^10.0.0",
@@ -56,18 +64,46 @@
     "prettier": "^3.1.0",
     "tsx": "^4.6.2",
     "typescript": "^5.3.3",
-    "vitest": "^1.0.4"
+    "vitest": "^1.0.4",
+    "pkg": "^5.8.1",
+    "semantic-release": "^22.0.12",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^9.2.6",
+    "@semantic-release/npm": "^11.0.3"
   },
   "files": [
     "dist",
-    "bin"
+    "bin",
+    "build",
+    "CHANGELOG.md"
   ],
   "keywords": [
     "hypernative",
     "cli",
     "configuration",
-    "management"
+    "management",
+    "security",
+    "monitoring",
+    "web3",
+    "blockchain",
+    "defi",
+    "threat-detection",
+    "incident-response"
   ],
-  "author": "",
-  "license": "MIT"
+  "author": "Hypernative <support@hypernative.io>",
+  "license": "MIT",
+  "homepage": "https://github.com/hypernative/cli",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hypernative/cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hypernative/cli/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "preferGlobal": true
 }

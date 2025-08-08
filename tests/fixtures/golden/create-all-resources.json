@@ -19,9 +19,7 @@
       "change_type": "CREATE",
       "desired_hash": "hash_59",
       "dependencies": [],
-      "dependents": [
-        "tx-monitor"
-      ],
+      "dependents": ["tx-monitor"],
       "risk_level": "low"
     },
     {
@@ -30,9 +28,7 @@
       "change_type": "CREATE",
       "desired_hash": "hash_89",
       "dependencies": [],
-      "dependents": [
-        "main-watchlist"
-      ],
+      "dependents": ["main-watchlist"],
       "risk_level": "low"
     },
     {
@@ -40,9 +36,7 @@
       "name": "main-watchlist",
       "change_type": "CREATE",
       "desired_hash": "hash_fd",
-      "dependencies": [
-        "slack-alerts"
-      ],
+      "dependencies": ["slack-alerts"],
       "dependents": [],
       "risk_level": "low"
     },
@@ -51,9 +45,7 @@
       "name": "tx-monitor",
       "change_type": "CREATE",
       "desired_hash": "hash_d8",
-      "dependencies": [
-        "email-alerts"
-      ],
+      "dependencies": ["email-alerts"],
       "dependents": [],
       "risk_level": "low"
     }

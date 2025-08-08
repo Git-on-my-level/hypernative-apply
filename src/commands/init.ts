@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { log } from '../lib/logger.js';
+import { createInterface } from 'readline';
 
 const SAMPLE_CONFIG_FILES = {
   'hypernative/config.yaml': `# Hypernative Configuration
@@ -53,16 +54,56 @@ enabled: true
 `,
 };
 
+// Interactive prompt helper
+async function askQuestion(question: string): Promise<string> {
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(answer.trim());
+    });
+  });
+}
+
 export const initCommand = new Command()
   .name('init')
   .description('Initialize Hypernative project structure')
   .option('--yes', 'Create files without confirmation (skip dry-run)')
   .option('--force', 'Overwrite existing files')
-  .action((options) => {
+  .option('--interactive', 'Interactive mode with guided setup')
+  .action(async (options) => {
     const isDryRun = !options.yes;
     const cwd = process.cwd();
 
     log.info('Initializing Hypernative project structure...');
+
+    // Interactive mode setup
+    if (options.interactive && isDryRun) {
+      log.info('\n📋 Interactive Setup Mode');
+      log.info('Answer the following questions to customize your project:');
+
+      const projectName = await askQuestion('\n🏷️  Project name (for documentation): ');
+      const monitorType = await askQuestion(
+        '🔍 What do you want to monitor?\n   1) Treasury wallets\n   2) Smart contracts\n   3) Both\n   Choose (1-3): '
+      );
+      const notifyChannel = await askQuestion(
+        '📢 Notification preference?\n   1) Slack only\n   2) Email only\n   3) Both\n   Choose (1-3): '
+      );
+
+      log.info(`\n✅ Configuration:`);
+      log.info(`   Project: ${projectName || 'Unnamed Project'}`);
+      log.info(
+        `   Monitoring: ${monitorType === '1' ? 'Treasury wallets' : monitorType === '2' ? 'Smart contracts' : 'Both'}`
+      );
+      log.info(
+        `   Notifications: ${notifyChannel === '1' ? 'Slack' : notifyChannel === '2' ? 'Email' : 'Both'}`
+      );
+      log.info('\n📝 The following files will be created with your preferences:');
+    }
 
     if (isDryRun) {
       log.info('Running in dry-run mode. Use --yes to create files.');
@@ -139,12 +180,27 @@ export const initCommand = new Command()
     });
 
     log.success('Hypernative project initialized successfully!');
-    log.info('\nNext steps:');
-    log.info('1. Set up authentication:');
-    log.info('   - Set environment variables: HN_CLIENT_ID, HN_CLIENT_SECRET');
-    log.info('   - Or configure profiles in ~/.hypernative/config.yaml');
-    log.info('   - Run "hypernative version --debug" to verify configuration');
-    log.info('2. Edit the configuration files in hypernative/ directory');
-    log.info('3. Run "hypernative plan" to preview changes');
-    log.info('4. Run "hypernative apply" to deploy your configuration');
+
+    // Enhanced next steps with better guidance
+    log.info('\n🚀 Next Steps:');
+    log.info('');
+    log.info('1️⃣  Set up authentication:');
+    log.info('   export HN_CLIENT_ID="your_client_id"');
+    log.info('   export HN_CLIENT_SECRET="your_client_secret"');
+    log.info('   OR create ~/.hypernative/config.yaml with profiles');
+    log.info('');
+    log.info('2️⃣  Verify your setup:');
+    log.info('   hypernative doctor');
+    log.info('');
+    log.info('3️⃣  Customize configurations:');
+    log.info('   - Update addresses in hypernative/watchlists/');
+    log.info('   - Set webhook URLs in hypernative/notification-channels/');
+    log.info('   - Adjust thresholds in hypernative/custom-agents/');
+    log.info('');
+    log.info('4️⃣  Test and deploy:');
+    log.info('   hypernative plan    # Preview changes');
+    log.info('   hypernative apply   # Deploy configuration');
+    log.info('');
+    log.info('📚 For more examples, check the samples/ directory in the CLI repository');
+    log.info('🔧 Run "hypernative doctor" anytime to diagnose issues');
   });

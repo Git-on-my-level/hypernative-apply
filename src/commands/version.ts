@@ -30,7 +30,7 @@ export const versionCommand = new Command()
       console.log('');
       try {
         const debugInfo = await getConfigDebugInfo(flags);
-        
+
         console.log('Configuration:');
         console.log(`  Profile: ${debugInfo.profile}`);
         console.log(`  Base URL: ${debugInfo.baseUrl}`);
@@ -39,7 +39,9 @@ export const versionCommand = new Command()
         console.log('');
         console.log('Configuration Sources:');
         console.log(`  Command flags: ${debugInfo.configSources.flags ? 'yes' : 'no'}`);
-        console.log(`  Environment variables: ${debugInfo.configSources.environment ? 'yes' : 'no'}`);
+        console.log(
+          `  Environment variables: ${debugInfo.configSources.environment ? 'yes' : 'no'}`
+        );
         console.log(`  Profile file: ${debugInfo.configSources.profileFile || 'not found'}`);
         console.log(`  Environment file: ${debugInfo.configSources.envFile || 'not found'}`);
       } catch (error) {

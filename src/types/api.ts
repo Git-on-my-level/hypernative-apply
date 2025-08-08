@@ -27,7 +27,7 @@ export interface RateLimitHeaders {
 }
 
 // Common error codes from documentation
-export type ApiErrorCode = 
+export type ApiErrorCode =
   | 'AUTHENTICATION_ERROR'
   | 'AUTHORIZATION_ERROR'
   | 'VALIDATION_ERROR'
@@ -293,11 +293,14 @@ export interface PoolToxicityResponse {
   pool_address: string;
   toxicity_percentage: number;
   recommendation: 'approve' | 'warn' | 'block';
-  breakdown: Record<string, {
-    percentage: number;
-    addresses: string[];
-    total_value: number;
-  }>;
+  breakdown: Record<
+    string,
+    {
+      percentage: number;
+      addresses: string[];
+      total_value: number;
+    }
+  >;
   total_liquidity: number;
   providers_analyzed: number;
   timestamp: string;

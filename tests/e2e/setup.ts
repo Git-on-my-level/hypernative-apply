@@ -14,31 +14,25 @@ if (!isE2E) {
 }
 
 // Ensure required environment variables are set for E2E tests
-const requiredEnvVars = [
-  'HYPERNATIVE_API_URL',
-  'HYPERNATIVE_API_KEY',
-];
+const requiredEnvVars = ['HYPERNATIVE_API_URL', 'HYPERNATIVE_API_KEY'];
 
 beforeAll(() => {
   console.log('Setting up E2E test environment...');
-  
+
   // Check required environment variables
-  const missing = requiredEnvVars.filter(env => !process.env[env]);
+  const missing = requiredEnvVars.filter((env) => !process.env[env]);
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables for E2E tests: ${missing.join(', ')}`);
   }
-  
+
   console.log('E2E environment variables verified');
 });
 
 beforeEach(() => {
   // Clean up any test artifacts from previous runs
-  const testDirs = [
-    '.hypernative-test',
-    'test-output',
-  ];
-  
-  testDirs.forEach(dir => {
+  const testDirs = ['.hypernative-test', 'test-output'];
+
+  testDirs.forEach((dir) => {
     if (existsSync(dir)) {
       rmSync(dir, { recursive: true, force: true });
     }

@@ -7,7 +7,6 @@ import { join } from 'path';
 import { rmSync, existsSync, writeFileSync, mkdirSync } from 'fs';
 import { StateStore } from './state-store.js';
 import { TestFixture } from '../../tests/utils/test-helpers.js';
-import type { StateFile, StateEntry } from '../types/state.js';
 
 describe('StateStore', () => {
   let stateStore: StateStore;
@@ -37,7 +36,7 @@ describe('StateStore', () => {
 
     it('should load existing state file', async () => {
       const mockState = TestFixture.createMockState();
-      
+
       // Create state directory and file
       const stateDir = join(testDir, '.hypernative');
       const stateFile = join(stateDir, 'state.json');
@@ -63,7 +62,7 @@ describe('StateStore', () => {
 
     it('should handle unsupported state file version', async () => {
       const invalidState = { version: '2.0.0', resources: {}, metadata: {} };
-      
+
       const stateDir = join(testDir, '.hypernative');
       const stateFile = join(stateDir, 'state.json');
       mkdirSync(stateDir, { recursive: true });
@@ -76,7 +75,7 @@ describe('StateStore', () => {
   describe('saveState', () => {
     it('should save state to file', async () => {
       const mockState = TestFixture.createMockState();
-      
+
       const result = await stateStore.saveState(mockState);
 
       expect(result.success).toBe(true);
@@ -170,12 +169,12 @@ describe('StateStore', () => {
       const createdAt = state1.resources['test'].metadata.created_at;
 
       // Wait a bit to ensure timestamp would be different
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Update resource
       await stateStore.updateResource('test', 'watchlist', 'wl_1', 'hash2', 'hash2');
       const state2 = await stateStore.loadState();
-      
+
       expect(state2.resources['test'].metadata.created_at).toBe(createdAt);
       expect(state2.resources['test'].metadata.updated_at).not.toBe(createdAt);
     });
@@ -185,7 +184,7 @@ describe('StateStore', () => {
     it('should remove existing resource', async () => {
       // Create a resource first
       await stateStore.updateResource('test-resource', 'watchlist', 'wl_123', 'hash123', 'hash123');
-      
+
       let state = await stateStore.loadState();
       expect(state.resources['test-resource']).toBeDefined();
 
@@ -199,7 +198,7 @@ describe('StateStore', () => {
 
     it('should handle removing non-existent resource gracefully', async () => {
       const result = await stateStore.removeResource('non-existent');
-      
+
       expect(result.success).toBe(true);
       expect(result.message).toContain('Resource non-existent not found');
     });
@@ -246,7 +245,7 @@ describe('StateStore', () => {
       const stateDir = join(testDir, '.hypernative');
       const lockFile = join(stateDir, '.lock');
       mkdirSync(stateDir, { recursive: true });
-      
+
       const staleLock = {
         pid: 999999, // Non-existent PID
         created_at: new Date(Date.now() - 10 * 60 * 1000).toISOString(), // 10 minutes ago
@@ -264,14 +263,14 @@ describe('StateStore', () => {
     it('should provide convenience methods for lock management', async () => {
       // Test acquireLock
       await expect(stateStore.acquireLock('plan')).resolves.not.toThrow();
-      
+
       // Should be locked
       const lockCheck = await stateStore.isLocked();
       expect(lockCheck.locked).toBe(true);
 
       // Test releaseLock
       await expect(stateStore.releaseLock()).resolves.not.toThrow();
-      
+
       // Should not be locked
       const lockCheck2 = await stateStore.isLocked();
       expect(lockCheck2.locked).toBe(false);
@@ -289,7 +288,7 @@ describe('StateStore', () => {
   describe('compareState', () => {
     it('should identify resources to create', async () => {
       const config = TestFixture.createMockConfig();
-      
+
       // Empty state - all resources should be created
       const comparison = await stateStore.compareState(config);
 
@@ -303,7 +302,7 @@ describe('StateStore', () => {
       // Create state with different hashes
       const mockState = TestFixture.createMockState();
       mockState.resources['test-slack'].last_applied_hash = 'old_hash';
-      
+
       const stateDir = join(testDir, '.hypernative');
       const stateFile = join(stateDir, 'state.json');
       mkdirSync(stateDir, { recursive: true });
@@ -313,7 +312,7 @@ describe('StateStore', () => {
       const comparison = await stateStore.compareState(config);
 
       // test-slack should need update, others should be new
-      const updateItems = comparison.to_update.filter(item => item.name === 'test-slack');
+      const updateItems = comparison.to_update.filter((item) => item.name === 'test-slack');
       expect(updateItems).toHaveLength(1);
       expect(updateItems[0].old_hash).toBe('old_hash');
     });
@@ -343,7 +342,7 @@ describe('StateStore', () => {
       const config = TestFixture.createMockConfig();
       const comparison = await stateStore.compareState(config);
 
-      const deleteItems = comparison.to_delete.filter(item => item.name === 'orphaned');
+      const deleteItems = comparison.to_delete.filter((item) => item.name === 'orphaned');
       expect(deleteItems).toHaveLength(1);
     });
 
@@ -356,7 +355,7 @@ describe('StateStore', () => {
       writeFileSync(stateFile, JSON.stringify(mockState, null, 2));
 
       const config = TestFixture.createMockConfig();
-      
+
       // Mock fingerprint generation to return consistent hashes
       vi.mock('./fingerprint.js', () => ({
         generateFingerprint: vi.fn().mockReturnValue('hash123'),
@@ -416,24 +415,18 @@ describe('StateStore', () => {
     it('should handle concurrent state operations safely', async () => {
       // This test simulates concurrent operations
       const promises = [];
-      
+
       // Create multiple resources concurrently
       for (let i = 0; i < 10; i++) {
         promises.push(
-          stateStore.updateResource(
-            `resource-${i}`,
-            'watchlist',
-            `wl_${i}`,
-            `hash${i}`,
-            `hash${i}`
-          )
+          stateStore.updateResource(`resource-${i}`, 'watchlist', `wl_${i}`, `hash${i}`, `hash${i}`)
         );
       }
 
       const results = await Promise.all(promises);
-      
+
       // All operations should succeed
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.success).toBe(true);
       });
 

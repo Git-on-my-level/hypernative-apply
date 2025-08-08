@@ -5,7 +5,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { join } from 'path';
 import { rmSync, existsSync, writeFileSync, mkdirSync } from 'fs';
-import { ConfigLoader, ConfigurationValidationError, loadHypernativeConfig } from './config-loader.js';
+import {
+  ConfigLoader,
+  ConfigurationValidationError,
+  loadHypernativeConfig,
+} from './config-loader.js';
 import { TestFixture } from '../../tests/utils/test-helpers.js';
 
 describe('ConfigLoader', () => {
@@ -50,13 +54,16 @@ describe('ConfigLoader', () => {
       mkdirSync(channelsDir, { recursive: true });
 
       // Create a valid notification channel
-      writeFileSync(join(channelsDir, 'slack-test.yaml'), `
+      writeFileSync(
+        join(channelsDir, 'slack-test.yaml'),
+        `
 name: Test Slack Channel
 type: slack
 enabled: true
 webhook_url: https://hooks.slack.com/services/test
 channel: "#alerts"
-`);
+`
+      );
 
       const result = await configLoader.loadConfig();
 
@@ -72,7 +79,9 @@ channel: "#alerts"
       mkdirSync(watchlistsDir, { recursive: true });
 
       // Create a valid watchlist
-      writeFileSync(join(watchlistsDir, 'test-watchlist.yaml'), `
+      writeFileSync(
+        join(watchlistsDir, 'test-watchlist.yaml'),
+        `
 name: Test Watchlist
 description: A test watchlist
 assets:
@@ -80,7 +89,8 @@ assets:
     type: Wallet
     address: "0x1234567890123456789012345678901234567890"
     name: Test Wallet
-`);
+`
+      );
 
       const result = await configLoader.loadConfig();
 
@@ -96,14 +106,17 @@ assets:
       mkdirSync(agentsDir, { recursive: true });
 
       // Create a valid custom agent
-      writeFileSync(join(agentsDir, 'test-agent.yaml'), `
+      writeFileSync(
+        join(agentsDir, 'test-agent.yaml'),
+        `
 name: Test Agent
 description: A test custom agent
 type: transaction_monitoring
 enabled: true
 conditions:
   transaction_amount_threshold: 1000000
-`);
+`
+      );
 
       const result = await configLoader.loadConfig();
 
@@ -118,11 +131,14 @@ conditions:
       mkdirSync(hypernativeDir, { recursive: true });
 
       // Create global config
-      writeFileSync(join(hypernativeDir, 'config.yaml'), `
+      writeFileSync(
+        join(hypernativeDir, 'config.yaml'),
+        `
 global:
   api_url: https://custom.api.url
   timeout: 30
-`);
+`
+      );
 
       const result = await configLoader.loadConfig();
 
@@ -137,7 +153,9 @@ global:
       mkdirSync(channelsDir, { recursive: true });
 
       // Create multi-document YAML
-      writeFileSync(join(channelsDir, 'multi-channels.yaml'), `
+      writeFileSync(
+        join(channelsDir, 'multi-channels.yaml'),
+        `
 name: Channel 1
 type: slack
 enabled: true
@@ -149,7 +167,8 @@ type: slack
 enabled: true
 webhook_url: https://hooks.slack.com/2
 channel: "#alerts2"
-`);
+`
+      );
 
       const result = await configLoader.loadConfig();
 
@@ -160,18 +179,21 @@ channel: "#alerts2"
 
     it('should interpolate environment variables', async () => {
       process.env.TEST_WEBHOOK_URL = 'https://hooks.slack.com/env-test';
-      
+
       const hypernativeDir = join(testDir, 'hypernative');
       const channelsDir = join(hypernativeDir, 'notification-channels');
       mkdirSync(channelsDir, { recursive: true });
 
-      writeFileSync(join(channelsDir, 'env-channel.yaml'), `
+      writeFileSync(
+        join(channelsDir, 'env-channel.yaml'),
+        `
 name: Env Channel
 type: slack
 enabled: true
 webhook_url: \${TEST_WEBHOOK_URL}
 channel: "#alerts"
-`);
+`
+      );
 
       const result = await configLoader.loadConfig();
 
@@ -190,16 +212,21 @@ channel: "#alerts"
       mkdirSync(watchlistsDir, { recursive: true });
 
       // Create notification channel
-      writeFileSync(join(channelsDir, 'valid-channel.yaml'), `
+      writeFileSync(
+        join(channelsDir, 'valid-channel.yaml'),
+        `
 name: Valid Channel
 type: slack
 enabled: true
 webhook_url: https://hooks.slack.com/valid
 channel: "#alerts"
-`);
+`
+      );
 
       // Create watchlist that references the channel
-      writeFileSync(join(watchlistsDir, 'valid-watchlist.yaml'), `
+      writeFileSync(
+        join(watchlistsDir, 'valid-watchlist.yaml'),
+        `
 name: Valid Watchlist
 description: References valid channel
 assets:
@@ -209,7 +236,8 @@ assets:
 alert_config:
   notification_channels:
     - valid-channel
-`);
+`
+      );
 
       const result = await configLoader.loadConfig();
 
@@ -226,13 +254,16 @@ alert_config:
       mkdirSync(channelsDir, { recursive: true });
 
       // Create invalid YAML
-      writeFileSync(join(channelsDir, 'invalid.yaml'), `
+      writeFileSync(
+        join(channelsDir, 'invalid.yaml'),
+        `
 name: Test
 type: slack
 enabled: true
   invalid_indentation: true
 webhook_url: https://hooks.slack.com/test
-`);
+`
+      );
 
       await expect(configLoader.loadConfig()).rejects.toThrow('YAML parse error');
     });
@@ -243,12 +274,15 @@ webhook_url: https://hooks.slack.com/test
       mkdirSync(channelsDir, { recursive: true });
 
       // Create channel with missing required fields
-      writeFileSync(join(channelsDir, 'invalid-channel.yaml'), `
+      writeFileSync(
+        join(channelsDir, 'invalid-channel.yaml'),
+        `
 name: Invalid Channel
 type: slack
 # Missing required webhook_url
 enabled: true
-`);
+`
+      );
 
       await expect(configLoader.loadConfig()).rejects.toThrow(ConfigurationValidationError);
     });
@@ -258,13 +292,16 @@ enabled: true
       const channelsDir = join(hypernativeDir, 'notification-channels');
       mkdirSync(channelsDir, { recursive: true });
 
-      writeFileSync(join(channelsDir, 'env-missing.yaml'), `
+      writeFileSync(
+        join(channelsDir, 'env-missing.yaml'),
+        `
 name: Env Missing
 type: slack
 enabled: true
 webhook_url: \${MISSING_ENV_VAR}
 channel: "#alerts"
-`);
+`
+      );
 
       await expect(configLoader.loadConfig()).rejects.toThrow(
         'Environment variable MISSING_ENV_VAR is not defined'
@@ -277,7 +314,9 @@ channel: "#alerts"
       mkdirSync(watchlistsDir, { recursive: true });
 
       // Create watchlist that references non-existent channel
-      writeFileSync(join(watchlistsDir, 'bad-ref.yaml'), `
+      writeFileSync(
+        join(watchlistsDir, 'bad-ref.yaml'),
+        `
 name: Bad Reference Watchlist
 description: References non-existent channel
 assets:
@@ -287,7 +326,8 @@ assets:
 alert_config:
   notification_channels:
     - non-existent-channel
-`);
+`
+      );
 
       await expect(configLoader.loadConfig()).rejects.toThrow(ConfigurationValidationError);
     });
@@ -303,14 +343,17 @@ alert_config:
       mkdirSync(channelsDir, { recursive: true });
 
       // Create slightly invalid config
-      writeFileSync(join(channelsDir, 'questionable.yaml'), `
+      writeFileSync(
+        join(channelsDir, 'questionable.yaml'),
+        `
 name: Questionable Channel
 type: slack
 enabled: true
 webhook_url: https://hooks.slack.com/test
 channel: "#alerts"
 unknown_field: should_be_ignored
-`);
+`
+      );
 
       // Strict mode might be more restrictive (depends on schema implementation)
       // For now, just ensure both modes can handle the config
@@ -322,9 +365,9 @@ unknown_field: should_be_ignored
     });
 
     it('should respect validateReferences option', async () => {
-      const noValidationLoader = new ConfigLoader({ 
-        baseDir: testDir, 
-        validateReferences: false 
+      const noValidationLoader = new ConfigLoader({
+        baseDir: testDir,
+        validateReferences: false,
       });
 
       const hypernativeDir = join(testDir, 'hypernative');
@@ -332,7 +375,9 @@ unknown_field: should_be_ignored
       mkdirSync(watchlistsDir, { recursive: true });
 
       // Create watchlist with invalid reference
-      writeFileSync(join(watchlistsDir, 'bad-ref.yaml'), `
+      writeFileSync(
+        join(watchlistsDir, 'bad-ref.yaml'),
+        `
 name: Bad Reference Watchlist
 description: References non-existent channel
 assets:
@@ -342,7 +387,8 @@ assets:
 alert_config:
   notification_channels:
     - non-existent-channel
-`);
+`
+      );
 
       // Should not throw when validation is disabled
       const result = await noValidationLoader.loadConfig();
@@ -351,23 +397,26 @@ alert_config:
 
     it('should respect interpolateEnv option', async () => {
       process.env.TEST_VALUE = 'test_value';
-      
-      const noInterpolationLoader = new ConfigLoader({ 
-        baseDir: testDir, 
-        interpolateEnv: false 
+
+      const noInterpolationLoader = new ConfigLoader({
+        baseDir: testDir,
+        interpolateEnv: false,
       });
 
       const hypernativeDir = join(testDir, 'hypernative');
       const channelsDir = join(hypernativeDir, 'notification-channels');
       mkdirSync(channelsDir, { recursive: true });
 
-      writeFileSync(join(channelsDir, 'env-test.yaml'), `
+      writeFileSync(
+        join(channelsDir, 'env-test.yaml'),
+        `
 name: Env Test
 type: slack
 enabled: true
 webhook_url: https://hooks.slack.com/\${TEST_VALUE}
 channel: "#alerts"
-`);
+`
+      );
 
       const result = await noInterpolationLoader.loadConfig();
 
@@ -386,18 +435,23 @@ channel: "#alerts"
       const channelsDir = join(hypernativeDir, 'notification-channels');
       mkdirSync(channelsDir, { recursive: true });
 
-      writeFileSync(join(channelsDir, 'my-special-channel.yaml'), `
+      writeFileSync(
+        join(channelsDir, 'my-special-channel.yaml'),
+        `
 name: My Special Channel
 type: slack
 enabled: true
 webhook_url: https://hooks.slack.com/special
 channel: "#special"
-`);
+`
+      );
 
       const result = await configLoader.loadConfig();
 
       expect(result.config.notification_channels['my-special-channel']).toBeDefined();
-      expect(result.config.notification_channels['my-special-channel'].name).toBe('My Special Channel');
+      expect(result.config.notification_channels['my-special-channel'].name).toBe(
+        'My Special Channel'
+      );
     });
 
     it('should handle resource names different from filenames', async () => {
@@ -405,13 +459,16 @@ channel: "#special"
       const channelsDir = join(hypernativeDir, 'notification-channels');
       mkdirSync(channelsDir, { recursive: true });
 
-      writeFileSync(join(channelsDir, 'file-name.yaml'), `
+      writeFileSync(
+        join(channelsDir, 'file-name.yaml'),
+        `
 name: Different Resource Name
 type: slack
 enabled: true
 webhook_url: https://hooks.slack.com/different
 channel: "#different"
-`);
+`
+      );
 
       const result = await configLoader.loadConfig();
 
@@ -426,13 +483,16 @@ channel: "#different"
       const channelsDir = join(hypernativeDir, 'notification-channels');
       mkdirSync(channelsDir, { recursive: true });
 
-      writeFileSync(join(channelsDir, 'Special@Channel#Name!.yaml'), `
+      writeFileSync(
+        join(channelsDir, 'Special@Channel#Name!.yaml'),
+        `
 name: Special Channel Name!
 type: slack
 enabled: true
 webhook_url: https://hooks.slack.com/special
 channel: "#special"
-`);
+`
+      );
 
       const result = await configLoader.loadConfig();
 
@@ -509,8 +569,12 @@ ${j < 4 ? '---' : ''}
       const validationError = new ConfigurationValidationError(errors);
 
       expect(validationError.message).toContain('Configuration validation failed with 2 errors');
-      expect(validationError.message).toContain('test/file1.yaml:5 (notification_channel: test-channel): webhook_url is required');
-      expect(validationError.message).toContain('test/file2.yaml (watchlist: test-watchlist): Invalid asset address format');
+      expect(validationError.message).toContain(
+        'test/file1.yaml:5 (notification_channel: test-channel): webhook_url is required'
+      );
+      expect(validationError.message).toContain(
+        'test/file2.yaml (watchlist: test-watchlist): Invalid asset address format'
+      );
       expect(validationError.errors).toBe(errors);
     });
   });

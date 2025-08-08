@@ -3,14 +3,13 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { join } from 'path';
 import { rmSync, existsSync } from 'fs';
 import { Planner, generateExecutionPlan, createPlanFile } from './planner.js';
 import { StateStore } from './state-store.js';
 import { TestFixture } from '../../tests/utils/test-helpers.js';
 import { ChangeType } from '../types/plan.js';
 import type { ParsedConfig } from '../schemas/config.schema.js';
-import type { ExecutionPlan, PlannerOptions } from '../types/plan.js';
+import type { PlannerOptions } from '../types/plan.js';
 
 describe('Planner', () => {
   let planner: Planner;
@@ -21,7 +20,7 @@ describe('Planner', () => {
     testDir = TestFixture.createTempDir('planner');
     planner = new Planner(testDir);
     mockConfig = TestFixture.createMockConfig();
-    
+
     // Mock the StateStore to avoid file system operations in most tests
     vi.spyOn(StateStore.prototype, 'loadState').mockResolvedValue(TestFixture.createMockState());
   });
@@ -42,7 +41,7 @@ describe('Planner', () => {
       expect(plan.changes).toBeDefined();
       expect(plan.summary).toBeDefined();
       expect(plan.dependencies).toBeDefined();
-      
+
       // Should have plan ID and timestamps
       expect(plan.metadata.plan_id).toMatch(/^[0-9a-f-]+$/);
       expect(plan.metadata.created_at).toBeDefined();
@@ -65,9 +64,9 @@ describe('Planner', () => {
       const plan = await planner.generatePlan(mockConfig);
 
       // Should have CREATE operations for all resources
-      const createChanges = plan.changes.filter(c => c.change_type === ChangeType.CREATE);
+      const createChanges = plan.changes.filter((c) => c.change_type === ChangeType.CREATE);
       expect(createChanges).toHaveLength(3); // 2 channels, 1 watchlist, 1 agent
-      
+
       // Check summary
       expect(plan.summary.to_create).toBe(3);
       expect(plan.summary.to_update).toBe(0);
@@ -78,17 +77,17 @@ describe('Planner', () => {
       // Mock state with different hashes (indicating changes)
       const stateWithChanges = TestFixture.createMockState();
       stateWithChanges.resources['test-slack'].last_applied_hash = 'old_hash_different';
-      
+
       vi.spyOn(StateStore.prototype, 'loadState').mockResolvedValue(stateWithChanges);
 
       const plan = await planner.generatePlan(mockConfig);
 
       // Should have UPDATE operations for changed resources
-      const updateChanges = plan.changes.filter(c => c.change_type === ChangeType.UPDATE);
+      const updateChanges = plan.changes.filter((c) => c.change_type === ChangeType.UPDATE);
       expect(updateChanges.length).toBeGreaterThan(0);
-      
+
       // Find the slack channel update
-      const slackUpdate = updateChanges.find(c => c.name === 'test-slack');
+      const slackUpdate = updateChanges.find((c) => c.name === 'test-slack');
       expect(slackUpdate).toBeDefined();
       expect(slackUpdate!.current_hash).toBe('old_hash_different');
     });
@@ -109,13 +108,13 @@ describe('Planner', () => {
           cli_version: '0.1.0',
         },
       };
-      
+
       vi.spyOn(StateStore.prototype, 'loadState').mockResolvedValue(stateWithExtra);
 
       const plan = await planner.generatePlan(mockConfig);
 
       // Should have DELETE operation for orphaned resource
-      const deleteChanges = plan.changes.filter(c => c.change_type === ChangeType.DELETE);
+      const deleteChanges = plan.changes.filter((c) => c.change_type === ChangeType.DELETE);
       expect(deleteChanges).toHaveLength(1);
       expect(deleteChanges[0].name).toBe('orphaned-resource');
       expect(deleteChanges[0].risk_level).toBe('medium');
@@ -125,12 +124,12 @@ describe('Planner', () => {
       const plan = await planner.generatePlan(mockConfig);
 
       // Watchlist should depend on notification channels
-      const watchlistChange = plan.changes.find(c => c.name === 'test-watchlist');
+      const watchlistChange = plan.changes.find((c) => c.name === 'test-watchlist');
       expect(watchlistChange).toBeDefined();
       expect(watchlistChange!.dependencies).toContain('test-slack');
-      
+
       // Custom agent should depend on notification channels
-      const agentChange = plan.changes.find(c => c.name === 'test-agent');
+      const agentChange = plan.changes.find((c) => c.name === 'test-agent');
       expect(agentChange).toBeDefined();
       expect(agentChange!.dependencies).toContain('test-email');
 
@@ -143,9 +142,9 @@ describe('Planner', () => {
       const plan = await planner.generatePlan(mockConfig);
 
       // Notification channels should come before watchlists and agents
-      const channelIndex = plan.changes.findIndex(c => c.kind === 'notification_channel');
-      const watchlistIndex = plan.changes.findIndex(c => c.kind === 'watchlist');
-      const agentIndex = plan.changes.findIndex(c => c.kind === 'custom_agent');
+      const channelIndex = plan.changes.findIndex((c) => c.kind === 'notification_channel');
+      const watchlistIndex = plan.changes.findIndex((c) => c.kind === 'watchlist');
+      const agentIndex = plan.changes.findIndex((c) => c.kind === 'custom_agent');
 
       expect(channelIndex).toBeLessThan(watchlistIndex);
       expect(channelIndex).toBeLessThan(agentIndex);
@@ -177,8 +176,8 @@ describe('Planner', () => {
       const plan = await planner.generatePlan(mockConfig);
 
       // CREATE operations should be low risk
-      const createChanges = plan.changes.filter(c => c.change_type === ChangeType.CREATE);
-      createChanges.forEach(change => {
+      const createChanges = plan.changes.filter((c) => c.change_type === ChangeType.CREATE);
+      createChanges.forEach((change) => {
         expect(change.risk_level).toBe('low');
       });
     });
@@ -205,7 +204,7 @@ describe('Planner', () => {
 
       const plan = await planner.generatePlan(mockConfig);
 
-      const agentChange = plan.changes.find(c => c.name === 'test-agent');
+      const agentChange = plan.changes.find((c) => c.name === 'test-agent');
       expect(agentChange).toBeDefined();
       // Should be REPLACE due to type change, or UPDATE if we can't determine
       expect([ChangeType.REPLACE, ChangeType.UPDATE]).toContain(agentChange!.change_type);
@@ -222,7 +221,7 @@ describe('Planner', () => {
       const plan = await planner.generatePlan(mockConfig, options);
 
       // Changes should include field diffs
-      const changesWithDiffs = plan.changes.filter(c => c.field_diffs);
+      const changesWithDiffs = plan.changes.filter((c) => c.field_diffs);
       expect(changesWithDiffs.length).toBeGreaterThan(0);
     });
 
@@ -235,9 +234,9 @@ describe('Planner', () => {
       const plan = await planner.generatePlan(mockConfig, options);
 
       // Field diffs should not contain sensitive information
-      plan.changes.forEach(change => {
+      plan.changes.forEach((change) => {
         if (change.field_diffs) {
-          change.field_diffs.forEach(diff => {
+          change.field_diffs.forEach((diff) => {
             if (diff.is_sensitive) {
               expect(diff.new_value).not.toContain('hooks.slack.com');
               expect(diff.old_value).not.toContain('hooks.slack.com');
@@ -269,10 +268,10 @@ describe('Planner', () => {
 
     it('should generate different config hash for different configs', async () => {
       const plan1 = await planner.generatePlan(mockConfig);
-      
+
       const modifiedConfig = { ...mockConfig };
       modifiedConfig.watchlists = {}; // Remove watchlists
-      
+
       const plan2 = await planner.generatePlan(modifiedConfig);
 
       expect(plan1.metadata.config_hash).not.toBe(plan2.metadata.config_hash);
@@ -289,7 +288,7 @@ describe('Planner', () => {
   describe('convenience functions', () => {
     it('generateExecutionPlan should work', async () => {
       const plan = await generateExecutionPlan(mockConfig, testDir);
-      
+
       expect(plan).toBeDefined();
       expect(plan.metadata.base_directory).toBe(testDir);
     });
@@ -297,7 +296,7 @@ describe('Planner', () => {
     it('createPlanFile should generate valid plan file', async () => {
       const plan = await generateExecutionPlan(mockConfig, testDir);
       const planFile = await createPlanFile(plan);
-      
+
       expect(planFile.version).toBe('1.0.0');
       expect(planFile.plan).toBe(plan);
       expect(planFile.signature).toBeDefined();
@@ -339,7 +338,7 @@ describe('Planner', () => {
           webhook_url: `https://hooks.slack.com/channel-${i}`,
           channel: `#channel-${i}`,
         };
-        
+
         largeConfig.watchlists[`watchlist-${i}`] = {
           name: `Watchlist ${i}`,
           description: `Test watchlist ${i}`,

@@ -14,7 +14,7 @@ import type { ApiWatchlist, ApiNotificationChannel, ApiCustomAgent } from '../..
  */
 export class MockApiClient {
   private baseUrl: string;
-  
+
   constructor(baseUrl: string = 'https://api.hypernative.xyz') {
     this.baseUrl = baseUrl;
   }
@@ -23,27 +23,21 @@ export class MockApiClient {
    * Mock successful watchlist creation
    */
   mockCreateWatchlist(payload: any, response: ApiWatchlist) {
-    return nock(this.baseUrl)
-      .post('/api/v2/watchlists')
-      .reply(201, response);
+    return nock(this.baseUrl).post('/api/v2/watchlists').reply(201, response);
   }
 
   /**
    * Mock successful watchlist update
    */
   mockUpdateWatchlist(id: string, payload: any, response: ApiWatchlist) {
-    return nock(this.baseUrl)
-      .patch(`/api/v2/watchlists/${id}`)
-      .reply(200, response);
+    return nock(this.baseUrl).patch(`/api/v2/watchlists/${id}`).reply(200, response);
   }
 
   /**
    * Mock watchlist deletion
    */
   mockDeleteWatchlist(id: string) {
-    return nock(this.baseUrl)
-      .delete(`/api/v2/watchlists/${id}`)
-      .reply(204);
+    return nock(this.baseUrl).delete(`/api/v2/watchlists/${id}`).reply(204);
   }
 
   /**
@@ -55,69 +49,58 @@ export class MockApiClient {
         .get(`/api/v2/watchlists/${id}`)
         .reply(404, { error: 'Watchlist not found' });
     }
-    
-    return nock(this.baseUrl)
-      .get(`/api/v2/watchlists/${id}`)
-      .reply(200, response);
+
+    return nock(this.baseUrl).get(`/api/v2/watchlists/${id}`).reply(200, response);
   }
 
   /**
    * Mock list watchlists
    */
   mockListWatchlists(response: ApiWatchlist[]) {
-    return nock(this.baseUrl)
-      .get('/api/v2/watchlists')
-      .reply(200, { data: response });
+    return nock(this.baseUrl).get('/api/v2/watchlists').reply(200, { data: response });
   }
 
   /**
    * Mock notification channel operations
    */
   mockCreateChannel(payload: any, response: ApiNotificationChannel) {
-    return nock(this.baseUrl)
-      .post('/api/v2/notification-channels')
-      .reply(201, response);
+    return nock(this.baseUrl).post('/api/v2/notification-channels').reply(201, response);
   }
 
   mockUpdateChannel(id: string, payload: any, response: ApiNotificationChannel) {
-    return nock(this.baseUrl)
-      .patch(`/api/v2/notification-channels/${id}`)
-      .reply(200, response);
+    return nock(this.baseUrl).patch(`/api/v2/notification-channels/${id}`).reply(200, response);
   }
 
   mockDeleteChannel(id: string) {
-    return nock(this.baseUrl)
-      .delete(`/api/v2/notification-channels/${id}`)
-      .reply(204);
+    return nock(this.baseUrl).delete(`/api/v2/notification-channels/${id}`).reply(204);
   }
 
   /**
    * Mock custom agent operations
    */
   mockCreateAgent(payload: any, response: ApiCustomAgent) {
-    return nock(this.baseUrl)
-      .post('/api/v2/custom-agents')
-      .reply(201, response);
+    return nock(this.baseUrl).post('/api/v2/custom-agents').reply(201, response);
   }
 
   mockUpdateAgent(id: string, payload: any, response: ApiCustomAgent) {
-    return nock(this.baseUrl)
-      .patch(`/api/v2/custom-agents/${id}`)
-      .reply(200, response);
+    return nock(this.baseUrl).patch(`/api/v2/custom-agents/${id}`).reply(200, response);
   }
 
   mockDeleteAgent(id: string) {
-    return nock(this.baseUrl)
-      .delete(`/api/v2/custom-agents/${id}`)
-      .reply(204);
+    return nock(this.baseUrl).delete(`/api/v2/custom-agents/${id}`).reply(204);
   }
 
   /**
    * Mock API errors
    */
-  mockApiError(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', path: string, statusCode: number, error: any) {
+  mockApiError(
+    method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
+    path: string,
+    statusCode: number,
+    error: any
+  ) {
     const nockInstance = nock(this.baseUrl);
-    
+
     switch (method) {
       case 'GET':
         return nockInstance.get(path).reply(statusCode, error);
@@ -290,7 +273,7 @@ export class TestFixture {
    */
   static writeConfigFiles(baseDir: string, config: ParsedConfig): void {
     const hypernativeDir = join(baseDir, 'hypernative');
-    
+
     // Create directories
     mkdirSync(join(hypernativeDir, 'notification-channels'), { recursive: true });
     mkdirSync(join(hypernativeDir, 'watchlists'), { recursive: true });
@@ -299,7 +282,10 @@ export class TestFixture {
     // Write notification channels
     Object.entries(config.notification_channels).forEach(([name, channel]) => {
       const filePath = join(hypernativeDir, 'notification-channels', `${name}.yaml`);
-      writeFileSync(filePath, `name: ${channel.name}\ntype: ${channel.type}\nenabled: ${channel.enabled}\n`);
+      writeFileSync(
+        filePath,
+        `name: ${channel.name}\ntype: ${channel.type}\nenabled: ${channel.enabled}\n`
+      );
     });
 
     // Write watchlists
@@ -311,7 +297,10 @@ export class TestFixture {
     // Write custom agents
     Object.entries(config.custom_agents).forEach(([name, agent]) => {
       const filePath = join(hypernativeDir, 'custom-agents', `${name}.yaml`);
-      writeFileSync(filePath, `name: ${agent.name}\ntype: ${agent.type}\nenabled: ${agent.enabled}\n`);
+      writeFileSync(
+        filePath,
+        `name: ${agent.name}\ntype: ${agent.type}\nenabled: ${agent.enabled}\n`
+      );
     });
   }
 }

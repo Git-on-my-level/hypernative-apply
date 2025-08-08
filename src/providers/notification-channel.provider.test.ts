@@ -5,14 +5,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { NotificationChannelProvider } from './notification-channel.provider.js';
 import { ApiClient } from '../lib/api-client.js';
-import { MockApiClient, TestFixture } from '../../tests/utils/test-helpers.js';
 import type { NotificationChannelConfig } from '../schemas/notification-channel.schema.js';
 import type { ApiNotificationChannel } from '../types/api.js';
 
 describe('NotificationChannelProvider', () => {
   let provider: NotificationChannelProvider;
   let mockApiClient: ApiClient;
-  let mockApi: MockApiClient;
 
   beforeEach(() => {
     mockApiClient = {
@@ -21,8 +19,7 @@ describe('NotificationChannelProvider', () => {
       patch: vi.fn(),
       delete: vi.fn(),
     } as any;
-    
-    mockApi = new MockApiClient();
+
     provider = new NotificationChannelProvider({ apiClient: mockApiClient, dryRun: false });
   });
 
@@ -62,7 +59,7 @@ describe('NotificationChannelProvider', () => {
     url: 'https://api.example.com/webhook',
     method: 'POST',
     headers: {
-      'Authorization': 'Bearer token123',
+      Authorization: 'Bearer token123',
       'Content-Type': 'application/json',
     },
     timeout: 30,
@@ -107,7 +104,7 @@ describe('NotificationChannelProvider', () => {
     });
 
     it('should filter by type', async () => {
-      const result = await provider.list({ type: 'slack' });
+      await provider.list({ type: 'slack' });
 
       expect(mockApiClient.get).toHaveBeenCalledWith('/api/v2/notification-channels', {
         params: { limit: 50, offset: 0, type: 'slack' },
@@ -117,7 +114,9 @@ describe('NotificationChannelProvider', () => {
     it('should handle API errors', async () => {
       mockApiClient.get = vi.fn().mockRejectedValue(new Error('API Error'));
 
-      await expect(provider.list()).rejects.toThrow('Failed to list notification channels: API Error');
+      await expect(provider.list()).rejects.toThrow(
+        'Failed to list notification channels: API Error'
+      );
     });
   });
 
@@ -217,7 +216,7 @@ describe('NotificationChannelProvider', () => {
         url: 'https://api.example.com/webhook',
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer token123',
+          Authorization: 'Bearer token123',
           'Content-Type': 'application/json',
         },
         timeout: 30,
@@ -226,7 +225,10 @@ describe('NotificationChannelProvider', () => {
     });
 
     it('should handle dry run mode', async () => {
-      const dryRunProvider = new NotificationChannelProvider({ apiClient: mockApiClient, dryRun: true });
+      const dryRunProvider = new NotificationChannelProvider({
+        apiClient: mockApiClient,
+        dryRun: true,
+      });
 
       const result = await dryRunProvider.create(mockSlackConfig);
 
@@ -239,7 +241,9 @@ describe('NotificationChannelProvider', () => {
     it('should handle API errors', async () => {
       mockApiClient.post = vi.fn().mockRejectedValue(new Error('Creation failed'));
 
-      await expect(provider.create(mockSlackConfig)).rejects.toThrow('Failed to create notification channel');
+      await expect(provider.create(mockSlackConfig)).rejects.toThrow(
+        'Failed to create notification channel'
+      );
     });
   });
 
@@ -261,20 +265,26 @@ describe('NotificationChannelProvider', () => {
 
       const result = await provider.update('nc_slack_123', updatedConfig);
 
-      expect(mockApiClient.patch).toHaveBeenCalledWith('/api/v2/notification-channels/nc_slack_123', {
-        name: 'Test Slack Channel',
-        type: 'slack',
-        enabled: false,
-        webhook_url: 'https://hooks.slack.com/services/test',
-        channel: '#updated-alerts',
-        username: 'hypernative-bot',
-        icon_emoji: ':warning:',
-      });
+      expect(mockApiClient.patch).toHaveBeenCalledWith(
+        '/api/v2/notification-channels/nc_slack_123',
+        {
+          name: 'Test Slack Channel',
+          type: 'slack',
+          enabled: false,
+          webhook_url: 'https://hooks.slack.com/services/test',
+          channel: '#updated-alerts',
+          username: 'hypernative-bot',
+          icon_emoji: ':warning:',
+        }
+      );
       expect(result).toEqual(expectedResponse);
     });
 
     it('should handle dry run mode', async () => {
-      const dryRunProvider = new NotificationChannelProvider({ apiClient: mockApiClient, dryRun: true });
+      const dryRunProvider = new NotificationChannelProvider({
+        apiClient: mockApiClient,
+        dryRun: true,
+      });
 
       const result = await dryRunProvider.update('nc_slack_123', mockSlackConfig);
 
@@ -297,11 +307,16 @@ describe('NotificationChannelProvider', () => {
 
       await provider.delete('nc_slack_123');
 
-      expect(mockApiClient.delete).toHaveBeenCalledWith('/api/v2/notification-channels/nc_slack_123');
+      expect(mockApiClient.delete).toHaveBeenCalledWith(
+        '/api/v2/notification-channels/nc_slack_123'
+      );
     });
 
     it('should handle dry run mode', async () => {
-      const dryRunProvider = new NotificationChannelProvider({ apiClient: mockApiClient, dryRun: true });
+      const dryRunProvider = new NotificationChannelProvider({
+        apiClient: mockApiClient,
+        dryRun: true,
+      });
 
       await dryRunProvider.delete('nc_slack_123');
 
@@ -329,7 +344,9 @@ describe('NotificationChannelProvider', () => {
 
       const result = await provider.testConnection('nc_slack_123');
 
-      expect(mockApiClient.post).toHaveBeenCalledWith('/api/v2/notification-channels/nc_slack_123/test');
+      expect(mockApiClient.post).toHaveBeenCalledWith(
+        '/api/v2/notification-channels/nc_slack_123/test'
+      );
       expect(result).toEqual(mockTestResponse);
     });
 
@@ -349,7 +366,10 @@ describe('NotificationChannelProvider', () => {
     });
 
     it('should handle dry run mode', async () => {
-      const dryRunProvider = new NotificationChannelProvider({ apiClient: mockApiClient, dryRun: true });
+      const dryRunProvider = new NotificationChannelProvider({
+        apiClient: mockApiClient,
+        dryRun: true,
+      });
 
       const result = await dryRunProvider.testConnection('nc_slack_123');
 
@@ -404,7 +424,10 @@ describe('NotificationChannelProvider', () => {
     });
 
     it('should handle dry run mode', async () => {
-      const dryRunProvider = new NotificationChannelProvider({ apiClient: mockApiClient, dryRun: true });
+      const dryRunProvider = new NotificationChannelProvider({
+        apiClient: mockApiClient,
+        dryRun: true,
+      });
 
       const result = await dryRunProvider.sendTestMessage('nc_slack_123', 'Test message');
 
@@ -460,7 +483,7 @@ describe('NotificationChannelProvider', () => {
         url: 'https://api.example.com/webhook',
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer token123',
+          Authorization: 'Bearer token123',
           'Content-Type': 'application/json',
         },
         timeout: 30,
@@ -525,7 +548,7 @@ describe('NotificationChannelProvider', () => {
         enabled: true,
         url: 'https://api.example.com/complex',
         headers: {
-          'Authorization': 'Bearer token123',
+          Authorization: 'Bearer token123',
           'X-Custom-Header': 'custom-value',
           'X-Another-Header': 'another-value',
         },
@@ -562,8 +585,8 @@ describe('NotificationChannelProvider', () => {
         name: 'Test Channel w/ Special Characters: #1 @alerts',
       };
 
-      mockApiClient.post = vi.fn().mockResolvedValue({ 
-        data: { ...mockSlackResponse, name: specialConfig.name } 
+      mockApiClient.post = vi.fn().mockResolvedValue({
+        data: { ...mockSlackResponse, name: specialConfig.name },
       });
 
       const result = await provider.create(specialConfig);
@@ -576,8 +599,8 @@ describe('NotificationChannelProvider', () => {
         recipients: Array.from({ length: 100 }, (_, i) => `user${i}@example.com`),
       };
 
-      mockApiClient.post = vi.fn().mockResolvedValue({ 
-        data: { id: 'nc_email_long', recipients: longEmailConfig.recipients } 
+      mockApiClient.post = vi.fn().mockResolvedValue({
+        data: { id: 'nc_email_long', recipients: longEmailConfig.recipients },
       });
 
       const result = await provider.create(longEmailConfig);
@@ -604,7 +627,7 @@ describe('NotificationChannelProvider', () => {
     it('should handle validation errors from API', async () => {
       mockApiClient.post = vi.fn().mockRejectedValue({
         status: 400,
-        data: { error: 'Invalid webhook URL format' }
+        data: { error: 'Invalid webhook URL format' },
       });
 
       await expect(provider.create(mockSlackConfig)).rejects.toThrow(

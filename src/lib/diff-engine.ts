@@ -1,6 +1,6 @@
 /**
  * Diff engine for deep object comparison and field-level change detection
- * 
+ *
  * This module provides utilities for comparing configurations and detecting
  * changes at the field level, with support for secret redaction and array
  * stabilization.
@@ -26,7 +26,7 @@ const SERVER_MANAGED_FIELDS = new Set([
   'metadata.version',
   'pagination',
   '_links',
-  '_metadata'
+  '_metadata',
 ]);
 
 // Fields that contain sensitive data
@@ -39,17 +39,17 @@ const SENSITIVE_FIELDS = new Set([
   'webhook_secret',
   'auth_token',
   'bearer_token',
-  'client_secret'
+  'client_secret',
 ]);
 
 // Pagination and server metadata patterns to ignore
 const IGNORED_PATTERNS = [
   /^metadata\./,
-  /^_/,  // Fields starting with underscore
+  /^_/, // Fields starting with underscore
   /pagination$/,
   /count$/,
   /^etag$/i,
-  /^version$/
+  /^version$/,
 ];
 
 /**
@@ -88,17 +88,13 @@ export interface DiffResult {
 /**
  * Deep compare two objects and generate field-level diffs
  */
-export function deepCompare(
-  oldObj: any, 
-  newObj: any, 
-  options: DiffOptions = {}
-): DiffResult {
+export function deepCompare(oldObj: any, newObj: any, options: DiffOptions = {}): DiffResult {
   const opts: Required<DiffOptions> = {
     includeArrayDiffs: options.includeArrayDiffs ?? true,
     redactSecrets: options.redactSecrets ?? true,
     maxDepth: options.maxDepth ?? 10,
     ignoreFields: options.ignoreFields ?? [],
-    sensitivePatterns: options.sensitivePatterns ?? []
+    sensitivePatterns: options.sensitivePatterns ?? [],
   };
 
   const fieldDiffs: FieldDiff[] = [];
@@ -106,7 +102,7 @@ export function deepCompare(
     fields_added: 0,
     fields_removed: 0,
     fields_changed: 0,
-    sensitive_fields_changed: 0
+    sensitive_fields_changed: 0,
   };
 
   // Clean objects before comparison to remove server-managed fields
@@ -119,7 +115,7 @@ export function deepCompare(
   return {
     has_differences: fieldDiffs.length > 0,
     field_diffs: fieldDiffs,
-    summary
+    summary,
   };
 }
 
@@ -132,12 +128,12 @@ function cleanForComparison(obj: any, options: Required<DiffOptions>): any {
   }
 
   if (Array.isArray(obj)) {
-    return stabilizeArray(obj.map(item => cleanForComparison(item, options)));
+    return stabilizeArray(obj.map((item) => cleanForComparison(item, options)));
   }
 
   if (typeof obj === 'object') {
     const cleaned: Record<string, any> = {};
-    
+
     for (const [key, value] of Object.entries(obj)) {
       // Skip server-managed fields
       if (shouldIgnoreField(key)) {
@@ -150,7 +146,7 @@ function cleanForComparison(obj: any, options: Required<DiffOptions>): any {
       }
 
       const cleanedValue = cleanForComparison(value, options);
-      
+
       // Only include non-null, non-undefined values
       if (cleanedValue !== null && cleanedValue !== undefined) {
         // Convert empty arrays and objects to null for consistency
@@ -160,11 +156,11 @@ function cleanForComparison(obj: any, options: Required<DiffOptions>): any {
         if (typeof cleanedValue === 'object' && Object.keys(cleanedValue).length === 0) {
           continue;
         }
-        
+
         cleaned[key] = cleanedValue;
       }
     }
-    
+
     return cleaned;
   }
 
@@ -172,7 +168,7 @@ function cleanForComparison(obj: any, options: Required<DiffOptions>): any {
   if (typeof obj === 'string') {
     return obj.trim();
   }
-  
+
   return obj;
 }
 
@@ -188,8 +184,8 @@ function stabilizeArray(arr: any[]): any[] {
   if (arr.length > 0 && typeof arr[0] === 'object' && arr[0] !== null) {
     // Look for common stable keys
     const stableKeys = ['id', 'name', 'address', 'type', 'key'];
-    const sortKey = stableKeys.find(key => arr[0][key] !== undefined);
-    
+    const sortKey = stableKeys.find((key) => arr[0][key] !== undefined);
+
     if (sortKey) {
       return [...arr].sort((a, b) => {
         const aVal = String(a[sortKey] || '');
@@ -200,7 +196,7 @@ function stabilizeArray(arr: any[]): any[] {
   }
 
   // For arrays of primitives, sort if they're all the same type
-  if (arr.length > 0 && arr.every(item => typeof item === typeof arr[0])) {
+  if (arr.length > 0 && arr.every((item) => typeof item === typeof arr[0])) {
     if (typeof arr[0] === 'string' || typeof arr[0] === 'number') {
       return [...arr].sort();
     }
@@ -219,7 +215,7 @@ function shouldIgnoreField(fieldPath: string): boolean {
   }
 
   // Check patterns
-  return IGNORED_PATTERNS.some(pattern => pattern.test(fieldPath));
+  return IGNORED_PATTERNS.some((pattern) => pattern.test(fieldPath));
 }
 
 /**
@@ -227,14 +223,14 @@ function shouldIgnoreField(fieldPath: string): boolean {
  */
 function isSensitiveField(fieldPath: string, customPatterns: RegExp[] = []): boolean {
   const lowerPath = fieldPath.toLowerCase();
-  
+
   // Check direct sensitive field names
-  if ([...SENSITIVE_FIELDS].some(field => lowerPath.includes(field))) {
+  if ([...SENSITIVE_FIELDS].some((field) => lowerPath.includes(field))) {
     return true;
   }
 
   // Check custom patterns
-  return customPatterns.some(pattern => pattern.test(fieldPath));
+  return customPatterns.some((pattern) => pattern.test(fieldPath));
 }
 
 /**
@@ -294,10 +290,10 @@ function compareObjects(
 
   // Compare object properties
   const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
-  
+
   for (const key of allKeys) {
     const fieldPath = path ? `${path}.${key}` : key;
-    
+
     // Skip ignored fields
     if (shouldIgnoreField(fieldPath)) {
       continue;
@@ -328,18 +324,19 @@ function compareArrays(
   }
 
   // Check if this is a simple array change
-  if (oldArr.length !== newArr.length || 
-      !oldArr.every(item => typeof item !== 'object') ||
-      !newArr.every(item => typeof item !== 'object')) {
-    
+  if (
+    oldArr.length !== newArr.length ||
+    !oldArr.every((item) => typeof item !== 'object') ||
+    !newArr.every((item) => typeof item !== 'object')
+  ) {
     // Complex array - compare element by element
     const maxLength = Math.max(oldArr.length, newArr.length);
-    
+
     for (let i = 0; i < maxLength; i++) {
       const elementPath = `${path}[${i}]`;
       const oldElement = i < oldArr.length ? oldArr[i] : undefined;
       const newElement = i < newArr.length ? newArr[i] : undefined;
-      
+
       compareObjects(oldElement, newElement, elementPath, diffs, summary, options, depth + 1);
     }
   } else {
@@ -361,11 +358,11 @@ function addFieldDiff(
   options: Required<DiffOptions>
 ): void {
   const isSensitive = isSensitiveField(path, options.sensitivePatterns);
-  
+
   // Redact sensitive values if requested
   let displayOldValue = oldValue;
   let displayNewValue = newValue;
-  
+
   if (isSensitive && options.redactSecrets) {
     displayOldValue = oldValue !== undefined ? '[REDACTED]' : undefined;
     displayNewValue = newValue !== undefined ? '[REDACTED]' : undefined;
@@ -376,7 +373,7 @@ function addFieldDiff(
     old_value: displayOldValue,
     new_value: displayNewValue,
     change_type: changeType,
-    is_sensitive: isSensitive
+    is_sensitive: isSensitive,
   });
 
   // Update summary
@@ -411,17 +408,17 @@ export function formatDiffSummary(result: DiffResult): string {
   if (summary.fields_added > 0) {
     parts.push(`${summary.fields_added} field${summary.fields_added === 1 ? '' : 's'} added`);
   }
-  
+
   if (summary.fields_changed > 0) {
     parts.push(`${summary.fields_changed} field${summary.fields_changed === 1 ? '' : 's'} changed`);
   }
-  
+
   if (summary.fields_removed > 0) {
     parts.push(`${summary.fields_removed} field${summary.fields_removed === 1 ? '' : 's'} removed`);
   }
 
   let result_str = parts.join(', ');
-  
+
   if (summary.sensitive_fields_changed > 0) {
     result_str += ` (${summary.sensitive_fields_changed} sensitive)`;
   }
@@ -433,30 +430,33 @@ export function formatDiffSummary(result: DiffResult): string {
  * Format field diffs for display
  */
 export function formatFieldDiffs(
-  diffs: FieldDiff[], 
+  diffs: FieldDiff[],
   options: { maxDiffs?: number; useColors?: boolean } = {}
 ): string[] {
   const maxDiffs = options.maxDiffs ?? 20;
   const useColors = options.useColors ?? false;
-  
+
   const formatted: string[] = [];
   const displayDiffs = diffs.slice(0, maxDiffs);
 
   for (const diff of displayDiffs) {
     let line = '';
-    
+
     switch (diff.change_type) {
       case 'added':
-        line = useColors ? `\x1b[32m+ ${diff.path}: ${formatValue(diff.new_value)}\x1b[0m` 
-                         : `+ ${diff.path}: ${formatValue(diff.new_value)}`;
+        line = useColors
+          ? `\x1b[32m+ ${diff.path}: ${formatValue(diff.new_value)}\x1b[0m`
+          : `+ ${diff.path}: ${formatValue(diff.new_value)}`;
         break;
       case 'removed':
-        line = useColors ? `\x1b[31m- ${diff.path}: ${formatValue(diff.old_value)}\x1b[0m`
-                         : `- ${diff.path}: ${formatValue(diff.old_value)}`;
+        line = useColors
+          ? `\x1b[31m- ${diff.path}: ${formatValue(diff.old_value)}\x1b[0m`
+          : `- ${diff.path}: ${formatValue(diff.old_value)}`;
         break;
       case 'changed':
-        line = useColors ? `\x1b[33m~ ${diff.path}: ${formatValue(diff.old_value)} -> ${formatValue(diff.new_value)}\x1b[0m`
-                         : `~ ${diff.path}: ${formatValue(diff.old_value)} -> ${formatValue(diff.new_value)}`;
+        line = useColors
+          ? `\x1b[33m~ ${diff.path}: ${formatValue(diff.old_value)} -> ${formatValue(diff.new_value)}\x1b[0m`
+          : `~ ${diff.path}: ${formatValue(diff.old_value)} -> ${formatValue(diff.new_value)}`;
         break;
     }
 
@@ -481,15 +481,15 @@ function formatValue(value: any): string {
   if (value === undefined) {
     return '<undefined>';
   }
-  
+
   if (value === null) {
     return '<null>';
   }
-  
+
   if (typeof value === 'string') {
     return `"${value}"`;
   }
-  
+
   if (Array.isArray(value)) {
     if (value.length === 0) {
       return '[]';
@@ -499,17 +499,20 @@ function formatValue(value: any): string {
     }
     return `[${value.slice(0, 2).map(formatValue).join(', ')}, ...${value.length - 2} more]`;
   }
-  
+
   if (typeof value === 'object') {
     const keys = Object.keys(value);
     if (keys.length === 0) {
       return '{}';
     }
     if (keys.length <= 2) {
-      return `{${keys.map(k => `${k}: ${formatValue(value[k])}`).join(', ')}}`;
+      return `{${keys.map((k) => `${k}: ${formatValue(value[k])}`).join(', ')}}`;
     }
-    return `{${keys.slice(0, 1).map(k => `${k}: ${formatValue(value[k])}`).join(', ')}, ...${keys.length - 1} more}`;
+    return `{${keys
+      .slice(0, 1)
+      .map((k) => `${k}: ${formatValue(value[k])}`)
+      .join(', ')}, ...${keys.length - 1} more}`;
   }
-  
+
   return String(value);
 }

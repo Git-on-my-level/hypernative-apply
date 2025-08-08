@@ -1,0 +1,38 @@
+name: Treasury Wallets
+description: Monitor all treasury and operational wallets
+assets:
+  # Main treasury wallet
+  - chain: ethereum
+    type: Wallet  
+    address: "0x1111111111111111111111111111111111111111"
+    tags: ["treasury", "main"]
+    
+  # Secondary treasury
+  - chain: ethereum
+    type: Wallet
+    address: "0x2222222222222222222222222222222222222222" 
+    tags: ["treasury", "secondary"]
+    
+  # Operations wallet
+  - chain: ethereum
+    type: Wallet
+    address: "0x3333333333333333333333333333333333333333"
+    tags: ["operations", "daily-use"]
+    
+  # Polygon treasury
+  - chain: polygon
+    type: Wallet
+    address: "0x4444444444444444444444444444444444444444"
+    tags: ["treasury", "polygon"]
+    
+alert_config:
+  notification_channels: ["slack-critical", "email-executives"]
+  severity: high
+  conditions:
+    - type: transaction_amount_threshold
+      threshold: 50000  # Alert on transactions >$50k
+      currency: USD
+    - type: balance_change
+      threshold: 10  # Alert on 10%+ balance changes
+      
+enabled: true

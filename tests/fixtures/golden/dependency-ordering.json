@@ -19,9 +19,7 @@
       "change_type": "CREATE",
       "desired_hash": "hash_72",
       "dependencies": [],
-      "dependents": [
-        "watchlist-1"
-      ],
+      "dependents": ["watchlist-1"],
       "risk_level": "low"
     },
     {
@@ -30,10 +28,7 @@
       "change_type": "CREATE",
       "desired_hash": "hash_55",
       "dependencies": [],
-      "dependents": [
-        "watchlist-1",
-        "agent-1"
-      ],
+      "dependents": ["watchlist-1", "agent-1"],
       "risk_level": "low"
     },
     {
@@ -41,9 +36,7 @@
       "name": "agent-1",
       "change_type": "CREATE",
       "desired_hash": "hash_8c",
-      "dependencies": [
-        "channel-2"
-      ],
+      "dependencies": ["channel-2"],
       "dependents": [],
       "risk_level": "low"
     },
@@ -52,10 +45,7 @@
       "name": "watchlist-1",
       "change_type": "CREATE",
       "desired_hash": "hash_85",
-      "dependencies": [
-        "channel-1",
-        "channel-2"
-      ],
+      "dependencies": ["channel-1", "channel-2"],
       "dependents": [],
       "risk_level": "low"
     }

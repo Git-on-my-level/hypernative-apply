@@ -3,18 +3,17 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { writeFileSync, mkdirSync } from 'fs';
+import { writeFileSync } from 'fs';
 import { join } from 'path';
 import { WatchlistProvider } from './watchlist.provider.js';
 import { ApiClient } from '../lib/api-client.js';
-import { MockApiClient, TestFixture } from '../../tests/utils/test-helpers.js';
+import { TestFixture } from '../../tests/utils/test-helpers.js';
 import type { WatchlistConfig } from '../schemas/watchlist.schema.js';
 import type { ApiWatchlist, ApiWatchlistAsset } from '../types/api.js';
 
 describe('WatchlistProvider', () => {
   let provider: WatchlistProvider;
   let mockApiClient: ApiClient;
-  let mockApi: MockApiClient;
 
   beforeEach(() => {
     mockApiClient = {
@@ -23,8 +22,7 @@ describe('WatchlistProvider', () => {
       patch: vi.fn(),
       delete: vi.fn(),
     } as any;
-    
-    mockApi = new MockApiClient();
+
     provider = new WatchlistProvider({ apiClient: mockApiClient, dryRun: false });
   });
 
@@ -132,7 +130,9 @@ describe('WatchlistProvider', () => {
     it('should throw for other API errors', async () => {
       mockApiClient.get = vi.fn().mockRejectedValue(new Error('Server Error'));
 
-      await expect(provider.getById('wl_test_123')).rejects.toThrow('Failed to get watchlist wl_test_123');
+      await expect(provider.getById('wl_test_123')).rejects.toThrow(
+        'Failed to get watchlist wl_test_123'
+      );
     });
   });
 
@@ -164,7 +164,9 @@ describe('WatchlistProvider', () => {
     it('should handle API errors', async () => {
       mockApiClient.post = vi.fn().mockRejectedValue(new Error('Creation failed'));
 
-      await expect(provider.create(mockWatchlistConfig)).rejects.toThrow('Failed to create watchlist');
+      await expect(provider.create(mockWatchlistConfig)).rejects.toThrow(
+        'Failed to create watchlist'
+      );
     });
   });
 
@@ -249,7 +251,9 @@ describe('WatchlistProvider', () => {
     it('should handle API errors', async () => {
       mockApiClient.delete = vi.fn().mockRejectedValue(new Error('Delete failed'));
 
-      await expect(provider.delete('wl_test_123')).rejects.toThrow('Failed to delete watchlist wl_test_123');
+      await expect(provider.delete('wl_test_123')).rejects.toThrow(
+        'Failed to delete watchlist wl_test_123'
+      );
     });
   });
 
@@ -266,7 +270,7 @@ describe('WatchlistProvider', () => {
 0x1234567890123456789012345678901234567890,ethereum,Wallet,Test Wallet,,
 0xA0b86991c431e8c5F2F1b2A4c0b48F8C7,ethereum,Token,USD Coin,USDC,stablecoin
 0x742D35CC6e7E7C59CC51a0C8ff7f4D5b6E6F7F7F,polygon,Protocol,Test Protocol,,defi`;
-      
+
       writeFileSync(csvPath, csvContent);
     });
 
@@ -277,7 +281,7 @@ describe('WatchlistProvider', () => {
         total: 3,
         errors: [],
       };
-      
+
       mockApiClient.post = vi.fn().mockResolvedValue({ data: mockResponse });
 
       const result = await provider.uploadCsv({
@@ -449,7 +453,7 @@ describe('WatchlistProvider', () => {
     it('should handle invalid JSON in CSV parsing', async () => {
       const testDir = TestFixture.createTempDir('csv-invalid');
       const invalidCsvPath = join(testDir, 'invalid.csv');
-      
+
       // Create a file that's not valid CSV
       writeFileSync(invalidCsvPath, 'not,a,valid\ncsv file with invalid content');
 

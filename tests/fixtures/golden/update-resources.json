@@ -6,10 +6,7 @@
     "config_hash": "fcc26baff5d885605e932d300e971f03a69b26ccdf2aa48518447fdef9fac613",
     "content_hash": "d807b0f8154f4f788962cb572f0194c1fcb3001e322659052abe3fc2176adf6d",
     "base_directory": "[NORMALIZED]",
-    "config_files": [
-      "hypernative/notification-channels/*.yaml",
-      "hypernative/watchlists/*.yaml"
-    ]
+    "config_files": ["hypernative/notification-channels/*.yaml", "hypernative/watchlists/*.yaml"]
   },
   "changes": [
     {
@@ -28,9 +25,7 @@
         }
       ],
       "dependencies": [],
-      "dependents": [
-        "main-watchlist"
-      ],
+      "dependents": ["main-watchlist"],
       "risk_level": "low"
     },
     {
@@ -48,9 +43,7 @@
           "change_type": "changed"
         }
       ],
-      "dependencies": [
-        "slack-alerts"
-      ],
+      "dependencies": ["slack-alerts"],
       "dependents": [],
       "risk_level": "low"
     }

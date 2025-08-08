@@ -1,6 +1,6 @@
 /**
  * Notification Channel Provider
- * 
+ *
  * Handles CRUD operations for Hypernative Notification Channels including:
  * - Creating, updating, and deleting notification channels
  * - Environment variable substitution with ${ENV_NAME} syntax
@@ -13,13 +13,11 @@
 import { log } from '../lib/logger.js';
 import { ApiClient } from '../lib/api-client.js';
 import { generateFingerprint } from '../lib/fingerprint.js';
-import { 
-  substituteEnvVars, 
-  redactSecrets, 
+import {
+  redactSecrets,
   createSafeConfigForLogging,
   safeSubstituteEnvVars,
   type EnvSubstitutionOptions,
-  type EnvSubstitutionResult 
 } from '../lib/env-substitution.js';
 import type { NotificationChannelConfig } from '../schemas/notification-channel.schema.js';
 import type {
@@ -27,7 +25,7 @@ import type {
   NotificationChannelCreatePayload,
   NotificationChannelUpdatePayload,
   NotificationChannelTestResponse,
-  NotificationChannelQueryParams
+  NotificationChannelQueryParams,
 } from '../types/api.js';
 
 export interface NotificationChannelProviderOptions {
@@ -67,15 +65,15 @@ export class NotificationChannelProvider {
    */
   async list(params?: NotificationChannelQueryParams): Promise<NotificationChannel[]> {
     log.debug('Fetching notification channels', createSafeConfigForLogging(params, 'query params'));
-    
+
     try {
       const response = await this.apiClient.get('/api/v2/notification-channels', {
         params: {
           limit: params?.limit ?? 100,
           offset: params?.offset ?? 0,
           enabled: params?.enabled,
-          type: params?.type
-        }
+          type: params?.type,
+        },
       });
 
       return response.data || [];
@@ -90,7 +88,7 @@ export class NotificationChannelProvider {
    */
   async getById(id: string): Promise<NotificationChannel | null> {
     log.debug(`Fetching notification channel: ${id}`);
-    
+
     try {
       const response = await this.apiClient.get(`/api/v2/notification-channels/${id}`);
       return response.data;
@@ -106,21 +104,27 @@ export class NotificationChannelProvider {
   /**
    * Test a notification channel
    */
-  async test(id: string, options: TestChannelOptions = {}): Promise<NotificationChannelTestResponse> {
-    log.debug(`Testing notification channel: ${id}`, createSafeConfigForLogging(options, 'test options'));
+  async test(
+    id: string,
+    options: TestChannelOptions = {}
+  ): Promise<NotificationChannelTestResponse> {
+    log.debug(
+      `Testing notification channel: ${id}`,
+      createSafeConfigForLogging(options, 'test options')
+    );
 
     if (this.dryRun) {
       log.info(`[DRY RUN] Would test notification channel: ${id}`);
       return {
         success: true,
         message: 'DRY RUN: Test would have been sent',
-        delivered_at: new Date().toISOString()
+        delivered_at: new Date().toISOString(),
       };
     }
 
     try {
       const payload: Record<string, any> = {};
-      
+
       if (options.testMessage) {
         payload.message = options.testMessage;
       }
@@ -129,13 +133,13 @@ export class NotificationChannelProvider {
         `/api/v2/notification-channels/${id}/test`,
         payload,
         {
-          timeout: (options.timeout || 30) * 1000 // Convert to milliseconds
+          timeout: (options.timeout || 30) * 1000, // Convert to milliseconds
         }
       );
 
       log.info(`Notification channel test completed: ${id}`, {
         success: response.data.success,
-        message: response.data.message
+        message: response.data.message,
       });
 
       return response.data;
@@ -148,14 +152,17 @@ export class NotificationChannelProvider {
   /**
    * Create a new notification channel
    */
-  async create(config: NotificationChannelConfig, options: TestChannelOptions = {}): Promise<NotificationChannel> {
+  async create(
+    config: NotificationChannelConfig,
+    options: TestChannelOptions = {}
+  ): Promise<NotificationChannel> {
     const payload = await this.buildCreatePayload(config);
-    
+
     log.debug('Creating notification channel:', {
       name: payload.name,
       type: payload.type,
       enabled: payload.enabled,
-      safeConfig: createSafeConfigForLogging(payload.configuration, 'channel configuration')
+      safeConfig: createSafeConfigForLogging(payload.configuration, 'channel configuration'),
     });
 
     if (this.dryRun) {
@@ -166,7 +173,7 @@ export class NotificationChannelProvider {
     try {
       const response = await this.apiClient.post('/api/v2/notification-channels', payload);
       const createdChannel = response.data;
-      
+
       log.info(`Created notification channel: ${createdChannel.name} (${createdChannel.id})`);
 
       // Test the channel if validation is requested
@@ -174,7 +181,7 @@ export class NotificationChannelProvider {
         try {
           const testResult = await this.test(createdChannel.id, options);
           log.info(`Channel validation completed: ${testResult.success ? 'PASSED' : 'FAILED'}`);
-          
+
           if (!testResult.success) {
             log.warn(`Channel test failed: ${testResult.message}`);
           }
@@ -195,17 +202,17 @@ export class NotificationChannelProvider {
    * Update an existing notification channel
    */
   async update(
-    id: string, 
-    config: NotificationChannelConfig, 
+    id: string,
+    config: NotificationChannelConfig,
     currentRemoteState?: NotificationChannel,
     options: TestChannelOptions = {}
   ): Promise<NotificationChannel> {
     const payload = await this.buildUpdatePayload(config);
-    
+
     log.debug(`Updating notification channel: ${id}`, {
       name: payload.name,
       enabled: payload.enabled,
-      safeConfig: createSafeConfigForLogging(payload.configuration, 'channel configuration')
+      safeConfig: createSafeConfigForLogging(payload.configuration, 'channel configuration'),
     });
 
     if (this.dryRun) {
@@ -216,7 +223,7 @@ export class NotificationChannelProvider {
     try {
       const response = await this.apiClient.patch(`/api/v2/notification-channels/${id}`, payload);
       const updatedChannel = response.data;
-      
+
       log.info(`Updated notification channel: ${updatedChannel.name} (${id})`);
 
       // Test the channel if validation is requested and it's enabled
@@ -224,7 +231,7 @@ export class NotificationChannelProvider {
         try {
           const testResult = await this.test(id, options);
           log.info(`Channel validation completed: ${testResult.success ? 'PASSED' : 'FAILED'}`);
-          
+
           if (!testResult.success) {
             log.warn(`Channel test failed: ${testResult.message}`);
           }
@@ -301,19 +308,23 @@ export class NotificationChannelProvider {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
   /**
    * Build create payload from notification channel config
    */
-  private async buildCreatePayload(config: NotificationChannelConfig): Promise<NotificationChannelCreatePayload> {
+  private async buildCreatePayload(
+    config: NotificationChannelConfig
+  ): Promise<NotificationChannelCreatePayload> {
     // Perform environment variable substitution
     const envResult = safeSubstituteEnvVars(config.configuration, this.envOptions);
-    
-    if (envResult.missingVars.length > 0 && (this.envOptions.strict !== false)) {
-      throw new Error(`Missing required environment variables: ${envResult.missingVars.join(', ')}`);
+
+    if (envResult.missingVars.length > 0 && this.envOptions.strict !== false) {
+      throw new Error(
+        `Missing required environment variables: ${envResult.missingVars.join(', ')}`
+      );
     }
 
     return {
@@ -322,19 +333,23 @@ export class NotificationChannelProvider {
       description: config.description,
       enabled: config.enabled ?? true,
       configuration: envResult.substituted,
-      tags: config.tags
+      tags: config.tags,
     };
   }
 
   /**
    * Build update payload from notification channel config
    */
-  private async buildUpdatePayload(config: NotificationChannelConfig): Promise<NotificationChannelUpdatePayload> {
+  private async buildUpdatePayload(
+    config: NotificationChannelConfig
+  ): Promise<NotificationChannelUpdatePayload> {
     // Perform environment variable substitution
     const envResult = safeSubstituteEnvVars(config.configuration, this.envOptions);
-    
-    if (envResult.missingVars.length > 0 && (this.envOptions.strict !== false)) {
-      throw new Error(`Missing required environment variables: ${envResult.missingVars.join(', ')}`);
+
+    if (envResult.missingVars.length > 0 && this.envOptions.strict !== false) {
+      throw new Error(
+        `Missing required environment variables: ${envResult.missingVars.join(', ')}`
+      );
     }
 
     return {
@@ -342,101 +357,143 @@ export class NotificationChannelProvider {
       description: config.description,
       enabled: config.enabled,
       configuration: envResult.substituted,
-      tags: config.tags
+      tags: config.tags,
     };
   }
 
   /**
    * Type-specific configuration validations
    */
-  private validateWebhookConfig(config: NotificationChannelConfig, errors: string[], warnings: string[]): void {
+  private validateWebhookConfig(
+    config: NotificationChannelConfig,
+    errors: string[],
+    warnings: string[]
+  ): void {
     const cfg = config.configuration as any;
-    
+
     if (!cfg.url) {
       errors.push("Webhook requires 'url' field");
     } else if (typeof cfg.url === 'string' && !cfg.url.match(/^https?:\/\/.+/)) {
-      errors.push("Webhook URL must be a valid HTTP/HTTPS URL");
+      errors.push('Webhook URL must be a valid HTTP/HTTPS URL');
     }
 
     if (cfg.method && !['GET', 'POST', 'PUT', 'PATCH'].includes(cfg.method)) {
-      errors.push("Invalid webhook method. Must be one of: GET, POST, PUT, PATCH");
+      errors.push('Invalid webhook method. Must be one of: GET, POST, PUT, PATCH');
     }
 
     if (cfg.timeout && (typeof cfg.timeout !== 'number' || cfg.timeout < 1 || cfg.timeout > 300)) {
-      warnings.push("Webhook timeout should be between 1 and 300 seconds");
+      warnings.push('Webhook timeout should be between 1 and 300 seconds');
     }
   }
 
-  private validateSlackConfig(config: NotificationChannelConfig, errors: string[], warnings: string[]): void {
+  private validateSlackConfig(
+    config: NotificationChannelConfig,
+    errors: string[],
+    warnings: string[]
+  ): void {
     const cfg = config.configuration as any;
-    
+
     if (!cfg.webhook_url) {
       errors.push("Slack channel requires 'webhook_url' field");
-    } else if (typeof cfg.webhook_url === 'string' && !cfg.webhook_url.includes('hooks.slack.com')) {
-      warnings.push("Slack webhook URL should be from hooks.slack.com");
+    } else if (
+      typeof cfg.webhook_url === 'string' &&
+      !cfg.webhook_url.includes('hooks.slack.com')
+    ) {
+      warnings.push('Slack webhook URL should be from hooks.slack.com');
     }
 
     if (cfg.icon_url && typeof cfg.icon_url === 'string' && !cfg.icon_url.match(/^https?:\/\/.+/)) {
-      warnings.push("Slack icon_url should be a valid URL");
+      warnings.push('Slack icon_url should be a valid URL');
     }
   }
 
-  private validateEmailConfig(config: NotificationChannelConfig, errors: string[], warnings: string[]): void {
+  private validateEmailConfig(
+    config: NotificationChannelConfig,
+    errors: string[],
+    _warnings: string[]
+  ): void {
     const cfg = config.configuration as any;
-    
+
     if (!cfg.smtp) {
       errors.push("Email channel requires 'smtp' configuration");
       return;
     }
 
     if (!cfg.smtp.host) {
-      errors.push("Email SMTP host is required");
+      errors.push('Email SMTP host is required');
     }
 
     if (!cfg.smtp.auth || !cfg.smtp.auth.user || !cfg.smtp.auth.pass) {
-      errors.push("Email SMTP authentication (user and pass) is required");
+      errors.push('Email SMTP authentication (user and pass) is required');
     }
 
-    if (!cfg.recipients || !cfg.recipients.to || !Array.isArray(cfg.recipients.to) || cfg.recipients.to.length === 0) {
+    if (
+      !cfg.recipients ||
+      !cfg.recipients.to ||
+      !Array.isArray(cfg.recipients.to) ||
+      cfg.recipients.to.length === 0
+    ) {
       errors.push("Email recipients 'to' field is required and must be a non-empty array");
     }
   }
 
-  private validateDiscordConfig(config: NotificationChannelConfig, errors: string[], warnings: string[]): void {
+  private validateDiscordConfig(
+    config: NotificationChannelConfig,
+    errors: string[],
+    warnings: string[]
+  ): void {
     const cfg = config.configuration as any;
-    
+
     if (!cfg.webhook_url) {
       errors.push("Discord channel requires 'webhook_url' field");
-    } else if (typeof cfg.webhook_url === 'string' && !cfg.webhook_url.includes('discord.com/api/webhooks')) {
-      warnings.push("Discord webhook URL should be from discord.com/api/webhooks");
+    } else if (
+      typeof cfg.webhook_url === 'string' &&
+      !cfg.webhook_url.includes('discord.com/api/webhooks')
+    ) {
+      warnings.push('Discord webhook URL should be from discord.com/api/webhooks');
     }
   }
 
-  private validatePagerDutyConfig(config: NotificationChannelConfig, errors: string[], warnings: string[]): void {
+  private validatePagerDutyConfig(
+    config: NotificationChannelConfig,
+    errors: string[],
+    _warnings: string[]
+  ): void {
     const cfg = config.configuration as any;
-    
+
     if (!cfg.integration_key) {
       errors.push("PagerDuty channel requires 'integration_key' field");
     }
 
     if (cfg.event_action && !['trigger', 'acknowledge', 'resolve'].includes(cfg.event_action)) {
-      errors.push("PagerDuty event_action must be one of: trigger, acknowledge, resolve");
+      errors.push('PagerDuty event_action must be one of: trigger, acknowledge, resolve');
     }
   }
 
-  private validateMSTeamsConfig(config: NotificationChannelConfig, errors: string[], warnings: string[]): void {
+  private validateMSTeamsConfig(
+    config: NotificationChannelConfig,
+    errors: string[],
+    warnings: string[]
+  ): void {
     const cfg = config.configuration as any;
-    
+
     if (!cfg.webhook_url) {
       errors.push("Microsoft Teams channel requires 'webhook_url' field");
-    } else if (typeof cfg.webhook_url === 'string' && !cfg.webhook_url.includes('webhook.office.com')) {
-      warnings.push("Microsoft Teams webhook URL should be from webhook.office.com");
+    } else if (
+      typeof cfg.webhook_url === 'string' &&
+      !cfg.webhook_url.includes('webhook.office.com')
+    ) {
+      warnings.push('Microsoft Teams webhook URL should be from webhook.office.com');
     }
   }
 
-  private validateTelegramConfig(config: NotificationChannelConfig, errors: string[], warnings: string[]): void {
+  private validateTelegramConfig(
+    config: NotificationChannelConfig,
+    errors: string[],
+    warnings: string[]
+  ): void {
     const cfg = config.configuration as any;
-    
+
     if (!cfg.bot_token) {
       errors.push("Telegram channel requires 'bot_token' field");
     }
@@ -446,14 +503,18 @@ export class NotificationChannelProvider {
     }
 
     if (cfg.parse_mode && !['MarkdownV2', 'HTML', 'Markdown'].includes(cfg.parse_mode)) {
-      warnings.push("Telegram parse_mode should be one of: MarkdownV2, HTML, Markdown");
+      warnings.push('Telegram parse_mode should be one of: MarkdownV2, HTML, Markdown');
     }
   }
 
-  private validateCommonConfig(config: NotificationChannelConfig, errors: string[], warnings: string[]): void {
+  private validateCommonConfig(
+    config: NotificationChannelConfig,
+    errors: string[],
+    warnings: string[]
+  ): void {
     // Common validation that applies to all channel types
     if (!config.configuration || Object.keys(config.configuration).length === 0) {
-      warnings.push("Channel configuration is empty - this may not work as expected");
+      warnings.push('Channel configuration is empty - this may not work as expected');
     }
 
     // Check for environment variable references
@@ -470,17 +531,19 @@ export class NotificationChannelProvider {
   /**
    * Create a mock notification channel for dry-run mode
    */
-  private createMockChannel(payload: NotificationChannelCreatePayload | NotificationChannelUpdatePayload): NotificationChannel {
+  private createMockChannel(
+    payload: NotificationChannelCreatePayload | NotificationChannelUpdatePayload
+  ): NotificationChannel {
     return {
       id: `mock_${Date.now()}`,
       name: payload.name || 'Mock Channel',
-      type: 'type' in payload ? payload.type : 'webhook' as const,
+      type: 'type' in payload ? payload.type : ('webhook' as const),
       description: payload.description,
       enabled: payload.enabled ?? true,
       configuration: redactSecrets(payload.configuration || {}),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      tags: payload.tags
+      tags: payload.tags,
     };
   }
 
@@ -496,7 +559,10 @@ export class NotificationChannelProvider {
   /**
    * Check if two notification channel configurations are equivalent
    */
-  static isConfigEqual(config1: NotificationChannelConfig, config2: NotificationChannelConfig): boolean {
+  static isConfigEqual(
+    config1: NotificationChannelConfig,
+    config2: NotificationChannelConfig
+  ): boolean {
     return this.generateConfigHash(config1) === this.generateConfigHash(config2);
   }
 }
@@ -505,13 +571,13 @@ export class NotificationChannelProvider {
  * Convenience function to create a notification channel provider
  */
 export function createNotificationChannelProvider(
-  apiClient: ApiClient, 
+  apiClient: ApiClient,
   dryRun?: boolean,
   envOptions?: EnvSubstitutionOptions
 ): NotificationChannelProvider {
-  return new NotificationChannelProvider({ 
-    apiClient, 
+  return new NotificationChannelProvider({
+    apiClient,
     dryRun,
-    envSubstitutionOptions: envOptions 
+    envSubstitutionOptions: envOptions,
   });
 }

@@ -74,7 +74,7 @@ export class PaginationHelper {
     // Fetch first page to get total count and determine pagination strategy
     const firstPageParams = { ...params, limit: pageSize, offset };
     const firstPage = await this.fetchPage<T>(endpoint, firstPageParams);
-    
+
     allItems.push(...firstPage.items);
     pagesFetched++;
     totalItems = firstPage.pagination.total;
@@ -101,9 +101,9 @@ export class PaginationHelper {
     }
 
     if (maxItems > 0 && allItems.length >= maxItems) {
-      log.debug('Max items reached after first page', { 
-        fetched: allItems.length, 
-        maxItems 
+      log.debug('Max items reached after first page', {
+        fetched: allItems.length,
+        maxItems,
       });
       return {
         items: allItems.slice(0, maxItems),
@@ -116,18 +116,14 @@ export class PaginationHelper {
 
     // Continue fetching remaining pages
     if (hasMore) {
-      const remainingPages = await this.fetchRemainingPages<T>(
-        endpoint,
-        params,
-        {
-          currentOffset: offset,
-          pageSize,
-          maxItems,
-          maxConcurrency,
-          shouldStop,
-          currentItems: allItems,
-        }
-      );
+      const remainingPages = await this.fetchRemainingPages<T>(endpoint, params, {
+        currentOffset: offset,
+        pageSize,
+        maxItems,
+        maxConcurrency,
+        shouldStop,
+        currentItems: allItems,
+      });
 
       allItems.push(...remainingPages.items);
       pagesFetched += remainingPages.pagesFetched;
@@ -157,13 +153,10 @@ export class PaginationHelper {
   /**
    * Fetch a specific page from a paginated endpoint
    */
-  async fetchPage<T>(
-    endpoint: string,
-    params: ListQueryParams
-  ): Promise<PaginatedResponse<T>> {
+  async fetchPage<T>(endpoint: string, params: ListQueryParams): Promise<PaginatedResponse<T>> {
     try {
       const response = await this.apiClient.get<PaginatedResponse<T>>(endpoint, params);
-      
+
       // Validate response structure
       if (!response || !Array.isArray(response.items) || !response.pagination) {
         throw new Error('Invalid paginated response format');
@@ -206,7 +199,10 @@ export class PaginationHelper {
     let hasMore = true;
     let truncated = false;
 
-    const activeFetches = new Map<number, Promise<{ items: T[]; pagination: PaginationMeta; pageOffset: number }>>();
+    const activeFetches = new Map<
+      number,
+      Promise<{ items: T[]; pagination: PaginationMeta; pageOffset: number }>
+    >();
 
     while (hasMore && !truncated) {
       // Wait for available slot if at max concurrency
@@ -217,13 +213,16 @@ export class PaginationHelper {
 
       // Check stopping conditions before starting new fetch
       const currentTotal = options.currentItems.length + allItems.length;
-      
+
       if (options.maxItems > 0 && currentTotal >= options.maxItems) {
         truncated = true;
         break;
       }
 
-      if (options.shouldStop && options.shouldStop([...options.currentItems, ...allItems], currentTotal)) {
+      if (
+        options.shouldStop &&
+        options.shouldStop([...options.currentItems, ...allItems], currentTotal)
+      ) {
         truncated = true;
         break;
       }
@@ -232,45 +231,52 @@ export class PaginationHelper {
       const pageParams = { ...baseParams, limit: options.pageSize, offset };
       const currentOffset = offset;
       const fetchPromise = this.fetchPageAsync<T>(endpoint, pageParams, currentOffset);
-      
+
       activeFetches.set(currentOffset, fetchPromise);
 
       // Process completed fetch
-      fetchPromise.then(({ items, pagination, pageOffset }) => {
-        // Insert items in correct position based on offset
-        const insertIndex = (pageOffset - options.currentOffset) / options.pageSize;
-        const startIndex = insertIndex * options.pageSize;
-        
-        // Ensure array is large enough
-        while (allItems.length < startIndex + items.length) {
-          allItems.push({} as T); // Placeholder
-        }
-        
-        // Insert items at correct position
-        for (let i = 0; i < items.length; i++) {
-          allItems[startIndex + i] = items[i];
-        }
+      fetchPromise
+        .then(({ items, pagination, pageOffset }) => {
+          // Insert items in correct position based on offset
+          const insertIndex = (pageOffset - options.currentOffset) / options.pageSize;
+          const startIndex = insertIndex * options.pageSize;
 
-        hasMore = pagination.has_more;
-        pagesFetched++;
+          // Ensure array is large enough
+          while (allItems.length < startIndex + items.length) {
+            allItems.push({} as T); // Placeholder
+          }
 
-        log.debug('Page fetched', {
-          pageOffset,
-          itemsOnPage: items.length,
-          totalItemsSoFar: allItems.filter(item => item !== null && item !== undefined && (typeof item !== 'object' || Object.keys(item as object).length > 0)).length,
-          hasMore,
-          pagesFetched,
+          // Insert items at correct position
+          for (let i = 0; i < items.length; i++) {
+            allItems[startIndex + i] = items[i];
+          }
+
+          hasMore = pagination.has_more;
+          pagesFetched++;
+
+          log.debug('Page fetched', {
+            pageOffset,
+            itemsOnPage: items.length,
+            totalItemsSoFar: allItems.filter(
+              (item) =>
+                item !== null &&
+                item !== undefined &&
+                (typeof item !== 'object' || Object.keys(item as object).length > 0)
+            ).length,
+            hasMore,
+            pagesFetched,
+          });
+
+          activeFetches.delete(pageOffset);
+        })
+        .catch((error) => {
+          log.error('Page fetch failed', {
+            offset: currentOffset,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          activeFetches.delete(currentOffset);
+          throw error;
         });
-
-        activeFetches.delete(pageOffset);
-      }).catch((error) => {
-        log.error('Page fetch failed', {
-          offset: currentOffset,
-          error: error instanceof Error ? error.message : String(error),
-        });
-        activeFetches.delete(currentOffset);
-        throw error;
-      });
 
       offset += options.pageSize;
     }
@@ -279,8 +285,12 @@ export class PaginationHelper {
     await Promise.all(Array.from(activeFetches.values()));
 
     // Filter out any placeholder objects
-    const validItems = allItems.filter(item => {
-      return item !== null && item !== undefined && (typeof item !== 'object' || Object.keys(item as object).length > 0);
+    const validItems = allItems.filter((item) => {
+      return (
+        item !== null &&
+        item !== undefined &&
+        (typeof item !== 'object' || Object.keys(item as object).length > 0)
+      );
     });
 
     return {
@@ -348,7 +358,7 @@ export async function fetchAllPagesWithProgress<T>(
   options: PaginationOptions = {}
 ): Promise<T[]> {
   const helper = new PaginationHelper(apiClient);
-  
+
   // Wrap the shouldStop callback to include progress reporting
   const originalShouldStop = options.shouldStop;
   const enhancedOptions: PaginationOptions = {
@@ -358,21 +368,25 @@ export async function fetchAllPagesWithProgress<T>(
       if (onProgress) {
         // We don't know total yet, so estimate based on first page
         const estimatedTotal = items.length > 0 ? totalFetched : 0;
-        onProgress(totalFetched, estimatedTotal, Math.ceil(totalFetched / (options.pageSize || 100)));
+        onProgress(
+          totalFetched,
+          estimatedTotal,
+          Math.ceil(totalFetched / (options.pageSize || 100))
+        );
       }
-      
+
       // Call original callback if provided
       return originalShouldStop ? originalShouldStop(items, totalFetched) : false;
     },
   };
-  
+
   const result = await helper.fetchAll<T>(endpoint, params, enhancedOptions);
-  
+
   // Final progress report
   if (onProgress) {
     onProgress(result.items.length, result.totalItems, result.pagesFetched);
   }
-  
+
   return result.items;
 }
 
@@ -397,11 +411,11 @@ export async function* iterateAllPages<T>(
   while (hasMore) {
     const pageParams = { ...params, limit: pageSize, offset };
     const page = await helper.fetchPage<T>(endpoint, pageParams);
-    
+
     for (const item of page.items) {
       yield item;
     }
-    
+
     hasMore = page.pagination.has_more;
     offset += page.items.length;
   }

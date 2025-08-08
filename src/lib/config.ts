@@ -103,7 +103,9 @@ function loadEnvironmentConfig(): EnvironmentConfig {
     return EnvironmentConfigSchema.parse(envConfig);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new Error(`Invalid environment configuration: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+      throw new Error(
+        `Invalid environment configuration: ${error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ')}`
+      );
     }
     throw error;
   }
@@ -126,40 +128,51 @@ function loadProfileConfig(): ConfigFile | null {
     return config;
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new Error(`Invalid profile configuration file: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+      throw new Error(
+        `Invalid profile configuration file: ${error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ')}`
+      );
     }
-    throw new Error(`Failed to load profile configuration: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to load profile configuration: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 
 /**
  * Resolves the active profile name based on precedence
  */
-function resolveProfileName(flags: CommandFlags, envConfig: EnvironmentConfig, profileConfig: ConfigFile | null): string {
+function resolveProfileName(
+  flags: CommandFlags,
+  envConfig: EnvironmentConfig,
+  profileConfig: ConfigFile | null
+): string {
   // Precedence: flags > env > profile file > default
   if (flags.profile) {
     return flags.profile;
   }
-  
+
   if (envConfig.HN_PROFILE) {
     return envConfig.HN_PROFILE;
   }
-  
+
   if (profileConfig?.defaultProfile) {
     return profileConfig.defaultProfile;
   }
-  
+
   return DEFAULT_CONFIG.profile;
 }
 
 /**
  * Gets profile configuration by name
  */
-function getProfileByName(profileName: string, profileConfig: ConfigFile | null): ProfileConfig | null {
+function getProfileByName(
+  profileName: string,
+  profileConfig: ConfigFile | null
+): ProfileConfig | null {
   if (!profileConfig?.profiles) {
     return null;
   }
-  
+
   return profileConfig.profiles[profileName] || null;
 }
 
@@ -185,9 +198,12 @@ export async function loadConfig(flags: CommandFlags = {}): Promise<ResolvedConf
 
     // Step 6: Resolve configuration with precedence (flags > env > profile > defaults)
     const resolvedConfig = {
-      clientId: flags.baseUrl ? '' : (envConfig.HN_CLIENT_ID || profileData?.clientId || ''),
-      clientSecret: flags.baseUrl ? '' : (envConfig.HN_CLIENT_SECRET || profileData?.clientSecret || ''),
-      baseUrl: flags.baseUrl || envConfig.HN_BASE_URL || profileData?.baseUrl || DEFAULT_CONFIG.baseUrl,
+      clientId: flags.baseUrl ? '' : envConfig.HN_CLIENT_ID || profileData?.clientId || '',
+      clientSecret: flags.baseUrl
+        ? ''
+        : envConfig.HN_CLIENT_SECRET || profileData?.clientSecret || '',
+      baseUrl:
+        flags.baseUrl || envConfig.HN_BASE_URL || profileData?.baseUrl || DEFAULT_CONFIG.baseUrl,
       profile: activeProfileName,
     };
 
@@ -196,17 +212,16 @@ export async function loadConfig(flags: CommandFlags = {}): Promise<ResolvedConf
       const missingFields = [];
       if (!resolvedConfig.clientId) missingFields.push('client ID');
       if (!resolvedConfig.clientSecret) missingFields.push('client secret');
-      
+
       throw new Error(
         `Missing required configuration: ${missingFields.join(' and ')}. ` +
-        'Please set HN_CLIENT_ID and HN_CLIENT_SECRET environment variables, ' +
-        'configure them in ~/.hypernative/config.yaml, or use --base-url for custom endpoints.'
+          'Please set HN_CLIENT_ID and HN_CLIENT_SECRET environment variables, ' +
+          'configure them in ~/.hypernative/config.yaml, or use --base-url for custom endpoints.'
       );
     }
 
     log.debug('Configuration resolved successfully', redactSensitive(resolvedConfig));
     return resolvedConfig;
-
   } catch (error) {
     if (error instanceof Error) {
       throw error; // Re-throw with original message
@@ -228,9 +243,12 @@ export async function getConfigDebugInfo(flags: CommandFlags = {}): Promise<Conf
     const profileData = getProfileByName(activeProfileName, profileConfig);
 
     const config = {
-      clientId: flags.baseUrl ? '' : (envConfig.HN_CLIENT_ID || profileData?.clientId || ''),
-      clientSecret: flags.baseUrl ? '' : (envConfig.HN_CLIENT_SECRET || profileData?.clientSecret || ''),
-      baseUrl: flags.baseUrl || envConfig.HN_BASE_URL || profileData?.baseUrl || DEFAULT_CONFIG.baseUrl,
+      clientId: flags.baseUrl ? '' : envConfig.HN_CLIENT_ID || profileData?.clientId || '',
+      clientSecret: flags.baseUrl
+        ? ''
+        : envConfig.HN_CLIENT_SECRET || profileData?.clientSecret || '',
+      baseUrl:
+        flags.baseUrl || envConfig.HN_BASE_URL || profileData?.baseUrl || DEFAULT_CONFIG.baseUrl,
       profile: activeProfileName,
     };
 
@@ -243,11 +261,18 @@ export async function getConfigDebugInfo(flags: CommandFlags = {}): Promise<Conf
         profileFile: existsSync(CONFIG_FILE_PATH) ? CONFIG_FILE_PATH : undefined,
         envFile: existsSync(ENV_FILE_PATH) ? ENV_FILE_PATH : undefined,
         flags: !!(flags.profile || flags.baseUrl),
-        environment: !!(envConfig.HN_CLIENT_ID || envConfig.HN_CLIENT_SECRET || envConfig.HN_BASE_URL || envConfig.HN_PROFILE),
+        environment: !!(
+          envConfig.HN_CLIENT_ID ||
+          envConfig.HN_CLIENT_SECRET ||
+          envConfig.HN_BASE_URL ||
+          envConfig.HN_PROFILE
+        ),
       },
     };
   } catch (error) {
-    throw new Error(`Failed to get debug info: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to get debug info: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 

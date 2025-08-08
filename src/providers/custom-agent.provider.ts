@@ -1,6 +1,6 @@
 /**
  * Custom Agent Provider
- * 
+ *
  * Handles CRUD operations for Hypernative Custom Agents including:
  * - Creating, updating, and deleting custom agents
  * - Configuration validation by type where feasible
@@ -20,7 +20,7 @@ import type {
   CustomAgentCreatePayload,
   CustomAgentUpdatePayload,
   CustomAgentStatusResponse,
-  CustomAgentQueryParams
+  CustomAgentQueryParams,
 } from '../types/api.js';
 
 export interface CustomAgentProviderOptions {
@@ -51,15 +51,15 @@ export class CustomAgentProvider {
    */
   async list(params?: CustomAgentQueryParams): Promise<CustomAgent[]> {
     log.debug('Fetching custom agents', params);
-    
+
     try {
       const response = await this.apiClient.get('/api/v2/custom-agents', {
         params: {
           limit: params?.limit ?? 100,
           offset: params?.offset ?? 0,
           enabled: params?.enabled,
-          type: params?.type
-        }
+          type: params?.type,
+        },
       });
 
       return response.data || [];
@@ -74,7 +74,7 @@ export class CustomAgentProvider {
    */
   async getById(id: string): Promise<CustomAgent | null> {
     log.debug(`Fetching custom agent: ${id}`);
-    
+
     try {
       const response = await this.apiClient.get(`/api/v2/custom-agents/${id}`);
       return response.data;
@@ -92,7 +92,7 @@ export class CustomAgentProvider {
    */
   async getStatus(id: string): Promise<CustomAgentStatusResponse | null> {
     log.debug(`Fetching custom agent status: ${id}`);
-    
+
     try {
       const response = await this.apiClient.get(`/api/v2/custom-agents/${id}/status`);
       return response.data;
@@ -110,10 +110,10 @@ export class CustomAgentProvider {
    */
   async create(config: CustomAgentConfig): Promise<CustomAgent> {
     const payload = await this.buildCreatePayload(config);
-    log.debug('Creating custom agent:', { 
-      name: payload.name, 
+    log.debug('Creating custom agent:', {
+      name: payload.name,
       type: payload.type,
-      channels: payload.notification_channels?.length || 0
+      channels: payload.notification_channels?.length || 0,
     });
 
     if (this.dryRun) {
@@ -135,12 +135,16 @@ export class CustomAgentProvider {
    * Update an existing custom agent
    * NOTE: If the type changes, this will be treated as a REPLACE operation in the planner
    */
-  async update(id: string, config: CustomAgentConfig, currentRemoteState?: CustomAgent): Promise<CustomAgent> {
+  async update(
+    id: string,
+    config: CustomAgentConfig,
+    currentRemoteState?: CustomAgent
+  ): Promise<CustomAgent> {
     const payload = await this.buildUpdatePayload(config);
-    log.debug(`Updating custom agent: ${id}`, { 
+    log.debug(`Updating custom agent: ${id}`, {
       name: payload.name,
       type: config.type,
-      channels: payload.notification_channels?.length || 0
+      channels: payload.notification_channels?.length || 0,
     });
 
     if (this.dryRun) {
@@ -163,9 +167,9 @@ export class CustomAgentProvider {
    * This deletes the old agent and creates a new one
    */
   async replace(id: string, config: CustomAgentConfig): Promise<CustomAgent> {
-    log.debug(`Replacing custom agent: ${id}`, { 
-      name: config.name, 
-      type: config.type 
+    log.debug(`Replacing custom agent: ${id}`, {
+      name: config.name,
+      type: config.type,
     });
 
     if (this.dryRun) {
@@ -177,7 +181,7 @@ export class CustomAgentProvider {
     try {
       // First delete the existing agent
       await this.delete(id);
-      
+
       // Then create a new one
       const newAgent = await this.create(config);
       log.info(`Replaced custom agent: ${newAgent.name} (${id} -> ${newAgent.id})`);
@@ -238,7 +242,7 @@ export class CustomAgentProvider {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -265,7 +269,7 @@ export class CustomAgentProvider {
       severity: config.severity ?? 'medium',
       chain: config.chain,
       configuration: config.configuration || {},
-      notification_channels: resolvedChannels
+      notification_channels: resolvedChannels,
     };
   }
 
@@ -290,16 +294,20 @@ export class CustomAgentProvider {
       enabled: config.enabled,
       severity: config.severity,
       configuration: config.configuration,
-      notification_channels: resolvedChannels
+      notification_channels: resolvedChannels,
     };
   }
 
   /**
    * Type-specific configuration validations
    */
-  private validateBalanceChangeConfig(config: CustomAgentConfig, errors: string[], warnings: string[]): void {
+  private validateBalanceChangeConfig(
+    config: CustomAgentConfig,
+    errors: string[],
+    warnings: string[]
+  ): void {
     const cfg = config.configuration || {};
-    
+
     if (!cfg.addresses || !Array.isArray(cfg.addresses) || cfg.addresses.length === 0) {
       errors.push("Balance change monitor requires 'addresses' array");
     }
@@ -308,51 +316,74 @@ export class CustomAgentProvider {
       errors.push("'threshold_value' must be a number");
     }
 
-    if (cfg.time_window && !['1m', '5m', '15m', '30m', '1h', '2h', '6h', '12h', '24h'].includes(cfg.time_window)) {
+    if (
+      cfg.time_window &&
+      !['1m', '5m', '15m', '30m', '1h', '2h', '6h', '12h', '24h'].includes(cfg.time_window)
+    ) {
       warnings.push(`Unknown time_window '${cfg.time_window}', using default`);
     }
   }
 
-  private validateHealthDeviationConfig(config: CustomAgentConfig, errors: string[], warnings: string[]): void {
+  private validateHealthDeviationConfig(
+    config: CustomAgentConfig,
+    errors: string[],
+    _warnings: string[]
+  ): void {
     const cfg = config.configuration || {};
-    
+
     if (!cfg.protocol) {
       errors.push("Health deviation monitor requires 'protocol' field");
     }
 
-    if (cfg.health_factor_threshold !== undefined && 
-        (typeof cfg.health_factor_threshold !== 'number' || cfg.health_factor_threshold <= 0)) {
+    if (
+      cfg.health_factor_threshold !== undefined &&
+      (typeof cfg.health_factor_threshold !== 'number' || cfg.health_factor_threshold <= 0)
+    ) {
       errors.push("'health_factor_threshold' must be a positive number");
     }
   }
 
-  private validateTransactionConfig(config: CustomAgentConfig, errors: string[], warnings: string[]): void {
+  private validateTransactionConfig(
+    config: CustomAgentConfig,
+    errors: string[],
+    _warnings: string[]
+  ): void {
     const cfg = config.configuration || {};
-    
+
     if (cfg.value_threshold_usd !== undefined && typeof cfg.value_threshold_usd !== 'number') {
       errors.push("'value_threshold_usd' must be a number");
     }
   }
 
-  private validateGovernanceConfig(config: CustomAgentConfig, errors: string[], warnings: string[]): void {
+  private validateGovernanceConfig(
+    config: CustomAgentConfig,
+    errors: string[],
+    _warnings: string[]
+  ): void {
     const cfg = config.configuration || {};
-    
+
     if (!cfg.governance_contract) {
       errors.push("Governance monitor requires 'governance_contract' address");
     }
   }
 
-  private validateCommonConfig(config: CustomAgentConfig, errors: string[], warnings: string[]): void {
+  private validateCommonConfig(
+    config: CustomAgentConfig,
+    errors: string[],
+    warnings: string[]
+  ): void {
     // Common validation that applies to all agent types
     if (!config.configuration || Object.keys(config.configuration).length === 0) {
-      warnings.push("Agent configuration is empty - this may not work as expected");
+      warnings.push('Agent configuration is empty - this may not work as expected');
     }
   }
 
   /**
    * Create a mock custom agent for dry-run mode
    */
-  private createMockAgent(payload: CustomAgentCreatePayload | CustomAgentUpdatePayload): CustomAgent {
+  private createMockAgent(
+    payload: CustomAgentCreatePayload | CustomAgentUpdatePayload
+  ): CustomAgent {
     return {
       id: `mock_${Date.now()}`,
       name: payload.name || 'Mock Agent',
@@ -363,7 +394,7 @@ export class CustomAgentProvider {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       execution_count: 0,
-      error_count: 0
+      error_count: 0,
     };
   }
 
@@ -392,6 +423,9 @@ export class CustomAgentProvider {
 /**
  * Convenience function to create a custom agent provider
  */
-export function createCustomAgentProvider(apiClient: ApiClient, dryRun?: boolean): CustomAgentProvider {
+export function createCustomAgentProvider(
+  apiClient: ApiClient,
+  dryRun?: boolean
+): CustomAgentProvider {
   return new CustomAgentProvider({ apiClient, dryRun });
 }

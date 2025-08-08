@@ -5,14 +5,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CustomAgentProvider } from './custom-agent.provider.js';
 import { ApiClient } from '../lib/api-client.js';
-import { MockApiClient, TestFixture } from '../../tests/utils/test-helpers.js';
 import type { CustomAgentConfig } from '../schemas/custom-agent.schema.js';
 import type { ApiCustomAgent } from '../types/api.js';
 
 describe('CustomAgentProvider', () => {
   let provider: CustomAgentProvider;
   let mockApiClient: ApiClient;
-  let mockApi: MockApiClient;
 
   beforeEach(() => {
     mockApiClient = {
@@ -21,8 +19,7 @@ describe('CustomAgentProvider', () => {
       patch: vi.fn(),
       delete: vi.fn(),
     } as any;
-    
-    mockApi = new MockApiClient();
+
     provider = new CustomAgentProvider({ apiClient: mockApiClient, dryRun: false });
   });
 
@@ -550,7 +547,7 @@ describe('CustomAgentProvider', () => {
       };
 
       mockApiClient.post = vi.fn().mockResolvedValue({
-        data: { ...mockApiResponse, name: specialConfig.name }
+        data: { ...mockApiResponse, name: specialConfig.name },
       });
 
       const result = await provider.create(specialConfig);
@@ -577,7 +574,7 @@ describe('CustomAgentProvider', () => {
     it('should handle validation errors from API', async () => {
       mockApiClient.post = vi.fn().mockRejectedValue({
         status: 400,
-        data: { error: 'Invalid condition parameters' }
+        data: { error: 'Invalid condition parameters' },
       });
 
       await expect(provider.create(mockTransactionMonitoringConfig)).rejects.toThrow(

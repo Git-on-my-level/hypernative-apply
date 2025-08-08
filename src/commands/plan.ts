@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { dirname, join } from 'path';
+import { dirname } from 'path';
 import { writeFileSync } from 'fs';
 import { log } from '../lib/logger.js';
 import { output } from '../lib/output-manager.js';
@@ -9,32 +9,36 @@ import { StateStore } from '../lib/state-store.js';
 import { Planner, createPlanFile } from '../lib/planner.js';
 import { formatFieldDiffs } from '../lib/diff-engine.js';
 import type { ParsedConfig } from '../schemas/config.schema.js';
-import type { StateComparison } from '../types/state.js';
 import type { ExecutionPlan, ResourceChange, PlanDisplayOptions } from '../types/plan.js';
 import { ChangeType } from '../types/plan.js';
 
 /**
  * Build details string for a resource change
  */
-function buildResourceDetails(resource: ResourceChange, opts: Required<PlanDisplayOptions>): string {
+function buildResourceDetails(
+  resource: ResourceChange,
+  opts: Required<PlanDisplayOptions>
+): string {
   const details: string[] = [];
-  
+
   if (resource.current_hash && resource.desired_hash) {
-    details.push(`${resource.current_hash.substring(0, 8)}...→${resource.desired_hash.substring(0, 8)}...`);
+    details.push(
+      `${resource.current_hash.substring(0, 8)}...→${resource.desired_hash.substring(0, 8)}...`
+    );
   } else if (resource.desired_hash) {
     details.push(`hash: ${resource.desired_hash.substring(0, 8)}...`);
   } else if (resource.current_hash) {
     details.push(`hash: ${resource.current_hash.substring(0, 8)}...`);
   }
-  
+
   if (resource.remote_id) {
     details.push(`id: ${resource.remote_id}`);
   }
-  
+
   if (resource.dependencies.length > 0 && opts.show_dependencies) {
     details.push(`deps: ${resource.dependencies.join(', ')}`);
   }
-  
+
   return details.join(', ');
 }
 
@@ -43,16 +47,18 @@ function buildResourceDetails(resource: ResourceChange, opts: Required<PlanDispl
  */
 function displayConfigurationSummary(config: ParsedConfig): void {
   log.info('\n📋 Configuration Summary');
-  
+
   // Build summary data
   const summaryItems: string[] = [];
-  
+
   // Notification Channels
   const channels = Object.entries(config.notification_channels);
   if (channels.length > 0) {
     summaryItems.push(`🔔 ${channels.length} Notification Channels`);
     const enabledChannels = channels.filter(([, channel]) => channel.enabled).length;
-    summaryItems.push(`   └─ ${enabledChannels} enabled, ${channels.length - enabledChannels} disabled`);
+    summaryItems.push(
+      `   └─ ${enabledChannels} enabled, ${channels.length - enabledChannels} disabled`
+    );
   }
 
   // Watchlists
@@ -76,7 +82,9 @@ function displayConfigurationSummary(config: ParsedConfig): void {
   if (config.global) {
     summaryItems.push('🌍 Global Configuration');
     if (config.global.project) {
-      summaryItems.push(`   └─ Project: ${config.global.project.name || 'Unnamed'} (${config.global.project.environment || 'development'})`);
+      summaryItems.push(
+        `   └─ Project: ${config.global.project.name || 'Unnamed'} (${config.global.project.environment || 'development'})`
+      );
     }
   }
 
@@ -95,24 +103,25 @@ function displayExecutionPlan(plan: ExecutionPlan, options: PlanDisplayOptions =
     show_field_diffs: options.show_field_diffs ?? true,
     show_dependencies: options.show_dependencies ?? false,
     max_field_diffs: options.max_field_diffs ?? 5,
-    compact_arrays: options.compact_arrays ?? true
+    compact_arrays: options.compact_arrays ?? true,
   };
 
   const { summary } = plan;
-  const totalChanges = summary.to_create + summary.to_update + summary.to_replace + summary.to_delete;
-  
+  const totalChanges =
+    summary.to_create + summary.to_update + summary.to_replace + summary.to_delete;
+
   if (totalChanges === 0) {
     log.success('\n✅ No changes required - configuration matches current state');
     if (summary.no_change > 0) {
       const noChangeResources = plan.changes
-        .filter(c => c.change_type === ChangeType.NO_CHANGE)
-        .map(resource => ({
+        .filter((c) => c.change_type === ChangeType.NO_CHANGE)
+        .map((resource) => ({
           name: resource.name,
           type: resource.kind,
           status: 'no-change' as const,
-          details: `${resource.current_hash?.substring(0, 12) || 'unknown'}...`
+          details: `${resource.current_hash?.substring(0, 12) || 'unknown'}...`,
         }));
-      
+
       output.displayResourceSummary(noChangeResources);
     }
     return;
@@ -124,43 +133,48 @@ function displayExecutionPlan(plan: ExecutionPlan, options: PlanDisplayOptions =
   if (summary.to_update > 0) summaryParts.push(`${summary.to_update} to update`);
   if (summary.to_replace > 0) summaryParts.push(`${summary.to_replace} to replace`);
   if (summary.to_delete > 0) summaryParts.push(`${summary.to_delete} to delete`);
-  
+
   output.displayBox('Execution Plan', [`📋 ${summaryParts.join(', ')}`]);
 
   // Group changes by type and display using resource summary
-  const allChanges = plan.changes.map(resource => ({
+  const allChanges = plan.changes.map((resource) => ({
     name: resource.name,
     type: resource.kind,
-    status: resource.change_type === ChangeType.CREATE ? 'create' as const :
-            resource.change_type === ChangeType.UPDATE ? 'update' as const :
-            resource.change_type === ChangeType.REPLACE ? 'update' as const :
-            resource.change_type === ChangeType.DELETE ? 'delete' as const :
-            'no-change' as const,
-    details: buildResourceDetails(resource, opts)
+    status:
+      resource.change_type === ChangeType.CREATE
+        ? ('create' as const)
+        : resource.change_type === ChangeType.UPDATE
+          ? ('update' as const)
+          : resource.change_type === ChangeType.REPLACE
+            ? ('update' as const)
+            : resource.change_type === ChangeType.DELETE
+              ? ('delete' as const)
+              : ('no-change' as const),
+    details: buildResourceDetails(resource, opts),
   }));
 
   // Filter out no-change unless explicitly requested
-  const filteredChanges = allChanges.filter(change => 
-    change.status !== 'no-change' || opts.show_dependencies
+  const filteredChanges = allChanges.filter(
+    (change) => change.status !== 'no-change' || opts.show_dependencies
   );
 
   output.displayResourceSummary(filteredChanges);
 
   // Show field diffs for updates if requested
   if (opts.show_field_diffs) {
-    const updatesWithDiffs = plan.changes.filter(c => 
-      c.change_type === ChangeType.UPDATE && c.field_diffs && c.field_diffs.length > 0
+    const updatesWithDiffs = plan.changes.filter(
+      (c) => c.change_type === ChangeType.UPDATE && c.field_diffs && c.field_diffs.length > 0
     );
 
     if (updatesWithDiffs.length > 0) {
       console.log('\nField-level changes:');
-      updatesWithDiffs.forEach(resource => {
+      updatesWithDiffs.forEach((resource) => {
         console.log(`\n${resource.kind}.${resource.name}:`);
-        const diffLines = formatFieldDiffs(resource.field_diffs!, { 
+        const diffLines = formatFieldDiffs(resource.field_diffs!, {
           maxDiffs: opts.max_field_diffs,
-          useColors: opts.use_colors 
+          useColors: opts.use_colors,
         });
-        diffLines.forEach(line => console.log(`  ${line}`));
+        diffLines.forEach((line) => console.log(`  ${line}`));
       });
     }
   }
@@ -168,9 +182,17 @@ function displayExecutionPlan(plan: ExecutionPlan, options: PlanDisplayOptions =
   // Display warnings
   if (plan.warnings && plan.warnings.length > 0) {
     log.info('⚠️  Warnings:');
-    plan.warnings.forEach(warning => {
-      const color = warning.severity === 'error' ? (opts.use_colors ? '\x1b[31m' : '') : 
-                   warning.severity === 'warning' ? (opts.use_colors ? '\x1b[33m' : '') : '';
+    plan.warnings.forEach((warning) => {
+      const color =
+        warning.severity === 'error'
+          ? opts.use_colors
+            ? '\x1b[31m'
+            : ''
+          : warning.severity === 'warning'
+            ? opts.use_colors
+              ? '\x1b[33m'
+              : ''
+            : '';
       const reset = opts.use_colors ? '\x1b[0m' : '';
       log.info(`  ${color}${warning.message}${reset}`);
       if (warning.affected_resources.length > 0) {
@@ -206,7 +228,7 @@ export const planCommand = new Command()
         useColors: !options.noColors,
         quiet: parentOpts.quiet,
         json: parentOpts.json,
-        useSpinners: !parentOpts.json && !parentOpts.quiet
+        useSpinners: !parentOpts.json && !parentOpts.quiet,
       });
 
       output.startSpinner('Loading configuration...');
@@ -217,7 +239,7 @@ export const planCommand = new Command()
 
       // Determine base directory for hypernative configs
       const baseDir = options.config ? dirname(options.config) : process.cwd();
-      
+
       // Load and validate hypernative resource configurations
       output.updateSpinner('Loading Hypernative resource configurations...');
       const configResult = await loadHypernativeConfig(baseDir, {
@@ -228,11 +250,15 @@ export const planCommand = new Command()
 
       const { config: hypernativeConfig, metadata } = configResult;
 
-      output.succeedSpinner(`Loaded ${metadata.total_resources} resources from ${metadata.files_loaded.length} files`);
-      
+      output.succeedSpinner(
+        `Loaded ${metadata.total_resources} resources from ${metadata.files_loaded.length} files`
+      );
+
       // Report loaded resources (detailed info)
-      log.info(`Resource breakdown: ${metadata.resource_counts.notification_channels} channels, ${metadata.resource_counts.watchlists} watchlists, ${metadata.resource_counts.custom_agents} agents`);
-      
+      log.info(
+        `Resource breakdown: ${metadata.resource_counts.notification_channels} channels, ${metadata.resource_counts.watchlists} watchlists, ${metadata.resource_counts.custom_agents} agents`
+      );
+
       if (metadata.load_time) {
         log.debug(`Configuration loaded in ${metadata.load_time}ms`);
       }
@@ -255,7 +281,9 @@ export const planCommand = new Command()
       const lockCheck = await stateStore.isLocked();
       if (lockCheck.locked) {
         output.failSpinner(`Another operation is in progress (PID: ${lockCheck.lockInfo?.pid})`);
-        log.error(`Another hypernative operation is in progress (PID: ${lockCheck.lockInfo?.pid}, operation: ${lockCheck.lockInfo?.operation})`);
+        log.error(
+          `Another hypernative operation is in progress (PID: ${lockCheck.lockInfo?.pid}, operation: ${lockCheck.lockInfo?.operation})`
+        );
         log.info('If you believe this is an error, you can remove the lock file manually:');
         log.info(`  rm ${stateStore.getStateDir()}/.lock`);
         process.exit(1);
@@ -270,12 +298,13 @@ export const planCommand = new Command()
         check_drift: options.checkDrift,
         redact_secrets: true,
         include_dependencies: options.showDependencies,
-        max_diff_depth: 10
+        max_diff_depth: 10,
       });
-      
+
       const { summary } = executionPlan;
-      const totalChanges = summary.to_create + summary.to_update + summary.to_replace + summary.to_delete;
-      
+      const totalChanges =
+        summary.to_create + summary.to_update + summary.to_replace + summary.to_delete;
+
       if (totalChanges === 0) {
         output.succeedSpinner('Plan generated - no changes required');
       } else {
@@ -286,7 +315,7 @@ export const planCommand = new Command()
       if (parentOpts.json || options.json) {
         const planFile = await createPlanFile(executionPlan);
         const jsonOutput = JSON.stringify(planFile, null, 2);
-        
+
         if (options.out) {
           if (options.out === '-') {
             console.log(jsonOutput);
@@ -305,17 +334,17 @@ export const planCommand = new Command()
           show_field_diffs: options.showFieldDiffs,
           show_dependencies: options.showDependencies,
           max_field_diffs: 10,
-          compact_arrays: true
+          compact_arrays: true,
         };
-        
+
         displayExecutionPlan(executionPlan, displayOptions);
-        
+
         // Save plan file if requested
         if (options.out) {
           output.startSpinner('Saving plan file...');
           const planFile = await createPlanFile(executionPlan);
           const outputPath = options.out === '-' ? '/dev/stdout' : options.out;
-          
+
           if (outputPath !== '/dev/stdout') {
             const finalPath = outputPath.endsWith('.json') ? outputPath : `${outputPath}.json`;
             writeFileSync(finalPath, JSON.stringify(planFile, null, 2), 'utf-8');
@@ -323,7 +352,7 @@ export const planCommand = new Command()
           }
         }
       }
-      
+
       // Display final summary
       if (!(parentOpts.json || options.json)) {
         if (totalChanges > 0) {
@@ -334,24 +363,23 @@ export const planCommand = new Command()
           log.success('\nPlan completed - no changes required');
         }
       }
-      
+
       // Clean up
       output.cleanup();
-      
+
       // Set appropriate exit code
-      if (executionPlan.warnings?.some(w => w.severity === 'error')) {
+      if (executionPlan.warnings?.some((w) => w.severity === 'error')) {
         process.exit(1); // Errors found
       } else if (totalChanges > 0) {
         process.exit(2); // Changes present
       } else {
         process.exit(0); // No changes
       }
-      
     } catch (error) {
       output.cleanup();
       if (error instanceof ConfigurationValidationError) {
         log.error('Configuration validation failed:');
-        error.errors.forEach(err => {
+        error.errors.forEach((err) => {
           const location = err.line_number ? `${err.file_path}:${err.line_number}` : err.file_path;
           const resource = err.resource_name ? ` (${err.resource_type}: ${err.resource_name})` : '';
           log.error(`  ${location}${resource}: ${err.message}`);

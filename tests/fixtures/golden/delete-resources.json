@@ -6,9 +6,7 @@
     "config_hash": "44b7977c379d128bcd01af1b36fc5338fb4120df86b995fe0253a600859db115",
     "content_hash": "e38b1098d6699ac93cc449394659249f1c7a7f0579c5de33c419d5e946e86e0f",
     "base_directory": "[NORMALIZED]",
-    "config_files": [
-      "hypernative/notification-channels/*.yaml"
-    ]
+    "config_files": ["hypernative/notification-channels/*.yaml"]
   },
   "changes": [
     {

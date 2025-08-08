@@ -1,6 +1,6 @@
 /**
  * Plan types for the Hypernative Apply CLI
- * 
+ *
  * This module defines the types used for planning changes to resources,
  * including dependency resolution, change detection, and plan serialization.
  */
@@ -11,7 +11,7 @@ export enum ChangeType {
   UPDATE = 'UPDATE',
   REPLACE = 'REPLACE',
   DELETE = 'DELETE',
-  NO_CHANGE = 'NO_CHANGE'
+  NO_CHANGE = 'NO_CHANGE',
 }
 
 // Field-level change information
@@ -113,13 +113,16 @@ export interface PlanSummary {
   /** Number of resources with no changes */
   no_change: number;
   /** Breakdown by resource type */
-  by_resource_type: Record<string, {
-    to_create: number;
-    to_update: number;
-    to_replace: number;
-    to_delete: number;
-    no_change: number;
-  }>;
+  by_resource_type: Record<
+    string,
+    {
+      to_create: number;
+      to_update: number;
+      to_replace: number;
+      to_delete: number;
+      no_change: number;
+    }
+  >;
 }
 
 // Plan validation warnings
@@ -264,10 +267,13 @@ export interface ExecutionSummary {
     deleted: number;
   };
   /** Breakdown by resource type */
-  by_resource_type: Record<string, {
-    successful: number;
-    failed: number;
-  }>;
+  by_resource_type: Record<
+    string,
+    {
+      successful: number;
+      failed: number;
+    }
+  >;
 }
 
 export interface ExecutionResult {

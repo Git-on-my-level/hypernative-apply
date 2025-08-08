@@ -1,6 +1,6 @@
 /**
  * Executor module for the Hypernative Apply CLI
- * 
+ *
  * Handles the execution of planned changes by:
  * - Coordinating with resource providers (watchlists, custom agents, notification channels)
  * - Managing execution order based on dependencies
@@ -17,8 +17,6 @@ import { CustomAgentProvider } from '../providers/custom-agent.provider.js';
 import { NotificationChannelProvider } from '../providers/notification-channel.provider.js';
 import { generateFingerprint } from './fingerprint.js';
 import type { ParsedConfig } from '../schemas/config.schema.js';
-import type { WatchlistConfig } from '../schemas/watchlist.schema.js';
-import type { NotificationChannelConfig } from '../schemas/notification-channel.schema.js';
 import type { StateFile, StateEntry } from '../types/state.js';
 import type {
   ExecutionPlan,
@@ -26,7 +24,7 @@ import type {
   ExecutionResult,
   ExecutionOptions,
   ResourceExecutionResult,
-  ExecutionSummary
+  ExecutionSummary,
 } from '../types/plan.js';
 import { ChangeType } from '../types/plan.js';
 import type { ApiWatchlist, CustomAgent, NotificationChannel } from '../types/api.js';
@@ -63,25 +61,29 @@ export class Executor {
 
     // Initialize providers
     this.providers = {
-      watchlistProvider: new WatchlistProvider({ 
-        apiClient: this.apiClient, 
-        dryRun: this.dryRun 
+      watchlistProvider: new WatchlistProvider({
+        apiClient: this.apiClient,
+        dryRun: this.dryRun,
       }),
-      customAgentProvider: new CustomAgentProvider({ 
-        apiClient: this.apiClient, 
-        dryRun: this.dryRun 
+      customAgentProvider: new CustomAgentProvider({
+        apiClient: this.apiClient,
+        dryRun: this.dryRun,
       }),
       notificationChannelProvider: new NotificationChannelProvider({
         apiClient: this.apiClient,
-        dryRun: this.dryRun
-      })
+        dryRun: this.dryRun,
+      }),
     };
   }
 
   /**
    * Execute the entire execution plan
    */
-  async execute(plan: ExecutionPlan, config: ParsedConfig, options: ExecutionOptions = {}): Promise<ExecutionResult> {
+  async execute(
+    plan: ExecutionPlan,
+    config: ParsedConfig,
+    options: ExecutionOptions = {}
+  ): Promise<ExecutionResult> {
     const startTime = Date.now();
     const results: ResourceExecutionResult[] = [];
     const rolledBack: string[] = [];
@@ -94,8 +96,8 @@ export class Executor {
       acquiredLock = true;
 
       // Filter out no-change resources unless requested
-      const changesToExecute = plan.changes.filter(change => 
-        change.change_type !== ChangeType.NO_CHANGE || options.includeNoChange
+      const changesToExecute = plan.changes.filter(
+        (change) => change.change_type !== ChangeType.NO_CHANGE || options.includeNoChange
       );
 
       if (changesToExecute.length === 0) {
@@ -104,12 +106,12 @@ export class Executor {
           success: true,
           results: [],
           summary: this.createExecutionSummary([], startTime),
-          plan_id: plan.metadata.plan_id
+          plan_id: plan.metadata.plan_id,
         };
       }
 
       log.info(`Executing ${changesToExecute.length} changes...`);
-      
+
       // Load current state
       let currentState = await this.stateStore.loadState();
 
@@ -117,10 +119,10 @@ export class Executor {
       for (let i = 0; i < changesToExecute.length; i++) {
         const change = changesToExecute[i];
         const progress = `(${i + 1}/${changesToExecute.length})`;
-        
+
         try {
           log.info(`${progress} Executing: ${change.change_type} ${change.kind}.${change.name}`);
-          
+
           const result = await this.executeChange(change, config, currentState);
           results.push(result);
 
@@ -130,25 +132,27 @@ export class Executor {
           }
 
           log.info(`${progress} Completed: ${change.kind}.${change.name}`);
-
         } catch (error) {
           log.error(`${progress} Failed: ${change.kind}.${change.name}`, error);
-          
+
           const failureResult: ResourceExecutionResult = {
             resource_name: change.name,
             resource_kind: change.kind,
             change_type: change.change_type,
             success: false,
             error: error instanceof Error ? error.message : String(error),
-            duration_ms: 0
+            duration_ms: 0,
           };
           results.push(failureResult);
 
           if (!this.continueOnError) {
             // Rollback previous successful changes
             log.warn('Failure detected, rolling back previous changes...');
-            await this.rollbackChanges(results.filter(r => r.success), currentState);
-            
+            await this.rollbackChanges(
+              results.filter((r) => r.success),
+              currentState
+            );
+
             throw new Error(`Execution failed at ${change.kind}.${change.name}: ${error}`);
           }
         }
@@ -158,13 +162,15 @@ export class Executor {
       await this.stateStore.saveState(currentState);
 
       const summary = this.createExecutionSummary(results, startTime);
-      const success = results.every(r => r.success);
+      const success = results.every((r) => r.success);
 
       if (success) {
         log.success(`All ${results.length} changes executed successfully`);
       } else {
-        const failureCount = results.filter(r => !r.success).length;
-        log.warn(`${results.length - failureCount}/${results.length} changes executed successfully (${failureCount} failures)`);
+        const failureCount = results.filter((r) => !r.success).length;
+        log.warn(
+          `${results.length - failureCount}/${results.length} changes executed successfully (${failureCount} failures)`
+        );
       }
 
       return {
@@ -172,9 +178,8 @@ export class Executor {
         results,
         summary,
         plan_id: plan.metadata.plan_id,
-        rolled_back: rolledBack
+        rolled_back: rolledBack,
       };
-
     } finally {
       if (acquiredLock) {
         await this.stateStore.releaseLock();
@@ -191,7 +196,7 @@ export class Executor {
     currentState: StateFile
   ): Promise<ResourceExecutionResult> {
     const startTime = Date.now();
-    
+
     try {
       let remoteId: string | undefined;
       let result: any;
@@ -223,9 +228,8 @@ export class Executor {
         success: true,
         remote_id: remoteId,
         duration_ms: Date.now() - startTime,
-        result
+        result,
       };
-
     } catch (error) {
       return {
         resource_name: change.name,
@@ -233,7 +237,7 @@ export class Executor {
         change_type: change.change_type,
         success: false,
         error: error instanceof Error ? error.message : String(error),
-        duration_ms: Date.now() - startTime
+        duration_ms: Date.now() - startTime,
       };
     }
   }
@@ -244,7 +248,7 @@ export class Executor {
   private async executeWatchlistChange(
     change: ResourceChange,
     config: ParsedConfig,
-    currentState: StateFile
+    _currentState: StateFile
   ): Promise<ApiWatchlist | null> {
     const watchlistConfig = config.watchlists[change.name];
     if (!watchlistConfig) {
@@ -259,10 +263,14 @@ export class Executor {
         if (!change.remote_id) {
           throw new Error(`Remote ID not found for watchlist update: ${change.name}`);
         }
-        
+
         // Get current remote state for asset reconciliation
         const currentRemoteState = await this.providers.watchlistProvider.getById(change.remote_id);
-        return await this.providers.watchlistProvider.update(change.remote_id, watchlistConfig, currentRemoteState || undefined);
+        return await this.providers.watchlistProvider.update(
+          change.remote_id,
+          watchlistConfig,
+          currentRemoteState || undefined
+        );
 
       case ChangeType.DELETE:
         if (!change.remote_id) {
@@ -289,7 +297,7 @@ export class Executor {
   private async executeCustomAgentChange(
     change: ResourceChange,
     config: ParsedConfig,
-    currentState: StateFile
+    _currentState: StateFile
   ): Promise<CustomAgent | null> {
     const agentConfig = config.custom_agents[change.name];
     if (!agentConfig) {
@@ -304,16 +312,22 @@ export class Executor {
         if (!change.remote_id) {
           throw new Error(`Remote ID not found for custom agent update: ${change.name}`);
         }
-        
+
         // Get current remote state for comparison
-        const currentRemoteState = await this.providers.customAgentProvider.getById(change.remote_id);
-        return await this.providers.customAgentProvider.update(change.remote_id, agentConfig, currentRemoteState || undefined);
+        const currentRemoteState = await this.providers.customAgentProvider.getById(
+          change.remote_id
+        );
+        return await this.providers.customAgentProvider.update(
+          change.remote_id,
+          agentConfig,
+          currentRemoteState || undefined
+        );
 
       case ChangeType.REPLACE:
         if (!change.remote_id) {
           throw new Error(`Remote ID not found for custom agent replacement: ${change.name}`);
         }
-        
+
         // Use the replace method which handles delete + create
         return await this.providers.customAgentProvider.replace(change.remote_id, agentConfig);
 
@@ -350,22 +364,25 @@ export class Executor {
 
       const now = new Date().toISOString();
       const existingEntry = currentState.resources[change.name];
-      
+
       // Prepare base metadata
       const baseMetadata = {
         created_at: existingEntry?.metadata.created_at || now,
         updated_at: now,
         created_by: 'cli' as const,
-        cli_version: '0.1.0' // TODO: Import from package.json
+        cli_version: '0.1.0', // TODO: Import from package.json
       };
 
       // Add type-specific metadata for custom agents
-      const metadata = change.kind === 'custom_agent' 
-        ? { 
-            ...baseMetadata, 
-            agent_type: (this.getResourceConfig(change.name, change.kind, config) as CustomAgentConfig).type 
-          }
-        : baseMetadata;
+      const metadata =
+        change.kind === 'custom_agent'
+          ? {
+              ...baseMetadata,
+              agent_type: (
+                this.getResourceConfig(change.name, change.kind, config) as CustomAgentConfig
+              ).type,
+            }
+          : baseMetadata;
 
       const stateEntry: StateEntry = {
         kind: change.kind,
@@ -373,7 +390,7 @@ export class Executor {
         remote_id: result.remote_id || change.remote_id || '',
         last_applied_hash: configHash,
         last_seen_remote_hash: configHash, // For now, assume they match
-        metadata
+        metadata,
       };
 
       newState.resources[change.name] = stateEntry;
@@ -404,14 +421,14 @@ export class Executor {
    */
   private async rollbackChanges(
     successfulResults: ResourceExecutionResult[],
-    currentState: StateFile
+    _currentState: StateFile
   ): Promise<void> {
     log.info(`Rolling back ${successfulResults.length} successful changes...`);
 
     // Rollback in reverse order
     for (let i = successfulResults.length - 1; i >= 0; i--) {
       const result = successfulResults[i];
-      
+
       try {
         switch (result.resource_kind) {
           case 'watchlist':
@@ -421,7 +438,7 @@ export class Executor {
             }
             // TODO: Handle UPDATE rollback (would need to restore previous state)
             break;
-          
+
           case 'notification_channel':
             if (result.change_type === ChangeType.CREATE && result.remote_id) {
               await this.providers.notificationChannelProvider.delete(result.remote_id);
@@ -443,8 +460,8 @@ export class Executor {
     results: ResourceExecutionResult[],
     startTime: number
   ): ExecutionSummary {
-    const successful = results.filter(r => r.success);
-    const failed = results.filter(r => !r.success);
+    const successful = results.filter((r) => r.success);
+    const failed = results.filter((r) => !r.success);
 
     const summary: ExecutionSummary = {
       total_resources: results.length,
@@ -455,9 +472,9 @@ export class Executor {
         created: 0,
         updated: 0,
         replaced: 0,
-        deleted: 0
+        deleted: 0,
       },
-      by_resource_type: {}
+      by_resource_type: {},
     };
 
     // Count by change type and resource type
@@ -480,7 +497,7 @@ export class Executor {
       if (!summary.by_resource_type[result.resource_kind]) {
         summary.by_resource_type[result.resource_kind] = {
           successful: 0,
-          failed: 0
+          failed: 0,
         };
       }
       summary.by_resource_type[result.resource_kind].successful++;
@@ -490,7 +507,7 @@ export class Executor {
       if (!summary.by_resource_type[result.resource_kind]) {
         summary.by_resource_type[result.resource_kind] = {
           successful: 0,
-          failed: 0
+          failed: 0,
         };
       }
       summary.by_resource_type[result.resource_kind].failed++;
@@ -505,7 +522,7 @@ export class Executor {
   private async executeNotificationChannelChange(
     change: ResourceChange,
     config: ParsedConfig,
-    currentState: StateFile
+    _currentState: StateFile
   ): Promise<NotificationChannel | null> {
     const channelConfig = config.notification_channels[change.name];
     if (!channelConfig) {
@@ -518,37 +535,41 @@ export class Executor {
     switch (change.change_type) {
       case ChangeType.CREATE:
         return await this.providers.notificationChannelProvider.create(channelConfig, testOptions);
-        
+
       case ChangeType.UPDATE:
         if (!change.remote_id) {
           throw new Error(`Remote ID not found for notification channel update: ${change.name}`);
         }
-        
+
         // Get current remote state for comparison
-        const currentRemoteState = await this.providers.notificationChannelProvider.getById(change.remote_id);
+        const currentRemoteState = await this.providers.notificationChannelProvider.getById(
+          change.remote_id
+        );
         return await this.providers.notificationChannelProvider.update(
-          change.remote_id, 
-          channelConfig, 
-          currentRemoteState || undefined, 
+          change.remote_id,
+          channelConfig,
+          currentRemoteState || undefined,
           testOptions
         );
-        
+
       case ChangeType.REPLACE:
         if (!change.remote_id) {
-          throw new Error(`Remote ID not found for notification channel replacement: ${change.name}`);
+          throw new Error(
+            `Remote ID not found for notification channel replacement: ${change.name}`
+          );
         }
-        
+
         // Delete the old channel and create a new one
         await this.providers.notificationChannelProvider.delete(change.remote_id);
         return await this.providers.notificationChannelProvider.create(channelConfig, testOptions);
-        
+
       case ChangeType.DELETE:
         if (!change.remote_id) {
           throw new Error(`Remote ID not found for notification channel deletion: ${change.name}`);
         }
         await this.providers.notificationChannelProvider.delete(change.remote_id);
         return null;
-        
+
       default:
         throw new Error(`Unsupported change type: ${change.change_type}`);
     }
@@ -563,7 +584,7 @@ export class Executor {
     if (lockCheck.locked) {
       return {
         canExecute: false,
-        reason: `Another operation is in progress (PID: ${lockCheck.lockInfo?.pid})`
+        reason: `Another operation is in progress (PID: ${lockCheck.lockInfo?.pid})`,
       };
     }
 
@@ -574,7 +595,7 @@ export class Executor {
     } catch (error) {
       return {
         canExecute: false,
-        reason: `API connectivity check failed: ${error}`
+        reason: `API connectivity check failed: ${error}`,
       };
     }
   }

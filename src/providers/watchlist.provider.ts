@@ -1,6 +1,6 @@
 /**
  * Watchlist Provider
- * 
+ *
  * Handles CRUD operations for Hypernative Watchlists including:
  * - Creating, updating, and deleting watchlists
  * - Asset reconciliation (computing add/remove sets)
@@ -13,18 +13,14 @@ import { parse as parseCsv } from 'csv-parse/sync';
 import { log } from '../lib/logger.js';
 import { ApiClient } from '../lib/api-client.js';
 import { generateFingerprint } from '../lib/fingerprint.js';
-import type { 
-  WatchlistConfig, 
-  AssetConfig, 
-  WatchlistApiPayload 
-} from '../schemas/watchlist.schema.js';
+import type { WatchlistConfig, AssetConfig } from '../schemas/watchlist.schema.js';
 import type {
   ApiWatchlist,
   ApiWatchlistAsset,
   ApiWatchlistCreatePayload,
   ApiWatchlistUpdatePayload,
   CsvUploadResult,
-  AssetReconciliationResult
+  AssetReconciliationResult,
 } from '../types/api.js';
 
 export interface WatchlistProviderOptions {
@@ -53,13 +49,13 @@ export class WatchlistProvider {
    */
   async list(params?: { limit?: number; offset?: number }): Promise<ApiWatchlist[]> {
     log.debug('Fetching watchlists', params);
-    
+
     try {
       const response = await this.apiClient.get('/api/v2/watchlists', {
         params: {
           limit: params?.limit ?? 50,
-          offset: params?.offset ?? 0
-        }
+          offset: params?.offset ?? 0,
+        },
       });
 
       return response.data || [];
@@ -74,7 +70,7 @@ export class WatchlistProvider {
    */
   async getById(id: string): Promise<ApiWatchlist | null> {
     log.debug(`Fetching watchlist: ${id}`);
-    
+
     try {
       const response = await this.apiClient.get(`/api/v2/watchlists/${id}`);
       return response.data;
@@ -112,27 +108,30 @@ export class WatchlistProvider {
   /**
    * Update an existing watchlist
    */
-  async update(id: string, config: WatchlistConfig, currentRemoteState?: ApiWatchlist): Promise<ApiWatchlist> {
+  async update(
+    id: string,
+    config: WatchlistConfig,
+    currentRemoteState?: ApiWatchlist
+  ): Promise<ApiWatchlist> {
     // If we have current state, perform asset reconciliation
     let reconciliation: AssetReconciliationResult | undefined;
     if (currentRemoteState) {
-      reconciliation = this.reconcileAssets(
-        config.assets,
-        currentRemoteState.assets || []
-      );
+      reconciliation = this.reconcileAssets(config.assets, currentRemoteState.assets || []);
     }
 
     const payload = this.buildUpdatePayload(config, reconciliation);
-    log.debug(`Updating watchlist: ${id}`, { 
+    log.debug(`Updating watchlist: ${id}`, {
       name: payload.name,
       assetsToAdd: reconciliation?.assets_to_add.length ?? 0,
-      assetsToRemove: reconciliation?.assets_to_remove.length ?? 0
+      assetsToRemove: reconciliation?.assets_to_remove.length ?? 0,
     });
 
     if (this.dryRun) {
       log.info(`[DRY RUN] Would update watchlist: ${id}`);
       if (reconciliation) {
-        log.info(`[DRY RUN] Assets: ${reconciliation.current_count} -> ${reconciliation.desired_count} (+${reconciliation.assets_to_add.length}, -${reconciliation.assets_to_remove.length})`);
+        log.info(
+          `[DRY RUN] Assets: ${reconciliation.current_count} -> ${reconciliation.desired_count} (+${reconciliation.assets_to_add.length}, -${reconciliation.assets_to_remove.length})`
+        );
       }
       return currentRemoteState || this.createMockWatchlist(payload);
     }
@@ -140,11 +139,16 @@ export class WatchlistProvider {
     try {
       const response = await this.apiClient.patch(`/api/v2/watchlists/${id}`, payload);
       log.info(`Updated watchlist: ${response.data.name} (${id})`);
-      
-      if (reconciliation && (reconciliation.assets_to_add.length > 0 || reconciliation.assets_to_remove.length > 0)) {
-        log.info(`Assets reconciled: ${reconciliation.current_count} -> ${reconciliation.desired_count} (+${reconciliation.assets_to_add.length}, -${reconciliation.assets_to_remove.length})`);
+
+      if (
+        reconciliation &&
+        (reconciliation.assets_to_add.length > 0 || reconciliation.assets_to_remove.length > 0)
+      ) {
+        log.info(
+          `Assets reconciled: ${reconciliation.current_count} -> ${reconciliation.desired_count} (+${reconciliation.assets_to_add.length}, -${reconciliation.assets_to_remove.length})`
+        );
       }
-      
+
       return response.data;
     } catch (error) {
       log.error(`Failed to update watchlist ${id}:`, error);
@@ -177,20 +181,22 @@ export class WatchlistProvider {
    */
   async uploadCsv(options: CsvUploadOptions): Promise<CsvUploadResult> {
     const { watchlistId, csvPath, dryRun = false, replaceAssets = false } = options;
-    
+
     log.debug(`Uploading CSV to watchlist: ${watchlistId}`, { csvPath, replaceAssets });
 
     try {
       // Parse and validate CSV
       const assets = this.parseCsvFile(csvPath);
-      
+
       if (dryRun || this.dryRun) {
-        log.info(`[DRY RUN] Would upload ${assets.length} assets from CSV to watchlist: ${watchlistId}`);
+        log.info(
+          `[DRY RUN] Would upload ${assets.length} assets from CSV to watchlist: ${watchlistId}`
+        );
         return {
           imported: assets.length,
           failed: 0,
           total: assets.length,
-          errors: []
+          errors: [],
         };
       }
 
@@ -199,7 +205,7 @@ export class WatchlistProvider {
       const csvContent = readFileSync(csvPath, 'utf-8');
       const blob = new Blob([csvContent], { type: 'text/csv' });
       formData.append('file', blob, 'assets.csv');
-      
+
       if (replaceAssets) {
         formData.append('replace', 'true');
       }
@@ -209,12 +215,14 @@ export class WatchlistProvider {
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+            'Content-Type': 'multipart/form-data',
+          },
         }
       );
 
-      log.info(`CSV uploaded to watchlist ${watchlistId}: ${response.data.imported} imported, ${response.data.failed} failed`);
+      log.info(
+        `CSV uploaded to watchlist ${watchlistId}: ${response.data.imported} imported, ${response.data.failed} failed`
+      );
       return response.data;
     } catch (error) {
       log.error(`Failed to upload CSV to watchlist ${watchlistId}:`, error);
@@ -229,13 +237,9 @@ export class WatchlistProvider {
     desiredAssets: AssetConfig[],
     currentAssets: ApiWatchlistAsset[]
   ): AssetReconciliationResult {
-    const currentAssetIds = new Set(
-      currentAssets.map(asset => this.getAssetIdentifier(asset))
-    );
-    
-    const desiredAssetIds = new Set(
-      desiredAssets.map(asset => this.getAssetIdentifier(asset))
-    );
+    const currentAssetIds = new Set(currentAssets.map((asset) => this.getAssetIdentifier(asset)));
+
+    const desiredAssetIds = new Set(desiredAssets.map((asset) => this.getAssetIdentifier(asset)));
 
     const assetsToAdd: AssetConfig[] = [];
     const assetsToRemove: ApiWatchlistAsset[] = [];
@@ -261,7 +265,7 @@ export class WatchlistProvider {
       desired_count: desiredAssets.length,
       assets_to_add: assetsToAdd,
       assets_to_remove: assetsToRemove,
-      no_change_count: currentAssets.length - assetsToRemove.length
+      no_change_count: currentAssets.length - assetsToRemove.length,
     };
   }
 
@@ -279,15 +283,15 @@ export class WatchlistProvider {
     return {
       name: config.name,
       description: config.description,
-      assets: config.assets.map(asset => ({
+      assets: config.assets.map((asset) => ({
         chain: asset.chain,
         type: asset.type,
         address: asset.address,
         name: asset.name,
         symbol: asset.symbol,
-        tags: asset.tags
+        tags: asset.tags,
       })),
-      alert_policy_id: config.alert_policy_id
+      alert_policy_id: config.alert_policy_id,
     };
   }
 
@@ -301,27 +305,27 @@ export class WatchlistProvider {
     const payload: ApiWatchlistUpdatePayload = {
       name: config.name,
       description: config.description,
-      alert_policy_id: config.alert_policy_id
+      alert_policy_id: config.alert_policy_id,
     };
 
     // Include asset changes if we have reconciliation data
     if (reconciliation) {
       if (reconciliation.assets_to_add.length > 0) {
-        payload.assets_to_add = reconciliation.assets_to_add.map(asset => ({
+        payload.assets_to_add = reconciliation.assets_to_add.map((asset) => ({
           chain: asset.chain,
           type: asset.type,
           address: asset.address,
           name: asset.name,
           symbol: asset.symbol,
-          tags: asset.tags
+          tags: asset.tags,
         }));
       }
 
       if (reconciliation.assets_to_remove.length > 0) {
-        payload.assets_to_remove = reconciliation.assets_to_remove.map(asset => ({
+        payload.assets_to_remove = reconciliation.assets_to_remove.map((asset) => ({
           chain: asset.chain,
           type: asset.type,
-          address: asset.address
+          address: asset.address,
         }));
       }
     }
@@ -338,15 +342,17 @@ export class WatchlistProvider {
       const records = parseCsv(csvContent, {
         columns: true,
         skip_empty_lines: true,
-        trim: true
+        trim: true,
       });
 
       const assets: AssetConfig[] = [];
-      
+
       for (const record of records as Record<string, string>[]) {
         // Validate required fields
         if (!record.address || !record.chain) {
-          throw new Error(`Missing required fields (address, chain) in CSV row: ${JSON.stringify(record)}`);
+          throw new Error(
+            `Missing required fields (address, chain) in CSV row: ${JSON.stringify(record)}`
+          );
         }
 
         // Validate address format
@@ -355,16 +361,31 @@ export class WatchlistProvider {
         }
 
         // Validate and cast chain
-        const validChains = ['ethereum', 'polygon', 'bsc', 'avalanche', 'arbitrum', 'optimism', 'base', 'fantom', 'gnosis', 'celo'];
+        const validChains = [
+          'ethereum',
+          'polygon',
+          'bsc',
+          'avalanche',
+          'arbitrum',
+          'optimism',
+          'base',
+          'fantom',
+          'gnosis',
+          'celo',
+        ];
         if (!validChains.includes(record.chain)) {
-          throw new Error(`Invalid chain: ${record.chain}. Must be one of: ${validChains.join(', ')}`);
+          throw new Error(
+            `Invalid chain: ${record.chain}. Must be one of: ${validChains.join(', ')}`
+          );
         }
 
         // Validate and cast asset type
         const validTypes = ['Wallet', 'Protocol', 'Token', 'Contract', 'Pool', 'NFT'];
         const assetType = record.type || 'Wallet';
         if (!validTypes.includes(assetType)) {
-          throw new Error(`Invalid asset type: ${assetType}. Must be one of: ${validTypes.join(', ')}`);
+          throw new Error(
+            `Invalid asset type: ${assetType}. Must be one of: ${validTypes.join(', ')}`
+          );
         }
 
         assets.push({
@@ -373,7 +394,7 @@ export class WatchlistProvider {
           address: record.address,
           name: record.name || undefined,
           symbol: record.symbol || undefined,
-          tags: record.tags ? record.tags.split(',').map((tag: string) => tag.trim()) : undefined
+          tags: record.tags ? record.tags.split(',').map((tag: string) => tag.trim()) : undefined,
         });
       }
 
@@ -386,7 +407,9 @@ export class WatchlistProvider {
   /**
    * Create a mock watchlist for dry-run mode
    */
-  private createMockWatchlist(payload: ApiWatchlistCreatePayload | ApiWatchlistUpdatePayload): ApiWatchlist {
+  private createMockWatchlist(
+    payload: ApiWatchlistCreatePayload | ApiWatchlistUpdatePayload
+  ): ApiWatchlist {
     return {
       id: `mock_${Date.now()}`,
       name: payload.name || 'Mock Watchlist',
@@ -396,7 +419,7 @@ export class WatchlistProvider {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       enabled: true,
-      assets: 'assets' in payload ? payload.assets : undefined
+      assets: 'assets' in payload ? payload.assets : undefined,
     };
   }
 

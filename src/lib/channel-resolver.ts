@@ -1,6 +1,6 @@
 /**
  * Channel Resolver Utility
- * 
+ *
  * Resolves notification channel logical names to their API IDs
  * Used during planning phase to validate channel references and during
  * execution to convert logical names to actual API channel IDs.
@@ -52,7 +52,7 @@ export class ChannelResolver {
 
       for (const logicalName of channelNames) {
         const channel = this.findChannelByLogicalName(logicalName);
-        
+
         if (channel) {
           resolved[logicalName] = channel.id;
           log.debug(`Resolved channel '${logicalName}' to ID '${channel.id}'`);
@@ -70,7 +70,7 @@ export class ChannelResolver {
       return { resolved, failed, errors };
     } catch (error) {
       log.error('Failed to resolve notification channels:', error);
-      
+
       // Return all as failed if we couldn't fetch channel data
       const failed = [...channelNames];
       const errors: Record<string, string> = {};
@@ -90,10 +90,10 @@ export class ChannelResolver {
     errors: string[];
   }> {
     const result = await this.resolveChannels(channelNames);
-    
+
     return {
       valid: result.failed.length === 0,
-      errors: result.failed.map(name => result.errors[name] || `Channel '${name}' not found`)
+      errors: result.failed.map((name) => result.errors[name] || `Channel '${name}' not found`),
     };
   }
 
@@ -110,7 +110,7 @@ export class ChannelResolver {
    */
   private async refreshChannelCache(): Promise<void> {
     const now = Date.now();
-    
+
     // Skip refresh if cache is still valid
     if (now - this.lastCacheUpdate < this.cacheExpiry && this.channelCache.size > 0) {
       return;
@@ -118,14 +118,14 @@ export class ChannelResolver {
 
     try {
       log.debug('Refreshing notification channel cache');
-      
+
       const response = await this.apiClient.get('/api/v2/notification-channels', {
-        params: { limit: 200 } // Get up to 200 channels
+        params: { limit: 200 }, // Get up to 200 channels
       });
 
       this.channelCache.clear();
       const channels: NotificationChannel[] = response.data || [];
-      
+
       for (const channel of channels) {
         this.channelCache.set(channel.name, channel);
       }
@@ -173,10 +173,10 @@ export class ChannelResolver {
   getSuggestions(invalidName: string): string[] {
     const suggestions: string[] = [];
     const lowerInvalid = invalidName.toLowerCase();
-    
+
     for (const [name] of this.channelCache.entries()) {
       const lowerName = name.toLowerCase();
-      
+
       // Simple similarity check: contains substring or similar
       if (lowerName.includes(lowerInvalid) || lowerInvalid.includes(lowerName)) {
         suggestions.push(name);
@@ -195,15 +195,15 @@ export class ChannelResolver {
     }
 
     const messages: string[] = [];
-    
+
     for (const failedChannel of result.failed) {
       const suggestions = this.getSuggestions(failedChannel);
       let message = `Notification channel '${failedChannel}' not found`;
-      
+
       if (suggestions.length > 0) {
         message += `. Did you mean: ${suggestions.join(', ')}?`;
       }
-      
+
       messages.push(message);
     }
 

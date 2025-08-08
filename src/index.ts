@@ -1,9 +1,6 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 import { planCommand } from './commands/plan.js';
 import { applyCommand } from './commands/apply.js';
 import { initCommand } from './commands/init.js';
@@ -11,12 +8,7 @@ import { doctorCommand } from './commands/doctor.js';
 import { versionCommand } from './commands/version.js';
 import { updateGlobalFlags } from './lib/logger.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Read package.json to get version
-const packageJsonPath = join(__dirname, '..', 'package.json');
-const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+// Note: Package version is handled by the version command
 
 const program = new Command();
 
@@ -53,7 +45,7 @@ program.hook('preAction', (thisCommand) => {
     json: opts.json,
     quiet: opts.quiet,
     debug: opts.debug,
-    noColors: opts.noColors
+    noColors: opts.noColors,
   });
 });
 
