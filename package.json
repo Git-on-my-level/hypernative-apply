@@ -1,0 +1,58 @@
+{
+  "name": "hypernative",
+  "version": "0.1.0",
+  "description": "Hypernative configuration management CLI",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "bin": {
+    "hypernative": "bin/hypernative"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src"
+  },
+  "dependencies": {
+    "commander": "^11.1.0",
+    "axios": "^1.6.2",
+    "zod": "^3.22.4",
+    "yaml": "^2.3.4",
+    "ora": "^8.0.1",
+    "chalk": "^5.3.0",
+    "winston": "^3.11.0",
+    "p-limit": "^5.0.0",
+    "dotenv": "^16.3.1",
+    "fast-glob": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.4",
+    "@typescript-eslint/eslint-plugin": "^6.13.1",
+    "@typescript-eslint/parser": "^6.13.1",
+    "eslint": "^8.54.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "prettier": "^3.1.0",
+    "tsx": "^4.6.2",
+    "typescript": "^5.3.3",
+    "vitest": "^1.0.4"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "keywords": [
+    "hypernative",
+    "cli",
+    "configuration",
+    "management"
+  ],
+  "author": "",
+  "license": "MIT"
+}
