@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "created": "2025-08-08T09:00:02.528Z",
+  "components": {
+    "modes": [
+      "ai-debt-maintainer",
+      "architect",
+      "autonomous-project-manager",
+      "engineer",
+      "reviewer"
+    ],
+    "workflows": [
+      "openmemory-setup",
+      "review",
+      "summarize"
+    ],
+    "integrations": [],
+    "agents": [],
+    "updated": "2025-08-08T09:00:08.153Z"
+  }
+}
