@@ -1,0 +1,38 @@
+name: test-balance-monitor
+description: Test balance monitoring custom agent
+type: address_balance_change
+enabled: true
+chain: ethereum
+severity: high
+
+configuration:
+  addresses:
+    - "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    - "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+  threshold_type: percentage
+  threshold_value: 10
+  direction: both
+  time_window: 1h
+  monitor_native_token: true
+  monitor_erc20_tokens: true
+
+notification_channels:
+  - slack_critical
+  - webhook_prod
+
+schedule:
+  interval: 5
+  timezone: UTC
+
+alert_template:
+  title: "Balance Change Alert"
+  message: "Significant balance change detected"
+  include_context:
+    transaction_details: true
+    risk_analysis: true
+
+monitoring:
+  collect_metrics: true
+  max_execution_time: "30s"
+  retry_on_failure: true
+  max_retries: 3

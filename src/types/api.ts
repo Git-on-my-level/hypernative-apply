@@ -144,6 +144,36 @@ export interface CustomAgent {
   last_error?: string;
 }
 
+export interface CustomAgentCreatePayload {
+  name: string;
+  type: string;
+  description?: string;
+  enabled?: boolean;
+  severity?: 'critical' | 'high' | 'medium' | 'low';
+  chain?: string;
+  configuration: Record<string, any>;
+  notification_channels?: string[];
+}
+
+export interface CustomAgentUpdatePayload {
+  name?: string;
+  description?: string;
+  enabled?: boolean;
+  severity?: 'critical' | 'high' | 'medium' | 'low';
+  configuration?: Record<string, any>;
+  notification_channels?: string[];
+}
+
+export interface CustomAgentStatusResponse {
+  id: string;
+  status: 'active' | 'inactive' | 'error' | 'pending';
+  last_execution?: string;
+  next_execution?: string;
+  execution_count: number;
+  error_count: number;
+  last_error?: string;
+}
+
 // Risk Insights related types
 export interface RiskInsight {
   id: string;

@@ -13,6 +13,7 @@ import { ApiClient } from './api-client.js';
 import { StateStore } from './state-store.js';
 import { log } from './logger.js';
 import { WatchlistProvider } from '../providers/watchlist.provider.js';
+import { CustomAgentProvider } from '../providers/custom-agent.provider.js';
 import { generateFingerprint } from './fingerprint.js';
 import type { ParsedConfig } from '../schemas/config.schema.js';
 import type { WatchlistConfig } from '../schemas/watchlist.schema.js';
@@ -26,7 +27,8 @@ import type {
   ExecutionSummary
 } from '../types/plan.js';
 import { ChangeType } from '../types/plan.js';
-import type { ApiWatchlist } from '../types/api.js';
+import type { ApiWatchlist, CustomAgent } from '../types/api.js';
+import type { CustomAgentConfig } from '../schemas/custom-agent.schema.js';
 
 export interface ExecutorOptions {
   apiClient: ApiClient;
@@ -38,6 +40,7 @@ export interface ExecutorOptions {
 
 export interface ProviderContext {
   watchlistProvider: WatchlistProvider;
+  customAgentProvider: CustomAgentProvider;
 }
 
 export class Executor {
@@ -58,6 +61,10 @@ export class Executor {
     // Initialize providers
     this.providers = {
       watchlistProvider: new WatchlistProvider({ 
+        apiClient: this.apiClient, 
+        dryRun: this.dryRun 
+      }),
+      customAgentProvider: new CustomAgentProvider({ 
         apiClient: this.apiClient, 
         dryRun: this.dryRun 
       })
@@ -193,8 +200,9 @@ export class Executor {
           throw new Error('Notification channel provider not implemented');
 
         case 'custom_agent':
-          // TODO: Implement custom agent provider
-          throw new Error('Custom agent provider not implemented');
+          result = await this.executeCustomAgentChange(change, config, currentState);
+          remoteId = result?.id;
+          break;
 
         default:
           throw new Error(`Unknown resource kind: ${change.kind}`);
@@ -268,6 +276,52 @@ export class Executor {
   }
 
   /**
+   * Execute a custom agent change
+   */
+  private async executeCustomAgentChange(
+    change: ResourceChange,
+    config: ParsedConfig,
+    currentState: StateFile
+  ): Promise<CustomAgent | null> {
+    const agentConfig = config.custom_agents[change.name];
+    if (!agentConfig) {
+      throw new Error(`Custom agent configuration not found: ${change.name}`);
+    }
+
+    switch (change.change_type) {
+      case ChangeType.CREATE:
+        return await this.providers.customAgentProvider.create(agentConfig);
+
+      case ChangeType.UPDATE:
+        if (!change.remote_id) {
+          throw new Error(`Remote ID not found for custom agent update: ${change.name}`);
+        }
+        
+        // Get current remote state for comparison
+        const currentRemoteState = await this.providers.customAgentProvider.getById(change.remote_id);
+        return await this.providers.customAgentProvider.update(change.remote_id, agentConfig, currentRemoteState || undefined);
+
+      case ChangeType.REPLACE:
+        if (!change.remote_id) {
+          throw new Error(`Remote ID not found for custom agent replacement: ${change.name}`);
+        }
+        
+        // Use the replace method which handles delete + create
+        return await this.providers.customAgentProvider.replace(change.remote_id, agentConfig);
+
+      case ChangeType.DELETE:
+        if (!change.remote_id) {
+          throw new Error(`Remote ID not found for custom agent deletion: ${change.name}`);
+        }
+        await this.providers.customAgentProvider.delete(change.remote_id);
+        return null;
+
+      default:
+        throw new Error(`Unsupported change type: ${change.change_type}`);
+    }
+  }
+
+  /**
    * Update state after a successful change
    */
   private async updateStateAfterChange(
@@ -289,18 +343,29 @@ export class Executor {
       const now = new Date().toISOString();
       const existingEntry = currentState.resources[change.name];
       
+      // Prepare base metadata
+      const baseMetadata = {
+        created_at: existingEntry?.metadata.created_at || now,
+        updated_at: now,
+        created_by: 'cli' as const,
+        cli_version: '0.1.0' // TODO: Import from package.json
+      };
+
+      // Add type-specific metadata for custom agents
+      const metadata = change.kind === 'custom_agent' 
+        ? { 
+            ...baseMetadata, 
+            agent_type: (this.getResourceConfig(change.name, change.kind, config) as CustomAgentConfig).type 
+          }
+        : baseMetadata;
+
       const stateEntry: StateEntry = {
         kind: change.kind,
         name: change.name,
         remote_id: result.remote_id || change.remote_id || '',
         last_applied_hash: configHash,
         last_seen_remote_hash: configHash, // For now, assume they match
-        metadata: {
-          created_at: existingEntry?.metadata.created_at || now,
-          updated_at: now,
-          created_by: 'cli',
-          cli_version: '0.1.0' // TODO: Import from package.json
-        }
+        metadata
       };
 
       newState.resources[change.name] = stateEntry;

@@ -375,9 +375,26 @@ export class Planner {
       };
     }
 
+    // Check for type changes in custom agents (requires REPLACE instead of UPDATE)
+    let changeType = ChangeType.UPDATE;
+    let requiresReplace = false;
+    
+    if (desired.kind === 'custom_agent') {
+      requiresReplace = await this.requiresCustomAgentReplace(
+        name, 
+        desired.config, 
+        existingState.remote_id
+      );
+      
+      if (requiresReplace) {
+        changeType = ChangeType.REPLACE;
+        log.debug(`Custom agent '${name}' type changed, marking as REPLACE`);
+      }
+    }
+
     // Resource has changes
     let fieldDiffs: FieldDiff[] | undefined;
-    let riskLevel: 'low' | 'medium' | 'high' = 'medium';
+    let riskLevel: 'low' | 'medium' | 'high' = requiresReplace ? 'high' : 'medium';
 
     if (options.include_field_diffs) {
       // We don't have the old config here, but we can note that diffs are available
@@ -395,15 +412,26 @@ export class Planner {
         change_type: 'changed'
       }];
 
-      // Assess risk based on the type of changes
-      riskLevel = this.assessChangeRisk(desired.kind, fieldDiffs);
+      // Add specific field diff for type change if it's a replace
+      if (requiresReplace) {
+        fieldDiffs.unshift({
+          path: 'type',
+          old_value: '[Previous type]',
+          new_value: desired.config.type,
+          change_type: 'changed',
+          is_sensitive: false
+        });
+      }
+
+      // Assess risk based on the type of changes (replaces are always high risk)
+      riskLevel = requiresReplace ? 'high' : this.assessChangeRisk(desired.kind, fieldDiffs);
     }
 
     return {
       kind: desired.kind,
       name,
       remote_id: existingState.remote_id,
-      change_type: ChangeType.UPDATE,
+      change_type: changeType,
       current_hash: existingState.last_applied_hash,
       desired_hash: desired.hash,
       field_diffs: fieldDiffs,
@@ -744,6 +772,42 @@ export class Planner {
     }
     
     return dependencies;
+  }
+
+  /**
+   * Check if a custom agent requires replacement (due to type change)
+   * This method uses state metadata to track the previous agent type
+   */
+  private async requiresCustomAgentReplace(
+    name: string,
+    desiredConfig: any,
+    remoteId?: string
+  ): Promise<boolean> {
+    if (!remoteId || !desiredConfig.type) {
+      return false;
+    }
+
+    try {
+      // Check if we have the previous type stored in state metadata
+      const currentState = await this.stateStore.loadState();
+      const existingState = currentState.resources[name];
+      
+      if (!existingState || !existingState.metadata) {
+        return false; // No previous state to compare
+      }
+
+      // Look for stored agent type in metadata
+      const storedType = (existingState.metadata as any).agent_type;
+      if (storedType && storedType !== desiredConfig.type) {
+        log.debug(`Custom agent '${name}' type changed from '${storedType}' to '${desiredConfig.type}', marking as REPLACE`);
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      log.warn(`Failed to check type change for custom agent '${name}':`, error);
+      return false; // If we can't determine, default to UPDATE to avoid data loss
+    }
   }
 
   /**
