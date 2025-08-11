@@ -130,13 +130,9 @@ export class NotificationChannelProvider {
         payload.message = options.testMessage;
       }
 
-      const response = await this.apiClient.post(
-        `/notification-channels/${id}/test`,
-        payload,
-        {
-          timeout: (options.timeout || 30) * 1000, // Convert to milliseconds
-        }
-      );
+      const response = await this.apiClient.post(`/notification-channels/${id}/test`, payload, {
+        timeout: (options.timeout || 30) * 1000, // Convert to milliseconds
+      });
 
       const result = unwrapApiResponse<NotificationChannelTestResponse>(response);
 

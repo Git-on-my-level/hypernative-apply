@@ -328,21 +328,18 @@ describe('NotificationChannelProvider', () => {
 
       const result = await provider.update('nc_slack_123', updatedConfig);
 
-      expect(mockApiClient.patch).toHaveBeenCalledWith(
-        '/notification-channels/nc_slack_123',
-        {
-          name: 'Test Slack Channel',
-          description: undefined,
-          enabled: false,
-          configuration: {
-            webhook_url: 'https://hooks.slack.com/services/test',
-            channel: '#updated-alerts',
-            username: 'hypernative-bot',
-            icon_emoji: ':warning:',
-          },
-          tags: undefined,
-        }
-      );
+      expect(mockApiClient.patch).toHaveBeenCalledWith('/notification-channels/nc_slack_123', {
+        name: 'Test Slack Channel',
+        description: undefined,
+        enabled: false,
+        configuration: {
+          webhook_url: 'https://hooks.slack.com/services/test',
+          channel: '#updated-alerts',
+          username: 'hypernative-bot',
+          icon_emoji: ':warning:',
+        },
+        tags: undefined,
+      });
       expect(result).toEqual(expectedResponse);
     });
 
@@ -373,9 +370,7 @@ describe('NotificationChannelProvider', () => {
 
       await provider.delete('nc_slack_123');
 
-      expect(mockApiClient.delete).toHaveBeenCalledWith(
-        '/notification-channels/nc_slack_123'
-      );
+      expect(mockApiClient.delete).toHaveBeenCalledWith('/notification-channels/nc_slack_123');
     });
 
     it('should handle dry run mode', async () => {
