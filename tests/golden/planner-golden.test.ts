@@ -110,9 +110,14 @@ describe('Golden Tests - Planner Output', () => {
       expect(plan.summary.to_create).toBe(4);
       expect(plan.summary.to_update).toBe(0);
 
-      // Compare with golden file
-      const isMatch = golden.compareWithGolden('create-all-resources', normalizedPlan);
-      expect(isMatch).toBe(true);
+      // Compare with golden file or update if requested
+      if (process.env.UPDATE_GOLDEN) {
+        golden.updateGolden('create-all-resources', normalizedPlan);
+        expect(true).toBe(true); // Always pass when updating
+      } else {
+        const isMatch = golden.compareWithGolden('create-all-resources', normalizedPlan);
+        expect(isMatch).toBe(true);
+      }
     });
 
     it('should generate consistent plan for dependency ordering', async () => {
@@ -182,8 +187,14 @@ describe('Golden Tests - Planner Output', () => {
         expect(idx).toBeLessThan(agentIndex);
       });
 
-      const isMatch = golden.compareWithGolden('dependency-ordering', normalizedPlan);
-      expect(isMatch).toBe(true);
+      // Compare with golden file or update if requested
+      if (process.env.UPDATE_GOLDEN) {
+        golden.updateGolden('dependency-ordering', normalizedPlan);
+        expect(true).toBe(true); // Always pass when updating
+      } else {
+        const isMatch = golden.compareWithGolden('dependency-ordering', normalizedPlan);
+        expect(isMatch).toBe(true);
+      }
     });
   });
 
@@ -271,8 +282,14 @@ describe('Golden Tests - Planner Output', () => {
       const updates = plan.changes.filter((c) => c.change_type === ChangeType.UPDATE);
       expect(updates).toHaveLength(2);
 
-      const isMatch = golden.compareWithGolden('update-resources', normalizedPlan);
-      expect(isMatch).toBe(true);
+      // Compare with golden file or update if requested
+      if (process.env.UPDATE_GOLDEN) {
+        golden.updateGolden('update-resources', normalizedPlan);
+        expect(true).toBe(true); // Always pass when updating
+      } else {
+        const isMatch = golden.compareWithGolden('update-resources', normalizedPlan);
+        expect(isMatch).toBe(true);
+      }
     });
   });
 
@@ -357,8 +374,14 @@ describe('Golden Tests - Planner Output', () => {
       const deletes = plan.changes.filter((c) => c.change_type === ChangeType.DELETE);
       expect(deletes).toHaveLength(2); // delete-me and also-delete
 
-      const isMatch = golden.compareWithGolden('delete-resources', normalizedPlan);
-      expect(isMatch).toBe(true);
+      // Compare with golden file or update if requested
+      if (process.env.UPDATE_GOLDEN) {
+        golden.updateGolden('delete-resources', normalizedPlan);
+        expect(true).toBe(true); // Always pass when updating
+      } else {
+        const isMatch = golden.compareWithGolden('delete-resources', normalizedPlan);
+        expect(isMatch).toBe(true);
+      }
     });
   });
 
@@ -468,8 +491,14 @@ describe('Golden Tests - Planner Output', () => {
 
       expect(updateChannelIndex).toBeLessThan(createAgentIndex);
 
-      const isMatch = golden.compareWithGolden('mixed-operations', normalizedPlan);
-      expect(isMatch).toBe(true);
+      // Compare with golden file or update if requested
+      if (process.env.UPDATE_GOLDEN) {
+        golden.updateGolden('mixed-operations', normalizedPlan);
+        expect(true).toBe(true); // Always pass when updating
+      } else {
+        const isMatch = golden.compareWithGolden('mixed-operations', normalizedPlan);
+        expect(isMatch).toBe(true);
+      }
     });
   });
 
@@ -566,8 +595,14 @@ describe('Golden Tests - Planner Output', () => {
       const noChanges = plan.changes.filter((c) => c.change_type === ChangeType.NO_CHANGE);
       expect(noChanges.length).toBeGreaterThan(0);
 
-      const isMatch = golden.compareWithGolden('no-changes', normalizedPlan);
-      expect(isMatch).toBe(true);
+      // Compare with golden file or update if requested
+      if (process.env.UPDATE_GOLDEN) {
+        golden.updateGolden('no-changes', normalizedPlan);
+        expect(true).toBe(true); // Always pass when updating
+      } else {
+        const isMatch = golden.compareWithGolden('no-changes', normalizedPlan);
+        expect(isMatch).toBe(true);
+      }
 
       // Clean up spies
       generateFingerprintSpy.mockRestore();
@@ -598,8 +633,14 @@ describe('Golden Tests - Planner Output', () => {
       expect(plan.changes).toHaveLength(0);
       expect(plan.summary.total_resources).toBe(0);
 
-      const isMatch = golden.compareWithGolden('empty-config', normalizedPlan);
-      expect(isMatch).toBe(true);
+      // Compare with golden file or update if requested
+      if (process.env.UPDATE_GOLDEN) {
+        golden.updateGolden('empty-config', normalizedPlan);
+        expect(true).toBe(true); // Always pass when updating
+      } else {
+        const isMatch = golden.compareWithGolden('empty-config', normalizedPlan);
+        expect(isMatch).toBe(true);
+      }
     });
   });
 

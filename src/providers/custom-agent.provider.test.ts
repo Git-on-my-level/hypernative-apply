@@ -37,7 +37,7 @@ describe('CustomAgentProvider', () => {
 
     // Set up default mock for notification channels endpoint
     (mockApiClient.get as any).mockImplementation((url: string) => {
-      if (url === '/api/v2/notification-channels') {
+      if (url === '/notification-channels') {
         return Promise.resolve({ data: mockNotificationChannels });
       }
       // For other endpoints, return a rejected promise that tests can override
@@ -109,7 +109,7 @@ describe('CustomAgentProvider', () => {
 
       const result = await provider.list();
 
-      expect(mockApiClient.get).toHaveBeenCalledWith('/api/v2/custom-agents', {
+      expect(mockApiClient.get).toHaveBeenCalledWith('/custom-agents', {
         params: {
           limit: 100,
           offset: 0,
@@ -130,7 +130,7 @@ describe('CustomAgentProvider', () => {
         type: 'large_transaction_monitor',
       });
 
-      expect(mockApiClient.get).toHaveBeenCalledWith('/api/v2/custom-agents', {
+      expect(mockApiClient.get).toHaveBeenCalledWith('/custom-agents', {
         params: {
           limit: 10,
           offset: 20,
@@ -156,7 +156,7 @@ describe('CustomAgentProvider', () => {
 
       const result = await provider.getById('ca_test_123');
 
-      expect(mockApiClient.get).toHaveBeenCalledWith('/api/v2/custom-agents/ca_test_123');
+      expect(mockApiClient.get).toHaveBeenCalledWith('/custom-agents/ca_test_123');
       expect(result).toEqual(mockApiResponse);
     });
 
@@ -183,7 +183,7 @@ describe('CustomAgentProvider', () => {
 
       const result = await provider.create(mockTransactionMonitoringConfig);
 
-      expect(mockApiClient.post).toHaveBeenCalledWith('/api/v2/custom-agents', {
+      expect(mockApiClient.post).toHaveBeenCalledWith('/custom-agents', {
         name: 'Transaction Monitoring Agent',
         description: 'Monitors high-value transactions',
         type: 'large_transaction_monitor',
@@ -228,7 +228,7 @@ describe('CustomAgentProvider', () => {
 
       const result = await provider.create(mockPriceMonitoringConfig);
 
-      expect(mockApiClient.post).toHaveBeenCalledWith('/api/v2/custom-agents', {
+      expect(mockApiClient.post).toHaveBeenCalledWith('/custom-agents', {
         name: 'Price Monitoring Agent',
         description: 'Monitors price changes',
         type: 'whale_movement_monitor',
@@ -279,7 +279,7 @@ describe('CustomAgentProvider', () => {
 
       const result = await provider.update('ca_test_123', updatedConfig);
 
-      expect(mockApiClient.patch).toHaveBeenCalledWith('/api/v2/custom-agents/ca_test_123', {
+      expect(mockApiClient.patch).toHaveBeenCalledWith('/custom-agents/ca_test_123', {
         name: 'Transaction Monitoring Agent',
         description: 'Updated description',
         enabled: false,
@@ -314,7 +314,7 @@ describe('CustomAgentProvider', () => {
 
       await provider.delete('ca_test_123');
 
-      expect(mockApiClient.delete).toHaveBeenCalledWith('/api/v2/custom-agents/ca_test_123');
+      expect(mockApiClient.delete).toHaveBeenCalledWith('/custom-agents/ca_test_123');
     });
 
     it('should handle dry run mode', async () => {

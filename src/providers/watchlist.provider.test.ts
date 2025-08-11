@@ -84,7 +84,7 @@ describe('WatchlistProvider', () => {
 
       const result = await provider.list();
 
-      expect(mockApiClient.get).toHaveBeenCalledWith('/api/v2/watchlists', {
+      expect(mockApiClient.get).toHaveBeenCalledWith('/watchlists', {
         params: { limit: 50, offset: 0 },
       });
       expect(result).toEqual(mockWatchlists);
@@ -96,7 +96,7 @@ describe('WatchlistProvider', () => {
 
       const result = await provider.list({ limit: 10, offset: 20 });
 
-      expect(mockApiClient.get).toHaveBeenCalledWith('/api/v2/watchlists', {
+      expect(mockApiClient.get).toHaveBeenCalledWith('/watchlists', {
         params: { limit: 10, offset: 20 },
       });
       expect(result).toEqual(mockWatchlists);
@@ -115,7 +115,7 @@ describe('WatchlistProvider', () => {
 
       const result = await provider.getById('wl_test_123');
 
-      expect(mockApiClient.get).toHaveBeenCalledWith('/api/v2/watchlists/wl_test_123');
+      expect(mockApiClient.get).toHaveBeenCalledWith('/watchlists/wl_test_123');
       expect(result).toEqual(mockApiWatchlist);
     });
 
@@ -142,7 +142,7 @@ describe('WatchlistProvider', () => {
 
       const result = await provider.create(mockWatchlistConfig);
 
-      expect(mockApiClient.post).toHaveBeenCalledWith('/api/v2/watchlists', {
+      expect(mockApiClient.post).toHaveBeenCalledWith('/watchlists', {
         name: 'Test Watchlist',
         description: 'Test watchlist for unit tests',
         assets: mockWatchlistConfig.assets,
@@ -176,7 +176,7 @@ describe('WatchlistProvider', () => {
 
       const result = await provider.update('wl_test_123', mockWatchlistConfig);
 
-      expect(mockApiClient.patch).toHaveBeenCalledWith('/api/v2/watchlists/wl_test_123', {
+      expect(mockApiClient.patch).toHaveBeenCalledWith('/watchlists/wl_test_123', {
         name: 'Test Watchlist',
         description: 'Test watchlist for unit tests',
         alert_policy_id: 'policy_123',
@@ -237,7 +237,7 @@ describe('WatchlistProvider', () => {
 
       await provider.delete('wl_test_123');
 
-      expect(mockApiClient.delete).toHaveBeenCalledWith('/api/v2/watchlists/wl_test_123');
+      expect(mockApiClient.delete).toHaveBeenCalledWith('/watchlists/wl_test_123');
     });
 
     it('should handle dry run mode', async () => {
@@ -292,7 +292,7 @@ describe('WatchlistProvider', () => {
 
       // Verify the endpoint and that FormData was used
       const call = mockApiClient.post.mock.calls[0];
-      expect(call[0]).toBe('/api/v2/watchlists/wl_test_123/upload-csv');
+      expect(call[0]).toBe('/watchlists/wl_test_123/upload-csv');
       // Verify FormData-like object by checking for typical FormData properties
       expect(call[1]).toHaveProperty('_boundary');
       expect(call[1]).toHaveProperty('_streams');
@@ -330,7 +330,7 @@ describe('WatchlistProvider', () => {
 
       // Verify the endpoint and that FormData was used
       const call = mockApiClient.post.mock.calls[0];
-      expect(call[0]).toBe('/api/v2/watchlists/wl_test_123/upload-csv');
+      expect(call[0]).toBe('/watchlists/wl_test_123/upload-csv');
       // Verify FormData-like object by checking for typical FormData properties
       expect(call[1]).toHaveProperty('_boundary');
       expect(call[1]).toHaveProperty('_streams');

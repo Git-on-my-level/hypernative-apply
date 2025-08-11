@@ -16,6 +16,6 @@ Acceptance Criteria
  - Secrets are never logged; redactions verified in debug logs
 
 References
-- GET/POST/PATCH/DELETE `/api/v2/notification-channels`
-- POST `/api/v2/notification-channels/{id}/test`
+- GET/POST/PATCH/DELETE `/notification-channels`
+- POST `/notification-channels/{id}/test`
 

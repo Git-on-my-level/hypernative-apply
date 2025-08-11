@@ -254,7 +254,7 @@ Headers:
 #### Method 2: Bearer Token
 ```bash
 # Get token
-POST /api/v2/auth/login
+POST /auth/login
 Body: {"email": "user@example.com", "password": "password"}
 
 # Use token
@@ -268,7 +268,7 @@ Headers:
 
 ##### List Alerts
 ```bash
-GET /api/v2/alerts
+GET /alerts
 
 Query Parameters:
   limit: 100 (max 1000)
@@ -280,7 +280,7 @@ Query Parameters:
   chain: "ethereum" | "polygon" | etc.
 
 Example:
-curl -X GET "https://api.hypernative.xyz/api/v2/alerts?limit=10&severity=high" \
+curl -X GET "https://api.hypernative.xyz/alerts?limit=10&severity=high" \
   -H "x-client-id: YOUR_CLIENT_ID" \
   -H "x-client-secret: YOUR_CLIENT_SECRET"
 
@@ -311,10 +311,10 @@ Response:
 
 ##### Get Alert by ID
 ```bash
-GET /api/v2/alerts/{alert_id}
+GET /alerts/{alert_id}
 
 Example:
-curl -X GET "https://api.hypernative.xyz/api/v2/alerts/alert_123" \
+curl -X GET "https://api.hypernative.xyz/alerts/alert_123" \
   -H "x-client-id: YOUR_CLIENT_ID" \
   -H "x-client-secret: YOUR_CLIENT_SECRET"
 
@@ -341,7 +341,7 @@ Response:
 
 ##### Acknowledge Alert
 ```bash
-PATCH /api/v2/alerts/{alert_id}/acknowledge
+PATCH /alerts/{alert_id}/acknowledge
 
 Body:
 {
@@ -350,7 +350,7 @@ Body:
 }
 
 Example:
-curl -X PATCH "https://api.hypernative.xyz/api/v2/alerts/alert_123/acknowledge" \
+curl -X PATCH "https://api.hypernative.xyz/alerts/alert_123/acknowledge" \
   -H "x-client-id: YOUR_CLIENT_ID" \
   -H "x-client-secret: YOUR_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
@@ -369,14 +369,14 @@ Response:
 
 ##### List Watchlists
 ```bash
-GET /api/v2/watchlists
+GET /watchlists
 
 Query Parameters:
   limit: 50
   offset: 0
 
 Example:
-curl -X GET "https://api.hypernative.xyz/api/v2/watchlists" \
+curl -X GET "https://api.hypernative.xyz/watchlists" \
   -H "x-client-id: YOUR_CLIENT_ID" \
   -H "x-client-secret: YOUR_CLIENT_SECRET"
 
@@ -397,7 +397,7 @@ Response:
 
 ##### Create Watchlist
 ```bash
-POST /api/v2/watchlists
+POST /watchlists
 
 Body:
 {
@@ -419,7 +419,7 @@ Body:
 }
 
 Example:
-curl -X POST "https://api.hypernative.xyz/api/v2/watchlists" \
+curl -X POST "https://api.hypernative.xyz/watchlists" \
   -H "x-client-id: YOUR_CLIENT_ID" \
   -H "x-client-secret: YOUR_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
@@ -438,7 +438,7 @@ Response:
 
 ##### Update Watchlist
 ```bash
-PATCH /api/v2/watchlists/{watchlist_id}
+PATCH /watchlists/{watchlist_id}
 
 Body:
 {
@@ -450,7 +450,7 @@ Body:
 
 ##### Delete Watchlist
 ```bash
-DELETE /api/v2/watchlists/{watchlist_id}
+DELETE /watchlists/{watchlist_id}
 
 Response:
 {
@@ -461,7 +461,7 @@ Response:
 
 ##### Upload CSV to Watchlist
 ```bash
-POST /api/v2/watchlists/{watchlist_id}/upload-csv
+POST /watchlists/{watchlist_id}/upload-csv
 
 Content-Type: multipart/form-data
 File Format:
@@ -481,7 +481,7 @@ Response:
 
 ##### List Custom Agents
 ```bash
-GET /api/v2/custom-agents
+GET /custom-agents
 
 Query Parameters:
   limit: 100
@@ -509,7 +509,7 @@ Response:
 
 ##### Create Custom Agent
 ```bash
-POST /api/v2/custom-agents
+POST /custom-agents
 
 Body:
 {
@@ -538,7 +538,7 @@ Response:
 
 ##### Update Custom Agent
 ```bash
-PATCH /api/v2/custom-agents/{agent_id}
+PATCH /custom-agents/{agent_id}
 
 Body:
 {
@@ -552,7 +552,7 @@ Body:
 
 ##### Delete Custom Agent
 ```bash
-DELETE /api/v2/custom-agents/{agent_id}
+DELETE /custom-agents/{agent_id}
 
 Response:
 {
@@ -563,7 +563,7 @@ Response:
 
 ##### Get Agent Status
 ```bash
-GET /api/v2/custom-agents/{agent_id}/status
+GET /custom-agents/{agent_id}/status
 
 Response:
 {
@@ -581,7 +581,7 @@ Response:
 
 ##### List Risk Insights
 ```bash
-GET /api/v2/risk-insights
+GET /risk-insights
 
 Query Parameters:
   limit: 100
@@ -613,7 +613,7 @@ Response:
 
 ##### Get Risk Insight by ID
 ```bash
-GET /api/v2/risk-insights/{insight_id}
+GET /risk-insights/{insight_id}
 
 Response:
 {
@@ -641,10 +641,10 @@ Response:
 
 ##### Get Risk Insights by Type
 ```bash
-GET /api/v2/risk-insights/by-type/{type_id}
+GET /risk-insights/by-type/{type_id}
 
 Example:
-GET /api/v2/risk-insights/by-type/A-4102
+GET /risk-insights/by-type/A-4102
 
 Response:
 {
@@ -659,7 +659,7 @@ Response:
 
 ##### Assess Transaction
 ```bash
-POST /api/v2/guardian/assess
+POST /guardian/assess
 
 Body:
 {
@@ -699,7 +699,7 @@ Response:
 
 ##### List Guardian Policies
 ```bash
-GET /api/v2/guardian/policies
+GET /guardian/policies
 
 Response:
 {
@@ -718,7 +718,7 @@ Response:
 
 ##### Create Guardian Policy
 ```bash
-POST /api/v2/guardian/policies
+POST /guardian/policies
 
 Body:
 {
@@ -738,7 +738,7 @@ Body:
 
 ##### Screen Single Address
 ```bash
-POST /api/v2/screener/address
+POST /screener/address
 
 Body:
 {
@@ -767,7 +767,7 @@ Response:
 
 ##### Screen Multiple Addresses (Batch)
 ```bash
-POST /api/v2/screener/batch
+POST /screener/batch
 
 Body:
 {
@@ -804,7 +804,7 @@ Response:
 
 ##### Check Pool Toxicity
 ```bash
-POST /api/v2/screener/pool-toxicity
+POST /screener/pool-toxicity
 
 Body:
 {
@@ -840,7 +840,7 @@ Response:
 
 ##### List Organization Members
 ```bash
-GET /api/v2/organizations/{org_id}/members
+GET /organizations/{org_id}/members
 
 Response:
 {
@@ -859,7 +859,7 @@ Response:
 
 ##### Add Organization Member
 ```bash
-POST /api/v2/organizations/{org_id}/members
+POST /organizations/{org_id}/members
 
 Body:
 {
@@ -879,7 +879,7 @@ Response:
 
 ##### Update Organization Member
 ```bash
-PATCH /api/v2/organizations/{org_id}/members/{member_id}
+PATCH /organizations/{org_id}/members/{member_id}
 
 Body:
 {
@@ -890,7 +890,7 @@ Body:
 
 ##### Remove Organization Member
 ```bash
-DELETE /api/v2/organizations/{org_id}/members/{member_id}
+DELETE /organizations/{org_id}/members/{member_id}
 
 Response:
 {
@@ -903,7 +903,7 @@ Response:
 
 ##### List Notification Channels
 ```bash
-GET /api/v2/notification-channels
+GET /notification-channels
 
 Response:
 {
@@ -924,7 +924,7 @@ Response:
 
 ##### Create Notification Channel
 ```bash
-POST /api/v2/notification-channels
+POST /notification-channels
 
 Body:
 {
@@ -950,7 +950,7 @@ Response:
 
 ##### Update Notification Channel
 ```bash
-PATCH /api/v2/notification-channels/{channel_id}
+PATCH /notification-channels/{channel_id}
 
 Body:
 {
@@ -963,7 +963,7 @@ Body:
 
 ##### Delete Notification Channel
 ```bash
-DELETE /api/v2/notification-channels/{channel_id}
+DELETE /notification-channels/{channel_id}
 
 Response:
 {
@@ -974,7 +974,7 @@ Response:
 
 ##### Test Notification Channel
 ```bash
-POST /api/v2/notification-channels/{channel_id}/test
+POST /notification-channels/{channel_id}/test
 
 Response:
 {
@@ -988,7 +988,7 @@ Response:
 
 ##### Get Supported Protocols
 ```bash
-GET /api/v2/protocols
+GET /protocols
 
 Query Parameters:
   chain: "ethereum" | "polygon" | etc.
@@ -1014,7 +1014,7 @@ Response:
 
 ##### Get Supported Chains
 ```bash
-GET /api/v2/chains
+GET /chains
 
 Response:
 {
@@ -1299,7 +1299,7 @@ def advanced_analysis(extracted_variables):
     is_wallet = is_eoa(whale_address, "ethereum")
     
     # Make Hypernative API call
-    alerts = hn_api_get("/api/v2/alerts", params={"limit": 10})
+    alerts = hn_api_get("/alerts", params={"limit": 10})
     
     # Get contract metadata
     contract_info = get_contract_data(token_address, "ethereum")
@@ -2104,11 +2104,11 @@ agent.add_variable(GetSecretVariable(
 # Step 3: Use hn_api_* helpers (automatically use loaded credentials)
 def call_hypernative_api(extracted_variables):
     # Get alerts
-    alerts = hn_api_get("/api/v2/alerts", params={"limit": 10})
+    alerts = hn_api_get("/alerts", params={"limit": 10})
     
     # Update watchlist
     update_result = hn_api_patch(
-        "/api/v2/watchlists/123",
+        "/watchlists/123",
         data={"name": "Updated Watchlist"}
     )
     
@@ -3064,7 +3064,7 @@ def fireblocks_transaction_policy(extracted_variables):
     
     # Screen recipient
     screening_result = hn_api_post(
-        "/api/v2/screener/address",
+        "/screener/address",
         data={"address": recipient, "chain": "ethereum"}
     )
     

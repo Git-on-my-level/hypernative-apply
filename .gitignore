@@ -123,4 +123,5 @@ qa-testing/
 *.tgz
 
 # Yarn Integrity file
-.yarn-integrity
+.yarn-integrity.test-csv-*
+.hypernative/

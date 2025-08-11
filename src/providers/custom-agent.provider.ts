@@ -54,7 +54,7 @@ export class CustomAgentProvider {
     log.debug('Fetching custom agents', params);
 
     try {
-      const response = await this.apiClient.get('/api/v2/custom-agents', {
+      const response = await this.apiClient.get('/custom-agents', {
         params: {
           limit: params?.limit ?? 100,
           offset: params?.offset ?? 0,
@@ -77,7 +77,7 @@ export class CustomAgentProvider {
     log.debug(`Fetching custom agent: ${id}`);
 
     try {
-      const response = await this.apiClient.get(`/api/v2/custom-agents/${id}`);
+      const response = await this.apiClient.get(`/custom-agents/${id}`);
       return unwrapApiResponse<CustomAgent>(response);
     } catch (error: any) {
       if (error.status === 404) {
@@ -95,7 +95,7 @@ export class CustomAgentProvider {
     log.debug(`Fetching custom agent status: ${id}`);
 
     try {
-      const response = await this.apiClient.get(`/api/v2/custom-agents/${id}/status`);
+      const response = await this.apiClient.get(`/custom-agents/${id}/status`);
       return unwrapApiResponse<CustomAgentStatusResponse>(response);
     } catch (error: any) {
       if (error.status === 404) {
@@ -123,7 +123,7 @@ export class CustomAgentProvider {
     }
 
     try {
-      const response = await this.apiClient.post('/api/v2/custom-agents', payload);
+      const response = await this.apiClient.post('/custom-agents', payload);
       const created = unwrapApiResponse<CustomAgent>(response);
       log.info(`Created custom agent: ${created.name} (${created.id})`);
       return created;
@@ -155,7 +155,7 @@ export class CustomAgentProvider {
     }
 
     try {
-      const response = await this.apiClient.patch(`/api/v2/custom-agents/${id}`, payload);
+      const response = await this.apiClient.patch(`/custom-agents/${id}`, payload);
       const updated = unwrapApiResponse<CustomAgent>(response);
       log.info(`Updated custom agent: ${updated.name} (${id})`);
       return updated;
@@ -207,7 +207,7 @@ export class CustomAgentProvider {
     }
 
     try {
-      await this.apiClient.delete(`/api/v2/custom-agents/${id}`);
+      await this.apiClient.delete(`/custom-agents/${id}`);
       log.info(`Deleted custom agent: ${id}`);
     } catch (error) {
       log.error(`Failed to delete custom agent ${id}:`, error);

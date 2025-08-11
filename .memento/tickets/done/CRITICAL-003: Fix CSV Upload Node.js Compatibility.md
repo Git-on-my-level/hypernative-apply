@@ -59,7 +59,7 @@ formData.append('file', createReadStream(csvPath), {
 Ensure the API client properly handles form-data content-type headers:
 ```typescript
 const response = await this.apiClient.post(
-  `/api/v2/watchlists/${watchlistId}/upload-csv`,
+  `/watchlists/${watchlistId}/upload-csv`,
   formData,
   {
     headers: {

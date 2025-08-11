@@ -18,6 +18,6 @@ Acceptance Criteria
  - Channel references resolved; failures reported with actionable hints
 
 References
-- GET/POST/PATCH/DELETE `/api/v2/custom-agents`
-- GET `/api/v2/custom-agents/{id}/status`
+- GET/POST/PATCH/DELETE `/custom-agents`
+- GET `/custom-agents/{id}/status`
 

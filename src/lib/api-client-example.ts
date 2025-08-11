@@ -20,7 +20,7 @@ async function basicApiClientExample() {
     const apiClient = ApiClient.fromConfig(config);
 
     // Make a simple GET request to fetch alerts
-    const alerts = await apiClient.get<{ items: Alert[]; pagination: any }>('/api/v2/alerts', {
+    const alerts = await apiClient.get<{ items: Alert[]; pagination: any }>('/alerts', {
       limit: 10,
       severity: 'high',
     });
@@ -28,7 +28,7 @@ async function basicApiClientExample() {
     console.log('Fetched alerts:', alerts.items.length);
 
     // Make a POST request to create a watchlist
-    const newWatchlist = await apiClient.post<Watchlist>('/api/v2/watchlists', {
+    const newWatchlist = await apiClient.post<Watchlist>('/watchlists', {
       name: 'Test Watchlist',
       description: 'Created via API client',
       addresses: ['0x123...', '0x456...'],
@@ -57,7 +57,7 @@ async function paginationExample() {
     // Method 1: Simple pagination - fetch all watchlists
     const allWatchlists = await fetchAllPages<Watchlist>(
       apiClient,
-      '/api/v2/watchlists',
+      '/watchlists',
       {}, // No query parameters
       { pageSize: 50 } // Options
     );
@@ -68,7 +68,7 @@ async function paginationExample() {
     const paginationHelper = new PaginationHelper(apiClient);
 
     const result = await paginationHelper.fetchAll<CustomAgent>(
-      '/api/v2/custom-agents',
+      '/custom-agents',
       {}, // Base query parameters
       {
         pageSize: 100,
@@ -115,7 +115,7 @@ async function rateLimitingExample() {
 
     // Make multiple concurrent requests - rate limiter will handle them
     const requests = Array.from({ length: 10 }, (_, i) =>
-      apiClient.get('/api/v2/alerts', { limit: 10, offset: i * 10 })
+      apiClient.get('/alerts', { limit: 10, offset: i * 10 })
     );
 
     const results = await Promise.all(requests);
@@ -141,7 +141,7 @@ async function errorHandlingExample() {
     const apiClient = ApiClient.fromConfig(config);
 
     // This request should fail (invalid watchlist ID)
-    await apiClient.get('/api/v2/watchlists/invalid-id-12345');
+    await apiClient.get('/watchlists/invalid-id-12345');
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.log('Caught expected error:', errorMsg);
