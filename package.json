@@ -1,0 +1,111 @@
+{
+  "name": "@hypernative/cli",
+  "version": "0.1.0",
+  "description": "Hypernative configuration management CLI for monitoring and security workflows",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "bin": {
+    "hypernative": "bin/hypernative",
+    "hn": "bin/hypernative"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:unit": "vitest run --exclude '**/e2e/**'",
+    "test:unit:watch": "vitest --exclude '**/e2e/**'",
+    "test:coverage": "vitest run --coverage --exclude '**/e2e/**'",
+    "test:golden": "vitest run tests/golden/",
+    "test:e2e": "E2E=1 vitest run tests/e2e/ --config vitest.config.ts",
+    "test:e2e:smoke": "E2E=1 vitest run tests/e2e/smoke.test.ts",
+    "test:ci": "npm run test:unit && npm run test:coverage",
+    "test:all": "npm run test:unit && npm run test:e2e",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "format": "prettier --write src tests",
+    "format:check": "prettier --check src tests",
+    "prebuild": "npm run lint && npm run format:check",
+    "prepare": "npm run build",
+    "prepack": "npm run build",
+    "pkg:build": "npm run build && npm run pkg:all",
+    "pkg:all": "pkg dist/index.js --targets node18-linux-x64,node18-macos-x64,node18-macos-arm64,node18-win-x64 --out-path build",
+    "pkg:linux": "pkg dist/index.js --targets node18-linux-x64 --out-path build",
+    "pkg:macos": "pkg dist/index.js --targets node18-macos-x64,node18-macos-arm64 --out-path build",
+    "pkg:windows": "pkg dist/index.js --targets node18-win-x64 --out-path build",
+    "semantic-release": "semantic-release",
+    "semantic-release:dry-run": "semantic-release --dry-run"
+  },
+  "dependencies": {
+    "@types/uuid": "^10.0.0",
+    "axios": "^1.6.2",
+    "chalk": "^5.3.0",
+    "commander": "^11.1.0",
+    "csv-parse": "^6.1.0",
+    "dotenv": "^16.3.1",
+    "fast-glob": "^3.3.2",
+    "form-data": "^4.0.4",
+    "ora": "^8.0.1",
+    "p-limit": "^5.0.0",
+    "uuid": "^11.1.0",
+    "winston": "^3.11.0",
+    "yaml": "^2.3.4",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^9.2.6",
+    "@semantic-release/npm": "^11.0.3",
+    "@types/form-data": "^2.2.1",
+    "@types/node": "^20.19.10",
+    "@typescript-eslint/eslint-plugin": "^6.13.1",
+    "@typescript-eslint/parser": "^6.13.1",
+    "eslint": "^8.54.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "nock": "^14.0.9",
+    "pkg": "^5.8.1",
+    "prettier": "^3.1.0",
+    "semantic-release": "^22.0.12",
+    "tsx": "^4.6.2",
+    "typescript": "^5.3.3",
+    "vitest": "^1.0.4"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "build",
+    "CHANGELOG.md"
+  ],
+  "keywords": [
+    "hypernative",
+    "cli",
+    "configuration",
+    "management",
+    "security",
+    "monitoring",
+    "web3",
+    "blockchain",
+    "defi",
+    "threat-detection",
+    "incident-response"
+  ],
+  "author": "Hypernative <support@hypernative.io>",
+  "license": "MIT",
+  "homepage": "https://github.com/hypernative/cli",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hypernative/cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hypernative/cli/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "preferGlobal": true
+}

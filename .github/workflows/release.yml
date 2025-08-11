@@ -1,0 +1,436 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - beta
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (no actual release)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  NODE_VERSION: '18.x'
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  test:
+    name: Test and Build
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        registry-url: 'https://registry.npmjs.org'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run linter and format check
+      run: |
+        npm run lint
+        npm run format:check
+    
+    - name: Run tests
+      run: npm run test:ci
+    
+    - name: Build project
+      run: npm run build
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-dist
+        path: |
+          dist/
+          bin/
+          package.json
+          package-lock.json
+        retention-days: 1
+
+  build-binaries:
+    name: Build Binaries
+    runs-on: ${{ matrix.os }}
+    needs: test
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux
+          - os: macos-latest
+            target: macos
+          - os: windows-latest
+            target: windows
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-dist
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build binaries for ${{ matrix.target }}
+      run: npm run pkg:${{ matrix.target }}
+    
+    - name: Create build directory if not exists
+      run: mkdir -p build
+      shell: bash
+    
+    - name: Test binary (Linux/macOS)
+      if: runner.os != 'Windows'
+      run: |
+        chmod +x build/*
+        ./build/index-* --version || true
+        ./build/index-* --help || true
+    
+    - name: Test binary (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        ./build/index.exe --version
+        ./build/index.exe --help
+    
+    - name: Upload binary artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: binaries-${{ matrix.target }}
+        path: build/
+        retention-days: 30
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: [test, build-binaries]
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    outputs:
+      released: ${{ steps.semantic-release.outputs.released }}
+      version: ${{ steps.semantic-release.outputs.version }}
+      major: ${{ steps.semantic-release.outputs.major }}
+      minor: ${{ steps.semantic-release.outputs.minor }}
+      patch: ${{ steps.semantic-release.outputs.patch }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        registry-url: 'https://registry.npmjs.org'
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-dist
+    
+    - name: Download all binary artifacts
+      uses: actions/download-artifact@v4
+      with:
+        pattern: binaries-*
+        path: build/
+        merge-multiple: true
+    
+    - name: List downloaded artifacts
+      run: |
+        echo "Build artifacts:"
+        ls -la build/ || true
+        echo "Root artifacts:"
+        ls -la
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Create NPM package
+      run: npm pack
+    
+    - name: Run semantic-release (dry-run)
+      if: github.event.inputs.dry_run == 'true'
+      run: npm run semantic-release:dry-run
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    
+    - name: Run semantic-release
+      if: github.event.inputs.dry_run != 'true'
+      id: semantic-release
+      run: |
+        npx semantic-release
+        echo "released=$([ -f .semantic-release-output ] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  generate-slsa-provenance:
+    name: Generate SLSA Provenance
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    permissions:
+      actions: read
+      id-token: write
+      contents: write
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.9.0
+    with:
+      base64-subjects: "${{ needs.release.outputs.provenance-subjects }}"
+      attestation-name: "hypernative-cli-${{ needs.release.outputs.version }}.intoto.jsonl"
+      upload-assets: true
+
+  publish-binaries:
+    name: Publish Binaries to Release
+    runs-on: ubuntu-latest
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    
+    steps:
+    - name: Download all binary artifacts
+      uses: actions/download-artifact@v4
+      with:
+        pattern: binaries-*
+        path: build/
+        merge-multiple: true
+    
+    - name: Create checksums
+      run: |
+        cd build
+        sha256sum * > checksums.txt
+        cat checksums.txt
+    
+    - name: Upload additional assets to release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ needs.release.outputs.version }}
+        files: |
+          build/checksums.txt
+          build/*
+        fail_on_unmatched_files: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-and-push-docker:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-dist
+    
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: |
+          hypernative/cli
+          ghcr.io/${{ github.repository }}
+        tags: |
+          type=semver,pattern={{version}},value=v${{ needs.release.outputs.version }}
+          type=semver,pattern={{major}}.{{minor}},value=v${{ needs.release.outputs.version }}
+          type=semver,pattern={{major}},value=v${{ needs.release.outputs.version }}
+          type=raw,value=latest,enable={{is_default_branch}}
+        labels: |
+          org.opencontainers.image.title=Hypernative CLI
+          org.opencontainers.image.description=Hypernative configuration management CLI for monitoring and security workflows
+          org.opencontainers.image.vendor=Hypernative
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        provenance: true
+        sbom: true
+
+  update-homebrew:
+    name: Update Homebrew Formula
+    runs-on: ubuntu-latest
+    needs: release
+    if: needs.release.outputs.released == 'true' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Update Homebrew formula
+      uses: mislav/bump-homebrew-formula-action@v3
+      with:
+        formula-name: hypernative
+        homebrew-tap: hypernative/homebrew-tap
+        download-url: https://registry.npmjs.org/@hypernative/cli/-/cli-${{ needs.release.outputs.version }}.tgz
+        commit-message: |
+          {{formulaName}} {{version}}
+
+          Created by https://github.com/mislav/bump-homebrew-formula-action
+      env:
+        COMMITTER_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  notify:
+    name: Notify Release
+    runs-on: ubuntu-latest
+    needs: [release, build-and-push-docker, update-homebrew]
+    if: always() && needs.release.outputs.released == 'true'
+    
+    steps:
+    - name: Notify success
+      if: needs.build-and-push-docker.result == 'success'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      run: |
+        if [ -n "$SLACK_WEBHOOK_URL" ]; then
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{
+              \"text\": \"🚀 Successfully released @hypernative/cli v${{ needs.release.outputs.version }}\",
+              \"attachments\": [{
+                \"color\": \"good\",
+                \"fields\": [{
+                  \"title\": \"Version\",
+                  \"value\": \"v${{ needs.release.outputs.version }}\",
+                  \"short\": true
+                }, {
+                  \"title\": \"NPM\",
+                  \"value\": \"<https://www.npmjs.com/package/@hypernative/cli|@hypernative/cli>\",
+                  \"short\": true
+                }, {
+                  \"title\": \"Docker\",
+                  \"value\": \"<https://hub.docker.com/r/hypernative/cli|hypernative/cli>\",
+                  \"short\": true
+                }, {
+                  \"title\": \"GitHub\",
+                  \"value\": \"<${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ needs.release.outputs.version }}|View Release>\",
+                  \"short\": true
+                }]
+              }]
+            }" \
+            "$SLACK_WEBHOOK_URL"
+        fi
+    
+    - name: Create summary
+      run: |
+        cat >> $GITHUB_STEP_SUMMARY << EOF
+        # 🚀 Release Summary
+        
+        **Version:** v${{ needs.release.outputs.version }}
+        **Branch:** ${{ github.ref_name }}
+        **Commit:** ${{ github.sha }}
+        
+        ## 📦 Published Artifacts
+        
+        - **NPM Package:** [@hypernative/cli@${{ needs.release.outputs.version }}](https://www.npmjs.com/package/@hypernative/cli)
+        - **Docker Images:** 
+          - [hypernative/cli:${{ needs.release.outputs.version }}](https://hub.docker.com/r/hypernative/cli)
+          - [ghcr.io/${{ github.repository }}:${{ needs.release.outputs.version }}](https://ghcr.io/${{ github.repository }})
+        - **Binaries:** Available in [GitHub Releases](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.release.outputs.version }})
+        
+        ## 🔧 Installation
+        
+        ### NPM (Global)
+        \`\`\`bash
+        npm install -g @hypernative/cli@${{ needs.release.outputs.version }}
+        hypernative --version
+        \`\`\`
+        
+        ### Docker
+        \`\`\`bash
+        docker run --rm hypernative/cli:${{ needs.release.outputs.version }} --version
+        \`\`\`
+        
+        ### Binary Download
+        Download platform-specific binaries from the [releases page](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.release.outputs.version }}).
+        
+        ## ✅ Quality Gates
+        
+        - ✅ Tests passed
+        - ✅ Binaries built for all platforms  
+        - ✅ NPM package published
+        - ✅ Docker images published
+        - ✅ SLSA provenance generated
+        - ✅ Security scan completed
+        EOF

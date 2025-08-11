@@ -1,0 +1,84 @@
+{
+  "metadata": {
+    "plan_id": "[NORMALIZED]",
+    "created_at": "[NORMALIZED]",
+    "cli_version": "0.1.0",
+    "config_hash": "3530d5763ddc5244950f5e3581c67a6df85938d5a0f826242af1d18dc346aa76",
+    "content_hash": "a32f0eb2a4b70c9180a6a459d7dc4554faac1d5a572e23d82cff4e108b5298f8",
+    "base_directory": "[NORMALIZED]",
+    "config_files": ["hypernative/notification-channels/*.yaml", "hypernative/watchlists/*.yaml"]
+  },
+  "changes": [
+    {
+      "kind": "notification_channel",
+      "name": "slack-alerts",
+      "remote_id": "nc_123",
+      "change_type": "UPDATE",
+      "current_hash": "old_slack_hash",
+      "desired_hash": "43b6c3a65603272814841c042aa25bb28bc4b336fda4e082d39764cc567b1475",
+      "field_diffs": [
+        {
+          "path": "config",
+          "old_value": "[Previous configuration]",
+          "new_value": "[New configuration]",
+          "change_type": "changed"
+        }
+      ],
+      "dependencies": [],
+      "dependents": ["main-watchlist"],
+      "risk_level": "low"
+    },
+    {
+      "kind": "watchlist",
+      "name": "main-watchlist",
+      "remote_id": "wl_456",
+      "change_type": "UPDATE",
+      "current_hash": "old_watchlist_hash",
+      "desired_hash": "d670019b0daa1f8a8dac67b71c0ee6cb51d612ee8b3b2641c786cc3bf0c25ef1",
+      "field_diffs": [
+        {
+          "path": "config",
+          "old_value": "[Previous configuration]",
+          "new_value": "[New configuration]",
+          "change_type": "changed"
+        }
+      ],
+      "dependencies": ["slack-alerts"],
+      "dependents": [],
+      "risk_level": "low"
+    }
+  ],
+  "summary": {
+    "total_resources": 2,
+    "to_create": 0,
+    "to_update": 2,
+    "to_replace": 0,
+    "to_delete": 0,
+    "no_change": 0,
+    "by_resource_type": {
+      "notification_channel": {
+        "to_create": 0,
+        "to_update": 1,
+        "to_replace": 0,
+        "to_delete": 0,
+        "no_change": 0
+      },
+      "watchlist": {
+        "to_create": 0,
+        "to_update": 1,
+        "to_replace": 0,
+        "to_delete": 0,
+        "no_change": 0
+      }
+    }
+  },
+  "dependencies": [
+    {
+      "resource_name": "main-watchlist",
+      "resource_kind": "watchlist",
+      "depends_on_name": "slack-alerts",
+      "depends_on_kind": "notification_channel",
+      "dependency_type": "references"
+    }
+  ]
+}

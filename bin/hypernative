@@ -1,0 +1,8 @@
+#!/usr/bin/env node
+
+import('../dist/index.js').then(module => {
+  // The index.js file will handle everything
+}).catch(err => {
+  console.error('Error loading hypernative CLI:', err);
+  process.exit(1);
+});

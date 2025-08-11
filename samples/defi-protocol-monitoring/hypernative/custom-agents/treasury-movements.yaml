@@ -1,0 +1,54 @@
+name: Large Treasury Movements
+description: Monitor large treasury fund movements that require approval
+type: treasury_monitor  
+chain: ethereum
+configuration:
+  # Treasury addresses to monitor
+  addresses:
+    - "0x1111111111111111111111111111111111111111"  # Main treasury
+    - "0x2222222222222222222222222222222222222222"  # Secondary treasury
+    - "0x4444444444444444444444444444444444444444"  # Polygon treasury
+  
+  # Alert thresholds
+  thresholds:
+    critical: 1000000  # $1M+ movements
+    high: 500000      # $500k+ movements  
+    medium: 100000    # $100k+ movements
+    
+  # Tokens to monitor
+  monitored_tokens:
+    - "USDC"
+    - "USDT"
+    - "DAI" 
+    - "WETH"
+    - "WBTC"
+    - "YOUR_TOKEN"  # Your protocol token
+    
+  # Transaction types
+  alert_conditions:
+    - type: outbound_transfer
+      description: "Large outbound treasury transfer"
+      severity_mapping:
+        gte_1000000: critical
+        gte_500000: high
+        gte_100000: medium
+        
+    - type: multi_signature_required
+      description: "Transaction requiring multiple signatures"
+      severity: high
+      
+    - type: emergency_withdrawal
+      description: "Emergency withdrawal function called"
+      severity: critical
+      
+  # Business logic
+  settings:
+    require_manual_approval: true
+    escalation_time_minutes: 30
+    auto_pause_on_critical: false  # Set to true to auto-pause on critical alerts
+    
+notification_channels:
+  - "slack-critical" 
+  - "email-executives"
+  
+enabled: true

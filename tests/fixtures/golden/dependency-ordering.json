@@ -1,0 +1,107 @@
+{
+  "metadata": {
+    "plan_id": "[NORMALIZED]",
+    "created_at": "[NORMALIZED]",
+    "cli_version": "0.1.0",
+    "config_hash": "3dea33f151b1aa1e7458d44f3ef62b1e6ac7333d657c74f649a5156c65cf9362",
+    "content_hash": "cabb530bd427c0251da476798597376c042ebdf94e7aeb201ea323e4d629785e",
+    "base_directory": "[NORMALIZED]",
+    "config_files": [
+      "hypernative/notification-channels/*.yaml",
+      "hypernative/watchlists/*.yaml",
+      "hypernative/custom-agents/*.yaml"
+    ]
+  },
+  "changes": [
+    {
+      "kind": "notification_channel",
+      "name": "channel-1",
+      "change_type": "CREATE",
+      "desired_hash": "63059aab77a14911edfcdaf514ecf620c340d77bfe06ebe760f72585d27b3a53",
+      "dependencies": [],
+      "dependents": ["watchlist-1"],
+      "risk_level": "low"
+    },
+    {
+      "kind": "notification_channel",
+      "name": "channel-2",
+      "change_type": "CREATE",
+      "desired_hash": "2318dda30cd0ddd3b0c55126c136a3ffdd58a2b1f9ff9d9cb69584d3474ffa4f",
+      "dependencies": [],
+      "dependents": ["watchlist-1", "agent-1"],
+      "risk_level": "low"
+    },
+    {
+      "kind": "custom_agent",
+      "name": "agent-1",
+      "change_type": "CREATE",
+      "desired_hash": "7fa00d78e88cbd19cb0d0dcf660e09d0145597adead731b30d204fb10a82b79b",
+      "dependencies": ["channel-2"],
+      "dependents": [],
+      "risk_level": "low"
+    },
+    {
+      "kind": "watchlist",
+      "name": "watchlist-1",
+      "change_type": "CREATE",
+      "desired_hash": "73557af904296cb747e6ac0fd5b7b3d514d142faba0e3c9202766d049058c8f3",
+      "dependencies": ["channel-1", "channel-2"],
+      "dependents": [],
+      "risk_level": "low"
+    }
+  ],
+  "summary": {
+    "total_resources": 4,
+    "to_create": 4,
+    "to_update": 0,
+    "to_replace": 0,
+    "to_delete": 0,
+    "no_change": 0,
+    "by_resource_type": {
+      "notification_channel": {
+        "to_create": 2,
+        "to_update": 0,
+        "to_replace": 0,
+        "to_delete": 0,
+        "no_change": 0
+      },
+      "custom_agent": {
+        "to_create": 1,
+        "to_update": 0,
+        "to_replace": 0,
+        "to_delete": 0,
+        "no_change": 0
+      },
+      "watchlist": {
+        "to_create": 1,
+        "to_update": 0,
+        "to_replace": 0,
+        "to_delete": 0,
+        "no_change": 0
+      }
+    }
+  },
+  "dependencies": [
+    {
+      "resource_name": "watchlist-1",
+      "resource_kind": "watchlist",
+      "depends_on_name": "channel-1",
+      "depends_on_kind": "notification_channel",
+      "dependency_type": "references"
+    },
+    {
+      "resource_name": "watchlist-1",
+      "resource_kind": "watchlist",
+      "depends_on_name": "channel-2",
+      "depends_on_kind": "notification_channel",
+      "dependency_type": "references"
+    },
+    {
+      "resource_name": "agent-1",
+      "resource_kind": "custom_agent",
+      "depends_on_name": "channel-2",
+      "depends_on_kind": "notification_channel",
+      "dependency_type": "references"
+    }
+  ]
+}

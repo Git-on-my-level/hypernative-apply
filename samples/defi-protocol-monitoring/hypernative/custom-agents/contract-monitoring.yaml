@@ -1,0 +1,90 @@
+name: Smart Contract Monitoring
+description: Monitor core protocol contracts for upgrades, admin actions, and anomalies
+type: contract_monitor
+chain: ethereum
+configuration:
+  # Contracts to monitor
+  contracts:
+    - address: "0x5555555555555555555555555555555555555555"
+      name: "Main Protocol Contract"  
+      type: "core"
+      proxy_pattern: "transparent"  # transparent, uups, beacon, or none
+      
+    - address: "0x6666666666666666666666666666666666666666"
+      name: "Governance Contract"
+      type: "governance"
+      proxy_pattern: "none"
+      
+    - address: "0x7777777777777777777777777777777777777777"
+      name: "Token Contract"
+      type: "token"
+      proxy_pattern: "none"
+      
+  # Monitor specific functions
+  monitored_functions:
+    # Admin functions that should trigger alerts
+    admin_functions:
+      - name: "upgrade"
+        severity: critical
+        description: "Contract upgrade initiated"
+        
+      - name: "pause"
+        severity: high  
+        description: "Contract paused"
+        
+      - name: "unpause"
+        severity: medium
+        description: "Contract unpaused"
+        
+      - name: "setOwner"
+        severity: critical
+        description: "Contract ownership changed"
+        
+      - name: "emergencyWithdraw"
+        severity: critical
+        description: "Emergency withdrawal executed"
+        
+    # Governance functions
+    governance_functions:
+      - name: "propose"
+        severity: medium
+        description: "New governance proposal created"
+        
+      - name: "vote"
+        severity: low
+        description: "Governance vote cast"  
+        
+      - name: "execute"
+        severity: high
+        description: "Governance proposal executed"
+        
+  # Monitor events
+  monitored_events:
+    - event: "Upgraded"
+      severity: critical
+      description: "Contract was upgraded to new implementation"
+      
+    - event: "OwnershipTransferred"
+      severity: critical 
+      description: "Contract ownership transferred"
+      
+    - event: "Paused"
+      severity: high
+      description: "Contract operations paused"
+      
+    - event: "RoleGranted" 
+      severity: medium
+      description: "New admin role granted"
+      
+  # Advanced monitoring
+  anomaly_detection:
+    enabled: true
+    gas_usage_threshold: 200  # Alert if gas usage increases by 200%
+    call_frequency_threshold: 500  # Alert if calls increase by 500%
+    failed_transaction_threshold: 10  # Alert if >10 failed txs in 1 hour
+    
+notification_channels:
+  - "slack-critical"
+  - "discord-community" 
+  
+enabled: true

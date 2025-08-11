@@ -1,0 +1,29 @@
+name: slack-general
+type: slack
+description: General monitoring alerts and updates
+config:
+  webhook_url: ${SLACK_GENERAL_WEBHOOK}
+  channel: "#security-monitoring"
+  username: "Hypernative Monitor"
+  icon_emoji: ":shield:"
+  mention_channel: false
+  mention_users: []
+  
+  # Filter settings
+  filters:
+    min_severity: medium
+    rate_limit_minutes: 15  # Don't spam the channel
+    
+  message_template: |
+    🛡️ *Security Monitor Alert*
+    
+    *Severity:* {{severity}}
+    *Time:* {{timestamp}}
+    
+    *Alert:* {{alert_title}}
+    *Details:* {{alert_description}}
+    
+    *Chain:* {{chain}} | *Address:* `{{address}}`
+    {{#if tx_hash}}*Transaction:* <https://etherscan.io/tx/{{tx_hash}}|{{tx_hash}}>{{/if}}
+    
+enabled: true

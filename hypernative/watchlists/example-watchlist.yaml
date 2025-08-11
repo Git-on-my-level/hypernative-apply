@@ -1,0 +1,30 @@
+# Valid watchlist configuration
+name: "Test Watchlist"
+description: "A simple watchlist for testing"
+enabled: true
+
+tags:
+  environment: "test"
+
+assets:
+  - chain: "ethereum"
+    type: "Wallet"
+    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    name: "Test Wallet"
+
+alert_config:
+  severity_threshold: "medium"
+  notification_channels:
+    - "Valid Webhook Channel"
+  
+  rules:
+    - asset_types: ["Wallet"]
+      conditions:
+        - type: "balance_change"
+          threshold: 10
+          direction: "decrease"
+      
+monitoring:
+  check_interval: 5
+  collect_history: true
+  retention_days: 30

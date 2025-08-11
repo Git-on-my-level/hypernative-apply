@@ -1,0 +1,29 @@
+# DeFi Protocol Monitoring Configuration
+version: 1
+api:
+  endpoint: "https://api.hypernative.com"  
+  timeout: 45000
+  retry_attempts: 5
+
+# Global configuration
+global:
+  default_severity: medium
+  enable_notifications: true
+  protocol_name: "Example DeFi Protocol"
+  
+  # Default chains to monitor
+  default_chains:
+    - ethereum
+    - polygon
+    - arbitrum
+    
+  # Default notification settings
+  notification_settings:
+    rate_limit_minutes: 5  # Minimum time between similar alerts
+    escalation_enabled: true
+    business_hours_only: false
+
+# Resource references (populated by individual files)
+watchlists: []
+notification_channels: []
+custom_agents: []

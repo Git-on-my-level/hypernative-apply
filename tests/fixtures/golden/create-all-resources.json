@@ -1,0 +1,100 @@
+{
+  "metadata": {
+    "plan_id": "[NORMALIZED]",
+    "created_at": "[NORMALIZED]",
+    "cli_version": "0.1.0",
+    "config_hash": "aee4d6f43dacaf2ddd47bd4ce757a2ea17aa7755bdc4c03d7988caf9408d54b9",
+    "content_hash": "7b275ba6c7b31d794fc6c530f1402c570f1c81c1274989fdf416aceeea5ad614",
+    "base_directory": "[NORMALIZED]",
+    "config_files": [
+      "hypernative/notification-channels/*.yaml",
+      "hypernative/watchlists/*.yaml",
+      "hypernative/custom-agents/*.yaml"
+    ]
+  },
+  "changes": [
+    {
+      "kind": "notification_channel",
+      "name": "email-alerts",
+      "change_type": "CREATE",
+      "desired_hash": "004936e5d0c2c8e2284c41f15b8058323b5dbaecaf3e35dcadaaf7569cd5484a",
+      "dependencies": [],
+      "dependents": ["tx-monitor"],
+      "risk_level": "low"
+    },
+    {
+      "kind": "notification_channel",
+      "name": "slack-alerts",
+      "change_type": "CREATE",
+      "desired_hash": "126d97de1cf9bacf156749f8caf114213ed7d05258a9d93dbb8af5345f38d557",
+      "dependencies": [],
+      "dependents": ["main-watchlist"],
+      "risk_level": "low"
+    },
+    {
+      "kind": "watchlist",
+      "name": "main-watchlist",
+      "change_type": "CREATE",
+      "desired_hash": "a1101908eb21123d3a669deca900dc54904cc7d13279b97339d8c5292f65dcfd",
+      "dependencies": ["slack-alerts"],
+      "dependents": [],
+      "risk_level": "low"
+    },
+    {
+      "kind": "custom_agent",
+      "name": "tx-monitor",
+      "change_type": "CREATE",
+      "desired_hash": "d56d0287c69c1c48d40c84aac964feee7dd1210c245a889a82070bac8d017a98",
+      "dependencies": ["email-alerts"],
+      "dependents": [],
+      "risk_level": "low"
+    }
+  ],
+  "summary": {
+    "total_resources": 4,
+    "to_create": 4,
+    "to_update": 0,
+    "to_replace": 0,
+    "to_delete": 0,
+    "no_change": 0,
+    "by_resource_type": {
+      "notification_channel": {
+        "to_create": 2,
+        "to_update": 0,
+        "to_replace": 0,
+        "to_delete": 0,
+        "no_change": 0
+      },
+      "watchlist": {
+        "to_create": 1,
+        "to_update": 0,
+        "to_replace": 0,
+        "to_delete": 0,
+        "no_change": 0
+      },
+      "custom_agent": {
+        "to_create": 1,
+        "to_update": 0,
+        "to_replace": 0,
+        "to_delete": 0,
+        "no_change": 0
+      }
+    }
+  },
+  "dependencies": [
+    {
+      "resource_name": "main-watchlist",
+      "resource_kind": "watchlist",
+      "depends_on_name": "slack-alerts",
+      "depends_on_kind": "notification_channel",
+      "dependency_type": "references"
+    },
+    {
+      "resource_name": "tx-monitor",
+      "resource_kind": "custom_agent",
+      "depends_on_name": "email-alerts",
+      "depends_on_kind": "notification_channel",
+      "dependency_type": "references"
+    }
+  ]
+}

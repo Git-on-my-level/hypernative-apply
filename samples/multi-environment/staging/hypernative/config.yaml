@@ -1,0 +1,26 @@
+# Staging Environment Configuration
+version: 1
+api:
+  endpoint: "https://api-staging.hypernative.com"
+  timeout: 30000
+
+global:
+  environment: staging
+  default_severity: low  # Lower thresholds for testing
+  enable_notifications: true
+  debug_mode: true
+  
+  # Use testnet chains for staging
+  default_chains:
+    - goerli
+    - mumbai
+    - arbitrum-goerli
+    
+  # Staging-specific settings
+  testing_mode: true
+  rate_limit_relaxed: true
+  verbose_logging: true
+
+watchlists: []
+notification_channels: []
+custom_agents: []

@@ -1,0 +1,108 @@
+{
+  "metadata": {
+    "plan_id": "[NORMALIZED]",
+    "created_at": "[NORMALIZED]",
+    "cli_version": "0.1.0",
+    "config_hash": "7d60e065d09657d32d2275138bf325061ed4b047778084320d80e4cb8486176c",
+    "content_hash": "c3418a24aa3572f44be191e3f933adc6f6b6fc79eebf28c8c544cd31853d5823",
+    "base_directory": "[NORMALIZED]",
+    "config_files": [
+      "hypernative/notification-channels/*.yaml",
+      "hypernative/watchlists/*.yaml",
+      "hypernative/custom-agents/*.yaml"
+    ]
+  },
+  "changes": [
+    {
+      "kind": "notification_channel",
+      "name": "test-email",
+      "remote_id": "nc_456",
+      "change_type": "NO_CHANGE",
+      "current_hash": "consistent_hash_123",
+      "desired_hash": "consistent_hash_123",
+      "dependencies": [],
+      "dependents": ["test-agent"],
+      "risk_level": "low"
+    },
+    {
+      "kind": "notification_channel",
+      "name": "test-slack",
+      "remote_id": "nc_123",
+      "change_type": "NO_CHANGE",
+      "current_hash": "consistent_hash_123",
+      "desired_hash": "consistent_hash_123",
+      "dependencies": [],
+      "dependents": ["test-watchlist"],
+      "risk_level": "low"
+    },
+    {
+      "kind": "custom_agent",
+      "name": "test-agent",
+      "remote_id": "ca_012",
+      "change_type": "NO_CHANGE",
+      "current_hash": "consistent_hash_123",
+      "desired_hash": "consistent_hash_123",
+      "dependencies": ["test-email"],
+      "dependents": [],
+      "risk_level": "low"
+    },
+    {
+      "kind": "watchlist",
+      "name": "test-watchlist",
+      "remote_id": "wl_789",
+      "change_type": "NO_CHANGE",
+      "current_hash": "consistent_hash_123",
+      "desired_hash": "consistent_hash_123",
+      "dependencies": ["test-slack"],
+      "dependents": [],
+      "risk_level": "low"
+    }
+  ],
+  "summary": {
+    "total_resources": 4,
+    "to_create": 0,
+    "to_update": 0,
+    "to_replace": 0,
+    "to_delete": 0,
+    "no_change": 4,
+    "by_resource_type": {
+      "notification_channel": {
+        "to_create": 0,
+        "to_update": 0,
+        "to_replace": 0,
+        "to_delete": 0,
+        "no_change": 2
+      },
+      "custom_agent": {
+        "to_create": 0,
+        "to_update": 0,
+        "to_replace": 0,
+        "to_delete": 0,
+        "no_change": 1
+      },
+      "watchlist": {
+        "to_create": 0,
+        "to_update": 0,
+        "to_replace": 0,
+        "to_delete": 0,
+        "no_change": 1
+      }
+    }
+  },
+  "dependencies": [
+    {
+      "resource_name": "test-watchlist",
+      "resource_kind": "watchlist",
+      "depends_on_name": "test-slack",
+      "depends_on_kind": "notification_channel",
+      "dependency_type": "references"
+    },
+    {
+      "resource_name": "test-agent",
+      "resource_kind": "custom_agent",
+      "depends_on_name": "test-email",
+      "depends_on_kind": "notification_channel",
+      "dependency_type": "references"
+    }
+  ]
+}

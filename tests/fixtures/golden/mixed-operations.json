@@ -1,0 +1,120 @@
+{
+  "metadata": {
+    "plan_id": "[NORMALIZED]",
+    "created_at": "[NORMALIZED]",
+    "cli_version": "0.1.0",
+    "config_hash": "5d0490bfd7544df39b9581309a3d9f10eb264d9e0bde23869da39a9dc746d5ae",
+    "content_hash": "b8c5df296994051603a7291e8971ee351220c7991a2ba91f731cd6368dc4d52e",
+    "base_directory": "[NORMALIZED]",
+    "config_files": [
+      "hypernative/notification-channels/*.yaml",
+      "hypernative/watchlists/*.yaml",
+      "hypernative/custom-agents/*.yaml"
+    ]
+  },
+  "changes": [
+    {
+      "kind": "notification_channel",
+      "name": "create-channel",
+      "change_type": "CREATE",
+      "desired_hash": "9471cf2764da32946ae7387c52089f8bfb271af542720df42b3bfd8c7150e421",
+      "dependencies": [],
+      "dependents": ["create-watchlist"],
+      "risk_level": "low"
+    },
+    {
+      "kind": "notification_channel",
+      "name": "update-channel",
+      "remote_id": "nc_update",
+      "change_type": "UPDATE",
+      "current_hash": "old_update_hash",
+      "desired_hash": "87c414ebb1418331ef0aa9f0f1494a8f1640f0fc7f352955e991024d489c0d62",
+      "field_diffs": [
+        {
+          "path": "config",
+          "old_value": "[Previous configuration]",
+          "new_value": "[New configuration]",
+          "change_type": "changed"
+        }
+      ],
+      "dependencies": [],
+      "dependents": ["create-agent"],
+      "risk_level": "low"
+    },
+    {
+      "kind": "custom_agent",
+      "name": "create-agent",
+      "change_type": "CREATE",
+      "desired_hash": "d32942de7e19fac8e525d71fa698018a7865a0651fb4a584a0d89079209690a6",
+      "dependencies": ["update-channel"],
+      "dependents": [],
+      "risk_level": "low"
+    },
+    {
+      "kind": "watchlist",
+      "name": "create-watchlist",
+      "change_type": "CREATE",
+      "desired_hash": "47e8fb8bf86e1ce8a18c5defd41dc9e9959a6c3b4b1177bba01d93d3e0eeb776",
+      "dependencies": ["create-channel"],
+      "dependents": [],
+      "risk_level": "low"
+    },
+    {
+      "kind": "watchlist",
+      "name": "delete-watchlist",
+      "remote_id": "wl_delete",
+      "change_type": "DELETE",
+      "current_hash": "delete_hash",
+      "dependencies": [],
+      "dependents": [],
+      "risk_level": "medium"
+    }
+  ],
+  "summary": {
+    "total_resources": 5,
+    "to_create": 3,
+    "to_update": 1,
+    "to_replace": 0,
+    "to_delete": 1,
+    "no_change": 0,
+    "by_resource_type": {
+      "notification_channel": {
+        "to_create": 1,
+        "to_update": 1,
+        "to_replace": 0,
+        "to_delete": 0,
+        "no_change": 0
+      },
+      "custom_agent": {
+        "to_create": 1,
+        "to_update": 0,
+        "to_replace": 0,
+        "to_delete": 0,
+        "no_change": 0
+      },
+      "watchlist": {
+        "to_create": 1,
+        "to_update": 0,
+        "to_replace": 0,
+        "to_delete": 1,
+        "no_change": 0
+      }
+    }
+  },
+  "dependencies": [
+    {
+      "resource_name": "create-watchlist",
+      "resource_kind": "watchlist",
+      "depends_on_name": "create-channel",
+      "depends_on_kind": "notification_channel",
+      "dependency_type": "references"
+    },
+    {
+      "resource_name": "create-agent",
+      "resource_kind": "custom_agent",
+      "depends_on_name": "update-channel",
+      "depends_on_kind": "notification_channel",
+      "dependency_type": "references"
+    }
+  ]
+}

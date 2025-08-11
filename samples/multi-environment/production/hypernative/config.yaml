@@ -1,0 +1,33 @@
+# Production Environment Configuration  
+version: 1
+api:
+  endpoint: "https://api.hypernative.com"
+  timeout: 45000
+  retry_attempts: 5
+
+global:
+  environment: production
+  default_severity: medium
+  enable_notifications: true
+  debug_mode: false
+  
+  # Production mainnet chains
+  default_chains:
+    - ethereum
+    - polygon
+    - arbitrum
+    - optimism
+    
+  # Production-specific settings
+  high_availability: true
+  redundant_monitoring: true
+  escalation_enabled: true
+  
+  # Security settings
+  strict_validation: true
+  require_confirmation: true
+  audit_trail: true
+
+watchlists: []
+notification_channels: []
+custom_agents: []
