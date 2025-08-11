@@ -1,110 +1,30 @@
-# Example Hypernative Watchlist Configuration
-# This file demonstrates how to define a watchlist for monitoring blockchain assets
-
-name: "Treasury Wallet Monitors"
-description: "Monitor treasury addresses for significant balance changes and suspicious activity"
+# Valid watchlist configuration
+name: "Test Watchlist"
+description: "A simple watchlist for testing"
 enabled: true
 
-# Tags for organization and filtering
 tags:
-  team: "security"
-  environment: "production"
-  priority: "high"
+  environment: "test"
 
-# Assets to monitor in this watchlist
 assets:
-  # Monitor a specific Ethereum wallet address
   - chain: "ethereum"
     type: "Wallet"
     address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-    name: "USDC Treasury Wallet"
-    tags:
-      - "treasury"
-      - "stablecoin"
+    name: "Test Wallet"
 
-  # Monitor a Polygon wallet
-  - chain: "polygon"  
-    type: "Wallet"
-    address: "0x8df3aad3a84da6b69a4da8aec3ea40d9091b2ac4"
-    name: "Polygon Operations Wallet"
-    tags:
-      - "operations"
-
-  # Monitor a protocol/contract
-  - chain: "ethereum"
-    type: "Protocol"
-    name: "Aave V3"
-    address: "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2"
-    tags:
-      - "defi"
-      - "lending"
-
-  # Monitor specific token contract
-  - chain: "ethereum"
-    type: "Token"
-    address: "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-    symbol: "DAI"
-    name: "Dai Stablecoin"
-    tags:
-      - "stablecoin"
-      - "defi"
-
-# Optional: Reference to alert policy (if using external policy management)
-alert_policy_id: "policy_treasury_strict"
-
-# Alternative: Inline alert configuration
 alert_config:
-  severity_threshold: "medium"  # minimum severity to trigger alerts
+  severity_threshold: "medium"
   notification_channels:
-    - "prod-webhook"
-    - "slack-security"
+    - "Valid Webhook Channel"
   
-  # Asset-specific alert rules
   rules:
     - asset_types: ["Wallet"]
       conditions:
         - type: "balance_change"
-          threshold: 10  # percent change
+          threshold: 10
           direction: "decrease"
-        - type: "transaction_volume" 
-          threshold: 1000000  # USD value
-          timeframe: "1h"
-    
-    - asset_types: ["Protocol", "Token"]
-      conditions:
-        - type: "unusual_activity"
-          threshold: "high"
-        - type: "security_incident"
-          severity: "medium"
-
-# Monitoring configuration
+      
 monitoring:
-  # How frequently to check for changes (in minutes)
   check_interval: 5
-  
-  # Enable historical data collection
   collect_history: true
-  
-  # Data retention period (in days)
-  retention_days: 90
-
-# Advanced options
-options:
-  # Skip monitoring during specific time windows
-  maintenance_windows:
-    - start: "02:00"
-      end: "04:00"
-      timezone: "UTC"
-      days: ["sunday"]
-  
-  # Custom thresholds for this watchlist
-  thresholds:
-    balance_change_major: 25  # percent
-    balance_change_critical: 50  # percent
-    transaction_count_unusual: 100  # per hour
-  
-  # Enable additional analysis
-  enhanced_monitoring:
-    risk_scoring: true
-    pattern_detection: true
-    cross_chain_tracking: true
+  retention_days: 30

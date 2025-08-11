@@ -3,9 +3,11 @@ import { join, relative, basename, extname } from 'path';
 import { parseDocument, parseAllDocuments, YAMLParseError, LineCounter } from 'yaml';
 import glob from 'fast-glob';
 import { z } from 'zod';
+import { validateConfigPath } from './path-security.js';
+import { createInputValidator } from './input-validation.js';
 
 import {
-  rootConfigSchema,
+  globalOnlyConfigSchema,
   createEmptyParsedConfig,
   type ParsedConfig,
   type ConfigLoadResult,
@@ -93,6 +95,9 @@ export class ConfigLoader {
         this.validateCrossReferences(config);
       }
 
+      // Validate input limits
+      this.validateInputLimits(config);
+
       // Fail fast if there are validation errors
       if (this.validationErrors.length > 0) {
         throw new ConfigurationValidationError(this.validationErrors);
@@ -137,15 +142,22 @@ export class ConfigLoader {
     const channelFiles = await glob('*.{yml,yaml}', { cwd: channelsDir, absolute: true });
 
     for (const filePath of channelFiles) {
+      // Validate path to prevent traversal attacks
+      try {
+        validateConfigPath(filePath, this.options.baseDir);
+      } catch (error) {
+        this.addFileError(filePath, error);
+        continue;
+      }
       try {
         const parsedYaml = this.parseYamlFile(filePath);
         const channels = this.parseMultiDocumentYaml(parsedYaml);
 
-        for (const channelData of channels) {
+        for (let channelData of channels) {
           const logicalName = this.getLogicalName(filePath, channelData.name);
 
           if (this.options.interpolateEnv) {
-            this.interpolateEnvironmentVariables(channelData);
+            channelData = this.interpolateEnvironmentVariables(channelData);
           }
 
           const validationResult = completeNotificationChannelSchema.safeParse(channelData);
@@ -182,12 +194,19 @@ export class ConfigLoader {
     const watchlistFiles = await glob('*.{yml,yaml}', { cwd: watchlistsDir, absolute: true });
 
     for (const filePath of watchlistFiles) {
+      // Validate path to prevent traversal attacks
+      try {
+        validateConfigPath(filePath, this.options.baseDir);
+      } catch (error) {
+        this.addFileError(filePath, error);
+        continue;
+      }
       try {
         const parsedYaml = this.parseYamlFile(filePath);
-        const watchlistData = parsedYaml.data;
+        let watchlistData = parsedYaml.data;
 
         if (this.options.interpolateEnv) {
-          this.interpolateEnvironmentVariables(watchlistData);
+          watchlistData = this.interpolateEnvironmentVariables(watchlistData);
         }
 
         const logicalName = this.getLogicalName(filePath, watchlistData.name);
@@ -228,12 +247,19 @@ export class ConfigLoader {
     const agentFiles = await glob('*.{yml,yaml}', { cwd: agentsDir, absolute: true });
 
     for (const filePath of agentFiles) {
+      // Validate path to prevent traversal attacks
+      try {
+        validateConfigPath(filePath, this.options.baseDir);
+      } catch (error) {
+        this.addFileError(filePath, error);
+        continue;
+      }
       try {
         const parsedYaml = this.parseYamlFile(filePath);
-        const agentData = parsedYaml.data;
+        let agentData = parsedYaml.data;
 
         if (this.options.interpolateEnv) {
-          this.interpolateEnvironmentVariables(agentData);
+          agentData = this.interpolateEnvironmentVariables(agentData);
         }
 
         const logicalName = this.getLogicalName(filePath, agentData.name);
@@ -274,14 +300,22 @@ export class ConfigLoader {
 
     for (const configPath of globalConfigPaths) {
       if (existsSync(configPath)) {
+        // Validate path to prevent traversal attacks
+        try {
+          validateConfigPath(configPath, this.options.baseDir);
+        } catch (error) {
+          this.addFileError(configPath, error);
+          continue;
+        }
+
         try {
           const parsedYaml = this.parseYamlFile(configPath);
 
           if (this.options.interpolateEnv) {
-            this.interpolateEnvironmentVariables(parsedYaml.data);
+            parsedYaml.data = this.interpolateEnvironmentVariables(parsedYaml.data);
           }
 
-          const validationResult = rootConfigSchema.safeParse(parsedYaml.data);
+          const validationResult = globalOnlyConfigSchema.safeParse(parsedYaml.data);
 
           if (!validationResult.success) {
             this.addValidationError(configPath, 'global_config', 'global', validationResult.error);
@@ -304,6 +338,9 @@ export class ConfigLoader {
    */
   private parseYamlFile(filePath: string): ParsedYamlWithMeta {
     try {
+      // Additional path validation at the lowest level
+      validateConfigPath(filePath, this.options.baseDir);
+
       const content = readFileSync(filePath, 'utf-8');
       const lineCounter = new LineCounter();
 
@@ -377,28 +414,31 @@ export class ConfigLoader {
   /**
    * Interpolate environment variables in configuration data
    */
-  private interpolateEnvironmentVariables(data: any): void {
+  private interpolateEnvironmentVariables(data: any): any {
     if (typeof data === 'string') {
       // Replace ${VAR_NAME} with environment variable value
-      data = data.replace(/\$\{([^}]+)\}/g, (match, varName) => {
+      return data.replace(/\$\{([^}]+)\}/g, (match, varName) => {
         const value = process.env[varName];
         if (value === undefined) {
           throw new Error(`Environment variable ${varName} is not defined`);
         }
         return value;
       });
-      return data;
     }
 
     if (Array.isArray(data)) {
       data.forEach((item, index) => {
         data[index] = this.interpolateEnvironmentVariables(item);
       });
+      return data;
     } else if (data && typeof data === 'object') {
       Object.keys(data).forEach((key) => {
         data[key] = this.interpolateEnvironmentVariables(data[key]);
       });
+      return data;
     }
+
+    return data;
   }
 
   /**
@@ -522,6 +562,67 @@ export class ConfigLoader {
       error_code: 'FILE_ERROR',
       message: error instanceof Error ? error.message : String(error),
     });
+  }
+
+  /**
+   * Validate input limits and constraints
+   */
+  private validateInputLimits(config: ParsedConfig): void {
+    try {
+      const validator = createInputValidator(config);
+      const validationErrors = validator.validateConfiguration(config);
+
+      // Convert validation errors to ConfigValidationError format
+      for (const error of validationErrors) {
+        // Extract file path information from field name if possible
+        const fieldParts = error.field.split('.');
+        const resourceType = fieldParts[0];
+        const resourceName = fieldParts[1];
+
+        // Find the file that contains this resource (approximation)
+        const filePath = this.findFileForResource(resourceType, resourceName);
+
+        this.validationErrors.push({
+          file_path: filePath || 'unknown',
+          resource_type: resourceType,
+          resource_name: resourceName,
+          error_code: 'INPUT_LIMIT_EXCEEDED',
+          message: error.message,
+          details: {
+            field: error.field,
+            limit: error.limit,
+            actual: error.actual,
+          },
+        });
+      }
+    } catch (error) {
+      // If input validation fails, add a general error
+      this.validationErrors.push({
+        file_path: 'configuration',
+        error_code: 'INPUT_VALIDATION_ERROR',
+        message: `Input validation failed: ${error instanceof Error ? error.message : String(error)}`,
+      });
+    }
+  }
+
+  /**
+   * Find the file that contains a specific resource (approximation based on loaded files)
+   */
+  private findFileForResource(resourceType: string, _resourceName: string): string | null {
+    // This is a simple approximation - in a more sophisticated implementation,
+    // we would track which file each resource came from during loading
+    const typeToDir: Record<string, string> = {
+      notification_channel: 'notification-channels',
+      watchlist: 'watchlists',
+      custom_agent: 'custom-agents',
+    };
+
+    const dirName = typeToDir[resourceType];
+    if (!dirName) return null;
+
+    // Look for files in the loaded files list that match the pattern
+    const pattern = join('hypernative', dirName);
+    return this.loadedFiles.find((file) => file.includes(pattern)) || null;
   }
 
   /**

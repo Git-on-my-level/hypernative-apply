@@ -1,9 +1,10 @@
 import { Command } from 'commander';
 import { existsSync, readFileSync } from 'fs';
-import { join, resolve } from 'path';
+import { join, resolve, dirname } from 'path';
 import { platform, arch } from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { fileURLToPath } from 'url';
 
 import { log } from '../lib/logger.js';
 import { loadHypernativeConfig } from '../lib/config-loader.js';
@@ -11,6 +12,10 @@ import { loadConfig } from '../lib/config.js';
 import { ApiClient } from '../lib/api-client.js';
 
 const execAsync = promisify(exec);
+
+// ES module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 interface DiagnosticResult {
   name: string;

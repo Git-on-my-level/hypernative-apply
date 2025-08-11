@@ -1,0 +1,9 @@
+# Example Notification Channel Configuration
+name: example-slack-channel
+type: slack
+description: "Example Slack notification channel"
+configuration:
+  webhook_url: "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+  channel: "#alerts"
+  username: "Hypernative Bot"
+enabled: true

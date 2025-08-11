@@ -1,178 +1,25 @@
-# Example Hypernative Custom Agent Configuration
-# This file demonstrates how to define a custom agent for automated monitoring
-
-name: "USDC Balance Monitor"
-description: "Monitor USDC token balance changes across treasury wallets and trigger alerts on significant movements"
+# Valid custom agent configuration
+name: "Test Balance Monitor"
+description: "A simple balance monitor for testing"
 enabled: true
 
-# Agent type determines the monitoring behavior
 type: "address_balance_change"
-
-# Blockchain network to monitor
 chain: "ethereum"
+severity: "medium"
 
-# Alert severity level
-severity: "high"
-
-# Tags for organization and filtering  
 tags:
-  team: "treasury"
-  asset: "usdc" 
-  monitor_type: "balance"
-  criticality: "high"
+  environment: "test"
 
-# Agent-specific configuration
 configuration:
-  # Addresses to monitor
   addresses:
-    - "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"  # USDC Treasury Primary
-    - "0x123...def"  # USDC Treasury Secondary
-    - "0x456...ghi"  # USDC Operations Wallet
-  
-  # Token contract to monitor (USDC)
-  token_address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-  
-  # Threshold configuration
-  threshold_type: "percentage"  # Options: "percentage", "absolute", "relative"
-  threshold_value: 10  # 10% change triggers alert
-  direction: "decrease"  # Options: "increase", "decrease", "both"
-  
-  # Time window for threshold calculation
-  time_window: "1h"  # Options: "1m", "5m", "15m", "1h", "6h", "24h"
-  
-  # Minimum absolute change to consider (prevents noise on small balances)
-  min_absolute_change: 10000  # $10,000 USD equivalent
-  
-  # Advanced monitoring options
-  advanced:
-    # Consider multiple transactions within time window
-    aggregate_transactions: true
-    
-    # Include pending transactions in calculations
-    include_pending: false
-    
-    # Monitor cross-chain transfers
-    cross_chain_tracking: true
-    
-    # Correlate with other agents
-    correlation_enabled: true
+    - "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  threshold_type: "percentage"
+  threshold_value: 10
+  direction: "both"
 
-# Notification channels to use when agent triggers
 notification_channels:
-  - "prod-webhook"
-  - "slack-treasury" 
-  - "email-security-team"
+  - "Valid Webhook Channel"
 
-# Execution schedule
 schedule:
-  # How often to check (in minutes) 
   interval: 5
-  
-  # Timezone for schedule interpretation
   timezone: "UTC"
-  
-  # Skip execution during maintenance windows
-  skip_windows:
-    - start: "02:00"
-      end: "04:00"
-      days: ["sunday"]
-
-# Alert customization
-alert_template:
-  title: "USDC Balance Alert: {{direction}} {{percentage}}%"
-  message: |
-    Treasury USDC balance {{direction}} detected:
-    
-    Address: {{address}}
-    Previous Balance: ${{previous_balance_usd}}
-    Current Balance: ${{current_balance_usd}} 
-    Change: {{change_percentage}}% ({{change_absolute_usd}})
-    Time Window: {{time_window}}
-    
-    Transaction Hash: {{transaction_hash}}
-    Block Number: {{block_number}}
-    
-    Risk Score: {{risk_score}}/100
-  
-  # Include additional context in alerts
-  include_context:
-    transaction_details: true
-    risk_analysis: true
-    historical_comparison: true
-    cross_reference_alerts: true
-
-# Response automation (optional)
-automated_responses:
-  # Conditions that trigger automated responses
-  triggers:
-    - condition: "change_percentage > 25"
-      actions:
-        - type: "notify_additional_channels"
-          channels: ["pager_duty", "executive_team"]
-        - type: "create_incident"
-          severity: "critical"
-          
-    - condition: "change_percentage > 50" 
-      actions:
-        - type: "pause_automated_trading"
-          duration: "1h"
-        - type: "require_manual_approval"
-          for_operations: ["withdraw", "transfer"]
-
-# Testing and validation
-testing:
-  # Enable test mode (alerts sent to test channels only)
-  test_mode: false
-  
-  # Test scenarios to validate agent configuration
-  test_scenarios:
-    - name: "Small balance decrease"
-      mock_data:
-        previous_balance: 1000000
-        current_balance: 950000  # 5% decrease
-      expected_result: "no_alert"  # Below 10% threshold
-    
-    - name: "Large balance decrease"  
-      mock_data:
-        previous_balance: 1000000
-        current_balance: 850000  # 15% decrease
-      expected_result: "alert_triggered"
-
-# Monitoring and performance
-monitoring:
-  # Track agent performance metrics
-  collect_metrics: true
-  
-  # Performance thresholds
-  max_execution_time: "30s"
-  max_memory_usage: "512MB"
-  
-  # Error handling
-  retry_on_failure: true
-  max_retries: 3
-  retry_delay: "5m"
-  
-  # Health checks
-  health_check_interval: "15m"
-  alert_on_health_failure: true
-
-# Integration options
-integrations:
-  # External services to call
-  external_apis:
-    - name: "risk_scoring_service"
-      url: "https://risk-api.company.com/score"
-      auth_type: "api_key"
-      timeout: "10s"
-  
-  # Database connections for historical data
-  databases:
-    - name: "analytics_db"
-      type: "postgresql"
-      connection_string_env: "ANALYTICS_DB_URL"
-  
-  # Message queue integrations
-  message_queues:
-    - name: "alert_queue"
-      type: "rabbitmq" 
-      queue_name: "treasury_alerts"

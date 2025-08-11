@@ -13,6 +13,7 @@ import { createHash } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { log } from './logger.js';
 import { generateFingerprint } from './fingerprint.js';
+import { LogRedactor } from './log-redaction.js';
 import { StateStore } from './state-store.js';
 import type { ParsedConfig } from '../schemas/config.schema.js';
 import type { StateFile, StateEntry } from '../types/state.js';
@@ -58,7 +59,7 @@ export class Planner {
       max_diff_depth: options.max_diff_depth ?? 10,
     };
 
-    log.debug('Generating execution plan with options:', opts);
+    log.debug('Generating execution plan with options:', LogRedactor.safeLog(opts));
 
     // Load current state
     const currentState = await this.stateStore.loadState();
@@ -107,8 +108,8 @@ export class Planner {
   private buildDependencyGraph(config: ParsedConfig): DependencyGraph {
     const nodes: Record<string, DependencyNode> = {};
 
-    // Create nodes for all resources
-    for (const [name] of Object.entries(config.notification_channels)) {
+    // Create nodes for all resources - handle undefined collections gracefully
+    for (const [name] of Object.entries(config.notification_channels || {})) {
       nodes[name] = {
         name,
         kind: 'notification_channel',
@@ -118,7 +119,7 @@ export class Planner {
       };
     }
 
-    for (const [name] of Object.entries(config.watchlists)) {
+    for (const [name] of Object.entries(config.watchlists || {})) {
       nodes[name] = {
         name,
         kind: 'watchlist',
@@ -128,7 +129,7 @@ export class Planner {
       };
     }
 
-    for (const [name] of Object.entries(config.custom_agents)) {
+    for (const [name] of Object.entries(config.custom_agents || {})) {
       nodes[name] = {
         name,
         kind: 'custom_agent',
@@ -156,8 +157,8 @@ export class Planner {
    * Add dependency relationships to the graph
    */
   private addDependencies(config: ParsedConfig, nodes: Record<string, DependencyNode>): void {
-    // Watchlists depend on notification channels
-    for (const [watchlistName, watchlistConfig] of Object.entries(config.watchlists)) {
+    // Watchlists depend on notification channels - handle undefined collections gracefully
+    for (const [watchlistName, watchlistConfig] of Object.entries(config.watchlists || {})) {
       const watchlistNode = nodes[watchlistName];
       if (!watchlistNode) continue;
 
@@ -170,8 +171,8 @@ export class Planner {
       }
     }
 
-    // Custom agents depend on notification channels
-    for (const [agentName, agentConfig] of Object.entries(config.custom_agents)) {
+    // Custom agents depend on notification channels - handle undefined collections gracefully
+    for (const [agentName, agentConfig] of Object.entries(config.custom_agents || {})) {
       const agentNode = nodes[agentName];
       if (!agentNode) continue;
 
@@ -275,8 +276,8 @@ export class Planner {
     const changes: ResourceChange[] = [];
     const desiredResources = new Map<string, { kind: string; config: any; hash: string }>();
 
-    // Collect all desired resources
-    for (const [name, channelConfig] of Object.entries(config.notification_channels)) {
+    // Collect all desired resources - handle undefined collections gracefully
+    for (const [name, channelConfig] of Object.entries(config.notification_channels || {})) {
       desiredResources.set(name, {
         kind: 'notification_channel',
         config: channelConfig,
@@ -284,7 +285,7 @@ export class Planner {
       });
     }
 
-    for (const [name, watchlistConfig] of Object.entries(config.watchlists)) {
+    for (const [name, watchlistConfig] of Object.entries(config.watchlists || {})) {
       desiredResources.set(name, {
         kind: 'watchlist',
         config: watchlistConfig,
@@ -292,7 +293,7 @@ export class Planner {
       });
     }
 
-    for (const [name, agentConfig] of Object.entries(config.custom_agents)) {
+    for (const [name, agentConfig] of Object.entries(config.custom_agents || {})) {
       desiredResources.set(name, {
         kind: 'custom_agent',
         config: agentConfig,
@@ -620,29 +621,29 @@ export class Planner {
   private generateConfigHash(config: ParsedConfig): string {
     // Generate a stable hash of the entire configuration
     const configString = JSON.stringify({
-      notification_channels: Object.keys(config.notification_channels)
+      notification_channels: Object.keys(config.notification_channels || {})
         .sort()
         .reduce(
           (acc, key) => {
-            acc[key] = generateFingerprint(config.notification_channels[key]);
+            acc[key] = generateFingerprint(config.notification_channels![key]);
             return acc;
           },
           {} as Record<string, string>
         ),
-      watchlists: Object.keys(config.watchlists)
+      watchlists: Object.keys(config.watchlists || {})
         .sort()
         .reduce(
           (acc, key) => {
-            acc[key] = generateFingerprint(config.watchlists[key]);
+            acc[key] = generateFingerprint(config.watchlists![key]);
             return acc;
           },
           {} as Record<string, string>
         ),
-      custom_agents: Object.keys(config.custom_agents)
+      custom_agents: Object.keys(config.custom_agents || {})
         .sort()
         .reduce(
           (acc, key) => {
-            acc[key] = generateFingerprint(config.custom_agents[key]);
+            acc[key] = generateFingerprint(config.custom_agents![key]);
             return acc;
           },
           {} as Record<string, string>
@@ -678,13 +679,13 @@ export class Planner {
     // In a real implementation, this would track which files were loaded
     const files: string[] = [];
 
-    if (Object.keys(config.notification_channels).length > 0) {
+    if (Object.keys(config.notification_channels || {}).length > 0) {
       files.push('hypernative/notification-channels/*.yaml');
     }
-    if (Object.keys(config.watchlists).length > 0) {
+    if (Object.keys(config.watchlists || {}).length > 0) {
       files.push('hypernative/watchlists/*.yaml');
     }
-    if (Object.keys(config.custom_agents).length > 0) {
+    if (Object.keys(config.custom_agents || {}).length > 0) {
       files.push('hypernative/custom-agents/*.yaml');
     }
 

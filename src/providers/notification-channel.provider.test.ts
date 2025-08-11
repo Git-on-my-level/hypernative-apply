@@ -31,24 +31,32 @@ describe('NotificationChannelProvider', () => {
     name: 'Test Slack Channel',
     type: 'slack',
     enabled: true,
-    webhook_url: 'https://hooks.slack.com/services/test',
-    channel: '#alerts',
-    username: 'hypernative-bot',
-    icon_emoji: ':warning:',
+    configuration: {
+      webhook_url: 'https://hooks.slack.com/services/test',
+      channel: '#alerts',
+      username: 'hypernative-bot',
+      icon_emoji: ':warning:',
+    },
   };
 
   const mockEmailConfig: NotificationChannelConfig = {
     name: 'Test Email Channel',
     type: 'email',
     enabled: true,
-    recipients: ['test@example.com', 'alerts@company.com'],
-    subject_prefix: '[HYPERNATIVE]',
-    smtp_config: {
-      host: 'smtp.example.com',
-      port: 587,
-      username: 'alerts@company.com',
-      password: 'secret123',
-      use_tls: true,
+    configuration: {
+      smtp: {
+        host: 'smtp.example.com',
+        port: 587,
+        auth: {
+          user: 'alerts@company.com',
+          pass: 'secret123',
+        },
+        secure: true,
+      },
+      recipients: {
+        to: ['test@example.com', 'alerts@company.com'],
+      },
+      subject_prefix: '[HYPERNATIVE]',
     },
   };
 
@@ -56,13 +64,15 @@ describe('NotificationChannelProvider', () => {
     name: 'Test Webhook Channel',
     type: 'webhook',
     enabled: true,
-    url: 'https://api.example.com/webhook',
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer token123',
-      'Content-Type': 'application/json',
+    configuration: {
+      url: 'https://api.example.com/webhook',
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer token123',
+        'Content-Type': 'application/json',
+      },
+      timeout: 30,
     },
-    timeout: 30,
   };
 
   const mockSlackResponse: ApiNotificationChannel = {
@@ -72,10 +82,12 @@ describe('NotificationChannelProvider', () => {
     enabled: true,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
-    webhook_url: 'https://hooks.slack.com/services/test',
-    channel: '#alerts',
-    username: 'hypernative-bot',
-    icon_emoji: ':warning:',
+    configuration: {
+      webhook_url: 'https://hooks.slack.com/services/test',
+      channel: '#alerts',
+      username: 'hypernative-bot',
+      icon_emoji: ':warning:',
+    },
   };
 
   describe('list', () => {
@@ -86,7 +98,7 @@ describe('NotificationChannelProvider', () => {
       const result = await provider.list();
 
       expect(mockApiClient.get).toHaveBeenCalledWith('/api/v2/notification-channels', {
-        params: { limit: 50, offset: 0 },
+        params: { limit: 100, offset: 0, enabled: undefined, type: undefined },
       });
       expect(result).toEqual(mockChannels);
     });
@@ -98,24 +110,28 @@ describe('NotificationChannelProvider', () => {
       const result = await provider.list({ limit: 10, offset: 20 });
 
       expect(mockApiClient.get).toHaveBeenCalledWith('/api/v2/notification-channels', {
-        params: { limit: 10, offset: 20 },
+        params: { limit: 10, offset: 20, enabled: undefined, type: undefined },
       });
       expect(result).toEqual(mockChannels);
     });
 
     it('should filter by type', async () => {
-      await provider.list({ type: 'slack' });
+      const mockChannels = [mockSlackResponse];
+      mockApiClient.get = vi.fn().mockResolvedValue({ data: mockChannels });
+
+      const result = await provider.list({ type: 'slack' });
 
       expect(mockApiClient.get).toHaveBeenCalledWith('/api/v2/notification-channels', {
-        params: { limit: 50, offset: 0, type: 'slack' },
+        params: { limit: 100, offset: 0, enabled: undefined, type: 'slack' },
       });
+      expect(result).toEqual(mockChannels);
     });
 
     it('should handle API errors', async () => {
       mockApiClient.get = vi.fn().mockRejectedValue(new Error('API Error'));
 
       await expect(provider.list()).rejects.toThrow(
-        'Failed to list notification channels: API Error'
+        'Failed to list notification channels: Error: API Error'
       );
     });
   });
@@ -156,11 +172,15 @@ describe('NotificationChannelProvider', () => {
       expect(mockApiClient.post).toHaveBeenCalledWith('/api/v2/notification-channels', {
         name: 'Test Slack Channel',
         type: 'slack',
+        description: undefined,
         enabled: true,
-        webhook_url: 'https://hooks.slack.com/services/test',
-        channel: '#alerts',
-        username: 'hypernative-bot',
-        icon_emoji: ':warning:',
+        configuration: {
+          webhook_url: 'https://hooks.slack.com/services/test',
+          channel: '#alerts',
+          username: 'hypernative-bot',
+          icon_emoji: ':warning:',
+        },
+        tags: undefined,
       });
       expect(result).toEqual(mockSlackResponse);
     });
@@ -173,8 +193,21 @@ describe('NotificationChannelProvider', () => {
         enabled: true,
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
-        recipients: ['test@example.com', 'alerts@company.com'],
-        subject_prefix: '[HYPERNATIVE]',
+        configuration: {
+          smtp: {
+            host: 'smtp.example.com',
+            port: 587,
+            auth: {
+              user: 'alerts@company.com',
+              pass: 'secret123',
+            },
+            secure: true,
+          },
+          recipients: {
+            to: ['test@example.com', 'alerts@company.com'],
+          },
+          subject_prefix: '[HYPERNATIVE]',
+        },
       };
 
       mockApiClient.post = vi.fn().mockResolvedValue({ data: mockEmailResponse });
@@ -184,10 +217,24 @@ describe('NotificationChannelProvider', () => {
       expect(mockApiClient.post).toHaveBeenCalledWith('/api/v2/notification-channels', {
         name: 'Test Email Channel',
         type: 'email',
+        description: undefined,
         enabled: true,
-        recipients: ['test@example.com', 'alerts@company.com'],
-        subject_prefix: '[HYPERNATIVE]',
-        smtp_config: mockEmailConfig.smtp_config,
+        configuration: {
+          smtp: {
+            host: 'smtp.example.com',
+            port: 587,
+            auth: {
+              user: 'alerts@company.com',
+              pass: 'secret123',
+            },
+            secure: true,
+          },
+          recipients: {
+            to: ['test@example.com', 'alerts@company.com'],
+          },
+          subject_prefix: '[HYPERNATIVE]',
+        },
+        tags: undefined,
       });
       expect(result).toEqual(mockEmailResponse);
     });
@@ -200,9 +247,15 @@ describe('NotificationChannelProvider', () => {
         enabled: true,
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
-        url: 'https://api.example.com/webhook',
-        method: 'POST',
-        timeout: 30,
+        configuration: {
+          url: 'https://api.example.com/webhook',
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer token123',
+            'Content-Type': 'application/json',
+          },
+          timeout: 30,
+        },
       };
 
       mockApiClient.post = vi.fn().mockResolvedValue({ data: mockWebhookResponse });
@@ -212,14 +265,18 @@ describe('NotificationChannelProvider', () => {
       expect(mockApiClient.post).toHaveBeenCalledWith('/api/v2/notification-channels', {
         name: 'Test Webhook Channel',
         type: 'webhook',
+        description: undefined,
         enabled: true,
-        url: 'https://api.example.com/webhook',
-        method: 'POST',
-        headers: {
-          Authorization: 'Bearer token123',
-          'Content-Type': 'application/json',
+        configuration: {
+          url: 'https://api.example.com/webhook',
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer token123',
+            'Content-Type': 'application/json',
+          },
+          timeout: 30,
         },
-        timeout: 30,
+        tags: undefined,
       });
       expect(result).toEqual(mockWebhookResponse);
     });
@@ -242,7 +299,7 @@ describe('NotificationChannelProvider', () => {
       mockApiClient.post = vi.fn().mockRejectedValue(new Error('Creation failed'));
 
       await expect(provider.create(mockSlackConfig)).rejects.toThrow(
-        'Failed to create notification channel'
+        'Failed to create notification channel: Error: Creation failed'
       );
     });
   });
@@ -251,13 +308,19 @@ describe('NotificationChannelProvider', () => {
     it('should update notification channel', async () => {
       const updatedConfig = {
         ...mockSlackConfig,
-        channel: '#updated-alerts',
+        configuration: {
+          ...mockSlackConfig.configuration,
+          channel: '#updated-alerts',
+        },
         enabled: false,
       };
 
       const expectedResponse = {
         ...mockSlackResponse,
-        channel: '#updated-alerts',
+        configuration: {
+          ...mockSlackResponse.configuration,
+          channel: '#updated-alerts',
+        },
         enabled: false,
       };
 
@@ -269,12 +332,15 @@ describe('NotificationChannelProvider', () => {
         '/api/v2/notification-channels/nc_slack_123',
         {
           name: 'Test Slack Channel',
-          type: 'slack',
+          description: undefined,
           enabled: false,
-          webhook_url: 'https://hooks.slack.com/services/test',
-          channel: '#updated-alerts',
-          username: 'hypernative-bot',
-          icon_emoji: ':warning:',
+          configuration: {
+            webhook_url: 'https://hooks.slack.com/services/test',
+            channel: '#updated-alerts',
+            username: 'hypernative-bot',
+            icon_emoji: ':warning:',
+          },
+          tags: undefined,
         }
       );
       expect(result).toEqual(expectedResponse);
@@ -296,7 +362,7 @@ describe('NotificationChannelProvider', () => {
       mockApiClient.patch = vi.fn().mockRejectedValue(new Error('Update failed'));
 
       await expect(provider.update('nc_slack_123', mockSlackConfig)).rejects.toThrow(
-        'Failed to update notification channel nc_slack_123'
+        'Failed to update notification channel nc_slack_123: Error: Update failed'
       );
     });
   });
@@ -327,42 +393,48 @@ describe('NotificationChannelProvider', () => {
       mockApiClient.delete = vi.fn().mockRejectedValue(new Error('Delete failed'));
 
       await expect(provider.delete('nc_slack_123')).rejects.toThrow(
-        'Failed to delete notification channel nc_slack_123'
+        'Failed to delete notification channel nc_slack_123: Error: Delete failed'
       );
     });
   });
 
-  describe('testConnection', () => {
-    it('should test notification channel connection', async () => {
+  describe('test', () => {
+    it('should test notification channel', async () => {
       const mockTestResponse = {
         success: true,
         message: 'Connection successful',
-        response_time: 123,
+        delivered_at: '2024-01-01T00:00:00Z',
       };
 
       mockApiClient.post = vi.fn().mockResolvedValue({ data: mockTestResponse });
 
-      const result = await provider.testConnection('nc_slack_123');
+      const result = await provider.test('nc_slack_123');
 
       expect(mockApiClient.post).toHaveBeenCalledWith(
-        '/api/v2/notification-channels/nc_slack_123/test'
+        '/api/v2/notification-channels/nc_slack_123/test',
+        {},
+        { timeout: 30000 }
       );
       expect(result).toEqual(mockTestResponse);
     });
 
-    it('should handle test connection failures', async () => {
-      const mockFailureResponse = {
-        success: false,
-        message: 'Connection failed: Invalid webhook URL',
-        error_code: 'INVALID_WEBHOOK',
+    it('should test notification channel with custom message', async () => {
+      const mockTestResponse = {
+        success: true,
+        message: 'Test message sent',
+        delivered_at: '2024-01-01T00:00:00Z',
       };
 
-      mockApiClient.post = vi.fn().mockResolvedValue({ data: mockFailureResponse });
+      mockApiClient.post = vi.fn().mockResolvedValue({ data: mockTestResponse });
 
-      const result = await provider.testConnection('nc_slack_123');
+      const result = await provider.test('nc_slack_123', { testMessage: 'Custom test' });
 
-      expect(result.success).toBe(false);
-      expect(result.message).toContain('Connection failed');
+      expect(mockApiClient.post).toHaveBeenCalledWith(
+        '/api/v2/notification-channels/nc_slack_123/test',
+        { message: 'Custom test' },
+        { timeout: 30000 }
+      );
+      expect(result).toEqual(mockTestResponse);
     });
 
     it('should handle dry run mode', async () => {
@@ -371,141 +443,19 @@ describe('NotificationChannelProvider', () => {
         dryRun: true,
       });
 
-      const result = await dryRunProvider.testConnection('nc_slack_123');
+      const result = await dryRunProvider.test('nc_slack_123');
 
       expect(mockApiClient.post).not.toHaveBeenCalled();
       expect(result.success).toBe(true);
-      expect(result.message).toContain('[DRY RUN]');
+      expect(result.message).toBe('DRY RUN: Test would have been sent');
     });
 
     it('should handle API errors', async () => {
       mockApiClient.post = vi.fn().mockRejectedValue(new Error('Test failed'));
 
-      await expect(provider.testConnection('nc_slack_123')).rejects.toThrow(
-        'Failed to test notification channel nc_slack_123'
+      await expect(provider.test('nc_slack_123')).rejects.toThrow(
+        'Failed to test notification channel nc_slack_123: Error: Test failed'
       );
-    });
-  });
-
-  describe('sendTestMessage', () => {
-    it('should send test message', async () => {
-      const mockSendResponse = {
-        success: true,
-        message: 'Test message sent successfully',
-        message_id: 'msg_123',
-      };
-
-      mockApiClient.post = vi.fn().mockResolvedValue({ data: mockSendResponse });
-
-      const result = await provider.sendTestMessage('nc_slack_123', 'Test alert message');
-
-      expect(mockApiClient.post).toHaveBeenCalledWith(
-        '/api/v2/notification-channels/nc_slack_123/send-test',
-        { message: 'Test alert message' }
-      );
-      expect(result).toEqual(mockSendResponse);
-    });
-
-    it('should send test message with custom payload', async () => {
-      const customPayload = {
-        message: 'Custom test message',
-        priority: 'high',
-        tags: ['test', 'alert'],
-      };
-
-      mockApiClient.post = vi.fn().mockResolvedValue({ data: { success: true } });
-
-      await provider.sendTestMessage('nc_slack_123', customPayload);
-
-      expect(mockApiClient.post).toHaveBeenCalledWith(
-        '/api/v2/notification-channels/nc_slack_123/send-test',
-        customPayload
-      );
-    });
-
-    it('should handle dry run mode', async () => {
-      const dryRunProvider = new NotificationChannelProvider({
-        apiClient: mockApiClient,
-        dryRun: true,
-      });
-
-      const result = await dryRunProvider.sendTestMessage('nc_slack_123', 'Test message');
-
-      expect(mockApiClient.post).not.toHaveBeenCalled();
-      expect(result.success).toBe(true);
-      expect(result.message).toContain('[DRY RUN]');
-    });
-
-    it('should handle send failures', async () => {
-      mockApiClient.post = vi.fn().mockRejectedValue(new Error('Send failed'));
-
-      await expect(provider.sendTestMessage('nc_slack_123', 'Test message')).rejects.toThrow(
-        'Failed to send test message to notification channel nc_slack_123'
-      );
-    });
-  });
-
-  describe('payload building', () => {
-    it('should build correct payload for Slack channels', () => {
-      const payload = (provider as any).buildCreatePayload(mockSlackConfig);
-
-      expect(payload).toEqual({
-        name: 'Test Slack Channel',
-        type: 'slack',
-        enabled: true,
-        webhook_url: 'https://hooks.slack.com/services/test',
-        channel: '#alerts',
-        username: 'hypernative-bot',
-        icon_emoji: ':warning:',
-      });
-    });
-
-    it('should build correct payload for email channels', () => {
-      const payload = (provider as any).buildCreatePayload(mockEmailConfig);
-
-      expect(payload).toEqual({
-        name: 'Test Email Channel',
-        type: 'email',
-        enabled: true,
-        recipients: ['test@example.com', 'alerts@company.com'],
-        subject_prefix: '[HYPERNATIVE]',
-        smtp_config: mockEmailConfig.smtp_config,
-      });
-    });
-
-    it('should build correct payload for webhook channels', () => {
-      const payload = (provider as any).buildCreatePayload(mockWebhookConfig);
-
-      expect(payload).toEqual({
-        name: 'Test Webhook Channel',
-        type: 'webhook',
-        enabled: true,
-        url: 'https://api.example.com/webhook',
-        method: 'POST',
-        headers: {
-          Authorization: 'Bearer token123',
-          'Content-Type': 'application/json',
-        },
-        timeout: 30,
-      });
-    });
-
-    it('should handle minimal configurations', () => {
-      const minimalConfig: NotificationChannelConfig = {
-        name: 'Minimal Slack',
-        type: 'slack',
-        enabled: true,
-        webhook_url: 'https://hooks.slack.com/minimal',
-      };
-
-      const payload = (provider as any).buildCreatePayload(minimalConfig);
-
-      expect(payload).toEqual({
-        name: 'Minimal Slack',
-        type: 'slack',
-        enabled: true,
-        webhook_url: 'https://hooks.slack.com/minimal',
-      });
     });
   });
 
@@ -541,42 +491,35 @@ describe('NotificationChannelProvider', () => {
   });
 
   describe('edge cases', () => {
-    it('should handle channels with complex headers', () => {
+    it('should handle channels with complex configurations', async () => {
       const complexWebhookConfig: NotificationChannelConfig = {
         name: 'Complex Webhook',
         type: 'webhook',
         enabled: true,
-        url: 'https://api.example.com/complex',
-        headers: {
-          Authorization: 'Bearer token123',
-          'X-Custom-Header': 'custom-value',
-          'X-Another-Header': 'another-value',
+        configuration: {
+          url: 'https://api.example.com/complex',
+          headers: {
+            Authorization: 'Bearer token123',
+            'X-Custom-Header': 'custom-value',
+            'X-Another-Header': 'another-value',
+          },
         },
       };
 
-      const payload = (provider as any).buildCreatePayload(complexWebhookConfig);
-      expect(payload.headers).toEqual(complexWebhookConfig.headers);
-    });
-
-    it('should handle SMTP configuration with various options', () => {
-      const complexEmailConfig: NotificationChannelConfig = {
-        name: 'Complex Email',
-        type: 'email',
+      const mockResponse: ApiNotificationChannel = {
+        id: 'nc_complex_123',
+        name: 'Complex Webhook',
+        type: 'webhook',
         enabled: true,
-        recipients: ['test@example.com'],
-        smtp_config: {
-          host: 'smtp.gmail.com',
-          port: 465,
-          username: 'user@gmail.com',
-          password: 'app-password',
-          use_tls: true,
-          use_ssl: false,
-          timeout: 60,
-        },
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+        configuration: complexWebhookConfig.configuration,
       };
 
-      const payload = (provider as any).buildCreatePayload(complexEmailConfig);
-      expect(payload.smtp_config).toEqual(complexEmailConfig.smtp_config);
+      mockApiClient.post = vi.fn().mockResolvedValue({ data: mockResponse });
+
+      const result = await provider.create(complexWebhookConfig);
+      expect(result.configuration).toEqual(complexWebhookConfig.configuration);
     });
 
     it('should handle channels with special characters in names', async () => {
@@ -620,18 +563,18 @@ describe('NotificationChannelProvider', () => {
       mockApiClient.post = vi.fn().mockRejectedValue(new Error('ETIMEDOUT'));
 
       await expect(provider.create(mockSlackConfig)).rejects.toThrow(
-        'Failed to create notification channel: ETIMEDOUT'
+        'Failed to create notification channel: Error: ETIMEDOUT'
       );
     });
 
     it('should handle validation errors from API', async () => {
-      mockApiClient.post = vi.fn().mockRejectedValue({
-        status: 400,
-        data: { error: 'Invalid webhook URL format' },
-      });
+      const error = new Error('Invalid webhook URL format');
+      (error as any).status = 400;
+      (error as any).data = { error: 'Invalid webhook URL format' };
+      mockApiClient.post = vi.fn().mockRejectedValue(error);
 
       await expect(provider.create(mockSlackConfig)).rejects.toThrow(
-        'Failed to create notification channel'
+        'Failed to create notification channel: Error: Invalid webhook URL format'
       );
     });
   });

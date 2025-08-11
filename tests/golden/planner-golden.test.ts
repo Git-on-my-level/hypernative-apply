@@ -475,21 +475,90 @@ describe('Golden Tests - Planner Output', () => {
 
   describe('Edge Cases', () => {
     it('should generate consistent plan with no changes', async () => {
-      // Mock state that exactly matches config
-      const matchingState = TestFixture.createMockState();
+      // Create config and state that match exactly
+      const config = TestFixture.createMockConfig();
 
-      // Mock fingerprint generation to return consistent hashes
-      vi.mock('../../src/lib/fingerprint.js', () => ({
-        generateFingerprint: vi.fn((obj) => {
-          // Create deterministic hash based on object content
-          const str = JSON.stringify(obj);
-          return 'hash_' + str.length.toString(16);
-        }),
-      }));
+      // Mock fingerprint to always return the same hash for matching resources
+      const fingerprintModule = await import('../../src/lib/fingerprint.js');
+      const mockHash = 'consistent_hash_123';
+      const generateFingerprintSpy = vi
+        .spyOn(fingerprintModule, 'generateFingerprint')
+        .mockReturnValue(mockHash);
+      const fingerprintsEqualSpy = vi
+        .spyOn(fingerprintModule, 'fingerprintsEqual')
+        .mockImplementation((a, b) => a === b);
+
+      // Create matching state with all resources from config
+      const matchingState = {
+        version: '1.0.0' as const,
+        resources: {
+          'test-slack': {
+            kind: 'notification_channel' as const,
+            name: 'test-slack',
+            remote_id: 'nc_123',
+            last_applied_hash: mockHash,
+            last_seen_remote_hash: mockHash,
+            metadata: {
+              created_at: '2024-01-01T00:00:00Z',
+              updated_at: '2024-01-01T00:00:00Z',
+              created_by: 'test',
+              cli_version: '0.1.0',
+            },
+          },
+          'test-email': {
+            kind: 'notification_channel' as const,
+            name: 'test-email',
+            remote_id: 'nc_456',
+            last_applied_hash: mockHash,
+            last_seen_remote_hash: mockHash,
+            metadata: {
+              created_at: '2024-01-01T00:00:00Z',
+              updated_at: '2024-01-01T00:00:00Z',
+              created_by: 'test',
+              cli_version: '0.1.0',
+            },
+          },
+          'test-watchlist': {
+            kind: 'watchlist' as const,
+            name: 'test-watchlist',
+            remote_id: 'wl_789',
+            last_applied_hash: mockHash,
+            last_seen_remote_hash: mockHash,
+            metadata: {
+              created_at: '2024-01-01T00:00:00Z',
+              updated_at: '2024-01-01T00:00:00Z',
+              created_by: 'test',
+              cli_version: '0.1.0',
+            },
+          },
+          'test-agent': {
+            kind: 'custom_agent' as const,
+            name: 'test-agent',
+            remote_id: 'ca_012',
+            last_applied_hash: mockHash,
+            last_seen_remote_hash: mockHash,
+            metadata: {
+              created_at: '2024-01-01T00:00:00Z',
+              updated_at: '2024-01-01T00:00:00Z',
+              created_by: 'test',
+              cli_version: '0.1.0',
+            },
+          },
+        },
+        metadata: {
+          created_at: '2024-01-01T00:00:00Z',
+          created_by_version: '0.1.0',
+          total_resources: 4,
+          resource_counts: {
+            watchlists: 1,
+            custom_agents: 1,
+            notification_channels: 2,
+          },
+        },
+      };
 
       vi.spyOn(StateStore.prototype, 'loadState').mockResolvedValue(matchingState);
 
-      const config = TestFixture.createMockConfig();
       const plan = await planner.generatePlan(config);
       const normalizedPlan = normalizePlan(plan);
 
@@ -499,6 +568,10 @@ describe('Golden Tests - Planner Output', () => {
 
       const isMatch = golden.compareWithGolden('no-changes', normalizedPlan);
       expect(isMatch).toBe(true);
+
+      // Clean up spies
+      generateFingerprintSpy.mockRestore();
+      fingerprintsEqualSpy.mockRestore();
     });
 
     it('should handle empty configuration consistently', async () => {

@@ -8,9 +8,11 @@
  * - Integration with existing state management and planning
  */
 
-import { readFileSync } from 'fs';
+import { readFileSync, createReadStream } from 'fs';
+import FormData from 'form-data';
 import { parse as parseCsv } from 'csv-parse/sync';
 import { log } from '../lib/logger.js';
+import { unwrapApiResponse, unwrapApiListResponse } from '../lib/api-response.js';
 import { ApiClient } from '../lib/api-client.js';
 import { generateFingerprint } from '../lib/fingerprint.js';
 import type { WatchlistConfig, AssetConfig } from '../schemas/watchlist.schema.js';
@@ -58,7 +60,7 @@ export class WatchlistProvider {
         },
       });
 
-      return response.data || [];
+      return unwrapApiListResponse<ApiWatchlist>(response);
     } catch (error) {
       log.error('Failed to list watchlists:', error);
       throw new Error(`Failed to list watchlists: ${error}`);
@@ -73,7 +75,7 @@ export class WatchlistProvider {
 
     try {
       const response = await this.apiClient.get(`/api/v2/watchlists/${id}`);
-      return response.data;
+      return unwrapApiResponse<ApiWatchlist>(response);
     } catch (error: any) {
       if (error.status === 404) {
         return null;
@@ -97,8 +99,9 @@ export class WatchlistProvider {
 
     try {
       const response = await this.apiClient.post('/api/v2/watchlists', payload);
-      log.info(`Created watchlist: ${response.data.name} (${response.data.id})`);
-      return response.data;
+      const created = unwrapApiResponse<ApiWatchlist>(response);
+      log.info(`Created watchlist: ${created.name} (${created.id})`);
+      return created;
     } catch (error) {
       log.error('Failed to create watchlist:', error);
       throw new Error(`Failed to create watchlist: ${error}`);
@@ -138,7 +141,8 @@ export class WatchlistProvider {
 
     try {
       const response = await this.apiClient.patch(`/api/v2/watchlists/${id}`, payload);
-      log.info(`Updated watchlist: ${response.data.name} (${id})`);
+      const updated = unwrapApiResponse<ApiWatchlist>(response);
+      log.info(`Updated watchlist: ${updated.name} (${id})`);
 
       if (
         reconciliation &&
@@ -149,7 +153,7 @@ export class WatchlistProvider {
         );
       }
 
-      return response.data;
+      return updated;
     } catch (error) {
       log.error(`Failed to update watchlist ${id}:`, error);
       throw new Error(`Failed to update watchlist ${id}: ${error}`);
@@ -202,9 +206,10 @@ export class WatchlistProvider {
 
       // Create form data for multipart upload
       const formData = new FormData();
-      const csvContent = readFileSync(csvPath, 'utf-8');
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      formData.append('file', blob, 'assets.csv');
+      formData.append('file', createReadStream(csvPath), {
+        filename: 'assets.csv',
+        contentType: 'text/csv',
+      });
 
       if (replaceAssets) {
         formData.append('replace', 'true');
@@ -215,15 +220,16 @@ export class WatchlistProvider {
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data',
+            ...formData.getHeaders(),
           },
         }
       );
 
+      const result = unwrapApiResponse<CsvUploadResult>(response);
       log.info(
-        `CSV uploaded to watchlist ${watchlistId}: ${response.data.imported} imported, ${response.data.failed} failed`
+        `CSV uploaded to watchlist ${watchlistId}: ${result.imported} imported, ${result.failed} failed`
       );
-      return response.data;
+      return result;
     } catch (error) {
       log.error(`Failed to upload CSV to watchlist ${watchlistId}:`, error);
       throw new Error(`Failed to upload CSV to watchlist ${watchlistId}: ${error}`);

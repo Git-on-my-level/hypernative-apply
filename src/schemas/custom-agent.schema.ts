@@ -290,6 +290,7 @@ export const customAgentSchema = z.object({
   description: z.string().optional(),
   enabled: z.boolean().default(true),
   type: agentTypeSchema,
+  code: z.string().optional(), // Unique code identifier for the agent
   chain: chainSchema,
   severity: z.enum(['critical', 'high', 'medium', 'low']).default('medium'),
   tags: z.record(z.string()).optional(),

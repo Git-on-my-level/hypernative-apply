@@ -4,6 +4,10 @@ api:
   endpoint: "https://api.hypernative.com"
   timeout: 30000
 
-watchlists: []
-notification_channels: []
-custom_agents: []
+watchlists:
+  - "./watchlists/example-watchlist.yaml"
+  - "./watchlists/malformed.yaml"
+notification_channels:
+  - "./notification-channels/example-channel.yaml"
+custom_agents:
+  - "./custom-agents/example-agent.yaml"

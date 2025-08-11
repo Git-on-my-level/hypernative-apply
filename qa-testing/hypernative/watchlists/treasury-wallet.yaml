@@ -1,0 +1,13 @@
+name: Treasury Wallet
+description: Monitor main treasury wallet for all transaction activity
+assets:
+  - chain: ethereum
+    type: Wallet
+    address: "0x1234567890123456789012345678901234567890"  # Replace with your wallet address
+alert_config:
+  notification_channels: ["slack-alerts"]
+  severity: medium
+  conditions:
+    - type: any_transaction
+      threshold: 0  # Alert on any transaction
+enabled: true

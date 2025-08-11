@@ -11,6 +11,7 @@
  */
 
 import { log } from '../lib/logger.js';
+import { unwrapApiResponse, unwrapApiListResponse } from '../lib/api-response.js';
 import { ApiClient } from '../lib/api-client.js';
 import { generateFingerprint } from '../lib/fingerprint.js';
 import { ChannelResolver } from '../lib/channel-resolver.js';
@@ -62,7 +63,7 @@ export class CustomAgentProvider {
         },
       });
 
-      return response.data || [];
+      return unwrapApiListResponse<CustomAgent>(response);
     } catch (error) {
       log.error('Failed to list custom agents:', error);
       throw new Error(`Failed to list custom agents: ${error}`);
@@ -77,7 +78,7 @@ export class CustomAgentProvider {
 
     try {
       const response = await this.apiClient.get(`/api/v2/custom-agents/${id}`);
-      return response.data;
+      return unwrapApiResponse<CustomAgent>(response);
     } catch (error: any) {
       if (error.status === 404) {
         return null;
@@ -95,7 +96,7 @@ export class CustomAgentProvider {
 
     try {
       const response = await this.apiClient.get(`/api/v2/custom-agents/${id}/status`);
-      return response.data;
+      return unwrapApiResponse<CustomAgentStatusResponse>(response);
     } catch (error: any) {
       if (error.status === 404) {
         return null;
@@ -123,8 +124,9 @@ export class CustomAgentProvider {
 
     try {
       const response = await this.apiClient.post('/api/v2/custom-agents', payload);
-      log.info(`Created custom agent: ${response.data.name} (${response.data.id})`);
-      return response.data;
+      const created = unwrapApiResponse<CustomAgent>(response);
+      log.info(`Created custom agent: ${created.name} (${created.id})`);
+      return created;
     } catch (error) {
       log.error('Failed to create custom agent:', error);
       throw new Error(`Failed to create custom agent: ${error}`);
@@ -154,8 +156,9 @@ export class CustomAgentProvider {
 
     try {
       const response = await this.apiClient.patch(`/api/v2/custom-agents/${id}`, payload);
-      log.info(`Updated custom agent: ${response.data.name} (${id})`);
-      return response.data;
+      const updated = unwrapApiResponse<CustomAgent>(response);
+      log.info(`Updated custom agent: ${updated.name} (${id})`);
+      return updated;
     } catch (error) {
       log.error(`Failed to update custom agent ${id}:`, error);
       throw new Error(`Failed to update custom agent ${id}: ${error}`);

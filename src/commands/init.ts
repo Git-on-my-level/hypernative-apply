@@ -18,20 +18,42 @@ custom_agents: []
   'hypernative/watchlists/example-watchlist.yaml': `# Example Watchlist Configuration
 name: example-watchlist
 description: "Example watchlist for monitoring"
-rules:
-  - type: balance_threshold
-    threshold: 1000000
-    token: USDC
-  - type: transaction_volume
-    threshold: 10000000
-    timeframe: "1h"
 enabled: true
+assets:
+  - chain: ethereum
+    type: Wallet
+    address: "0x742d35Cc6637C0532D4B8B1D96A4Bb7E6ad77e3A"
+    name: "Example Treasury Wallet"
+    tags: ["treasury", "example"]
+  - chain: polygon
+    type: Contract
+    address: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
+    name: "USDC Contract"
+    symbol: "USDC"
+alert_config:
+  severity_threshold: medium
+  notification_channels: ["example-slack-channel"]
+  enabled: true
+  rules:
+    - conditions:
+        - type: balance_change
+          threshold: 1000000
+          direction: decrease
+          timeframe: "1h"
+      severity: critical
+      enabled: true
+    - conditions:
+        - type: transaction_volume
+          threshold: 10000000
+          timeframe: "24h"
+      severity: high
+      enabled: true
 `,
   'hypernative/notification-channels/example-channel.yaml': `# Example Notification Channel Configuration
 name: example-slack-channel
 type: slack
 description: "Example Slack notification channel"
-config:
+configuration:
   webhook_url: "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
   channel: "#alerts"
   username: "Hypernative Bot"
@@ -40,17 +62,16 @@ enabled: true
   'hypernative/custom-agents/example-agent.yaml': `# Example Custom Agent Configuration
 name: example-agent
 description: "Example custom monitoring agent"
-triggers:
-  - event: transaction
-    filters:
-      - field: amount
-        operator: gt
-        value: 100000
-actions:
-  - type: alert
-    severity: high
-    message: "Large transaction detected"
+type: large_transaction_monitor
+chain: ethereum
+severity: high
 enabled: true
+configuration:
+  addresses: ["0x742d35Cc6637C0532D4B8B1D96A4Bb7E6ad77e3A"]
+  threshold_value: 100000
+  direction: both
+  time_window: "1h"
+notification_channels: ["example-slack-channel"]
 `,
 };
 

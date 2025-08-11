@@ -1,0 +1,11 @@
+name: slack-alerts
+type: slack
+description: Main Slack channel for security alerts
+config:
+  webhook_url: ${SLACK_WEBHOOK_URL}
+  channel: "#security-alerts"
+  username: "Hypernative Security Bot"
+  icon_emoji: ":shield:"
+  mention_users: []  # Add @username to mention specific users
+  mention_channel: false  # Set to true to @channel on alerts
+enabled: true

@@ -177,6 +177,24 @@ function getProfileByName(
 }
 
 /**
+ * Validates baseUrl for HTTPS enforcement
+ */
+function validateBaseUrl(baseUrl: string): void {
+  // Allow http://localhost for testing/development
+  if (baseUrl.startsWith('http://localhost')) {
+    return;
+  }
+
+  // Enforce HTTPS for all other URLs
+  if (!baseUrl.startsWith('https://')) {
+    throw new Error(
+      `Base URL must use HTTPS: ${baseUrl}. ` +
+        'Only http://localhost is allowed for local development.'
+    );
+  }
+}
+
+/**
  * Loads and resolves complete configuration with precedence handling
  */
 export async function loadConfig(flags: CommandFlags = {}): Promise<ResolvedConfig> {
@@ -207,7 +225,10 @@ export async function loadConfig(flags: CommandFlags = {}): Promise<ResolvedConf
       profile: activeProfileName,
     };
 
-    // Step 7: Validate required credentials (unless using custom base URL)
+    // Step 7: Validate HTTPS enforcement
+    validateBaseUrl(resolvedConfig.baseUrl);
+
+    // Step 8: Validate required credentials (unless using custom base URL)
     if (!flags.baseUrl && (!resolvedConfig.clientId || !resolvedConfig.clientSecret)) {
       const missingFields = [];
       if (!resolvedConfig.clientId) missingFields.push('client ID');

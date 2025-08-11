@@ -51,6 +51,7 @@ export class Executor {
   private parallelism: number;
   private continueOnError: boolean;
   private providers: ProviderContext;
+  private originalStates: Map<string, any> = new Map(); // Store original remote states for rollback
 
   constructor(options: ExecutorOptions) {
     this.apiClient = options.apiClient;
@@ -264,8 +265,12 @@ export class Executor {
           throw new Error(`Remote ID not found for watchlist update: ${change.name}`);
         }
 
-        // Get current remote state for asset reconciliation
+        // Get current remote state for asset reconciliation and store for rollback
         const currentRemoteState = await this.providers.watchlistProvider.getById(change.remote_id);
+        if (currentRemoteState) {
+          this.originalStates.set(`${change.kind}.${change.name}`, currentRemoteState);
+        }
+
         return await this.providers.watchlistProvider.update(
           change.remote_id,
           watchlistConfig,
@@ -313,10 +318,14 @@ export class Executor {
           throw new Error(`Remote ID not found for custom agent update: ${change.name}`);
         }
 
-        // Get current remote state for comparison
+        // Get current remote state for comparison and store for rollback
         const currentRemoteState = await this.providers.customAgentProvider.getById(
           change.remote_id
         );
+        if (currentRemoteState) {
+          this.originalStates.set(`${change.kind}.${change.name}`, currentRemoteState);
+        }
+
         return await this.providers.customAgentProvider.update(
           change.remote_id,
           agentConfig,
@@ -428,29 +437,176 @@ export class Executor {
     // Rollback in reverse order
     for (let i = successfulResults.length - 1; i >= 0; i--) {
       const result = successfulResults[i];
+      const resourceKey = `${result.resource_kind}.${result.resource_name}`;
 
       try {
         switch (result.resource_kind) {
           case 'watchlist':
-            if (result.change_type === ChangeType.CREATE && result.remote_id) {
-              await this.providers.watchlistProvider.delete(result.remote_id);
-              log.debug(`Rolled back created watchlist: ${result.resource_name}`);
-            }
-            // TODO: Handle UPDATE rollback (would need to restore previous state)
+            await this.rollbackWatchlistChange(result, resourceKey);
             break;
 
           case 'notification_channel':
-            if (result.change_type === ChangeType.CREATE && result.remote_id) {
-              await this.providers.notificationChannelProvider.delete(result.remote_id);
-              log.debug(`Rolled back created notification channel: ${result.resource_name}`);
-            }
-            // TODO: Handle UPDATE rollback (would need to restore previous state)
+            await this.rollbackNotificationChannelChange(result, resourceKey);
+            break;
+
+          case 'custom_agent':
+            await this.rollbackCustomAgentChange(result, resourceKey);
             break;
         }
       } catch (error) {
         log.error(`Failed to rollback ${result.resource_kind}.${result.resource_name}:`, error);
       }
     }
+  }
+
+  /**
+   * Rollback a watchlist change
+   */
+  private async rollbackWatchlistChange(
+    result: ResourceExecutionResult,
+    resourceKey: string
+  ): Promise<void> {
+    switch (result.change_type) {
+      case ChangeType.CREATE:
+        if (result.remote_id) {
+          await this.providers.watchlistProvider.delete(result.remote_id);
+          log.debug(`Rolled back created watchlist: ${result.resource_name}`);
+        }
+        break;
+
+      case ChangeType.UPDATE:
+        if (result.remote_id) {
+          const originalState = this.originalStates.get(resourceKey);
+          if (originalState) {
+            // Restore the original state by updating with original configuration
+            await this.providers.watchlistProvider.update(
+              result.remote_id,
+              this.convertApiWatchlistToConfig(originalState),
+              originalState
+            );
+            log.debug(`Rolled back updated watchlist: ${result.resource_name}`);
+          }
+        }
+        break;
+
+      case ChangeType.REPLACE:
+        // REPLACE operations are more complex to rollback - would need original resource recreation
+        log.warn(`Cannot rollback REPLACE operation for watchlist: ${result.resource_name}`);
+        break;
+    }
+  }
+
+  /**
+   * Rollback a notification channel change
+   */
+  private async rollbackNotificationChannelChange(
+    result: ResourceExecutionResult,
+    resourceKey: string
+  ): Promise<void> {
+    switch (result.change_type) {
+      case ChangeType.CREATE:
+        if (result.remote_id) {
+          await this.providers.notificationChannelProvider.delete(result.remote_id);
+          log.debug(`Rolled back created notification channel: ${result.resource_name}`);
+        }
+        break;
+
+      case ChangeType.UPDATE:
+        if (result.remote_id) {
+          const originalState = this.originalStates.get(resourceKey);
+          if (originalState) {
+            // Restore the original state by updating with original configuration
+            await this.providers.notificationChannelProvider.update(
+              result.remote_id,
+              this.convertApiNotificationChannelToConfig(originalState),
+              originalState
+            );
+            log.debug(`Rolled back updated notification channel: ${result.resource_name}`);
+          }
+        }
+        break;
+
+      case ChangeType.REPLACE:
+        log.warn(
+          `Cannot rollback REPLACE operation for notification channel: ${result.resource_name}`
+        );
+        break;
+    }
+  }
+
+  /**
+   * Rollback a custom agent change
+   */
+  private async rollbackCustomAgentChange(
+    result: ResourceExecutionResult,
+    resourceKey: string
+  ): Promise<void> {
+    switch (result.change_type) {
+      case ChangeType.CREATE:
+        if (result.remote_id) {
+          await this.providers.customAgentProvider.delete(result.remote_id);
+          log.debug(`Rolled back created custom agent: ${result.resource_name}`);
+        }
+        break;
+
+      case ChangeType.UPDATE:
+        if (result.remote_id) {
+          const originalState = this.originalStates.get(resourceKey);
+          if (originalState) {
+            // Restore the original state by updating with original configuration
+            await this.providers.customAgentProvider.update(
+              result.remote_id,
+              this.convertApiCustomAgentToConfig(originalState),
+              originalState
+            );
+            log.debug(`Rolled back updated custom agent: ${result.resource_name}`);
+          }
+        }
+        break;
+
+      case ChangeType.REPLACE:
+        log.warn(`Cannot rollback REPLACE operation for custom agent: ${result.resource_name}`);
+        break;
+    }
+  }
+
+  /**
+   * Convert API watchlist response back to configuration format for rollback
+   */
+  private convertApiWatchlistToConfig(apiWatchlist: ApiWatchlist): any {
+    return {
+      name: apiWatchlist.name,
+      description: apiWatchlist.description || '',
+      assets: apiWatchlist.assets || [],
+      tags: apiWatchlist.tags || {},
+    };
+  }
+
+  /**
+   * Convert API notification channel response back to configuration format for rollback
+   */
+  private convertApiNotificationChannelToConfig(apiChannel: NotificationChannel): any {
+    // This is a simplified conversion - in reality, we'd need more sophisticated mapping
+    return {
+      type: apiChannel.type,
+      name: apiChannel.name,
+      settings: apiChannel.settings || {},
+      enabled: apiChannel.enabled ?? true,
+    };
+  }
+
+  /**
+   * Convert API custom agent response back to configuration format for rollback
+   */
+  private convertApiCustomAgentToConfig(apiAgent: CustomAgent): any {
+    return {
+      name: apiAgent.name,
+      type: apiAgent.type,
+      description: apiAgent.description || '',
+      code: apiAgent.code || '',
+      enabled: apiAgent.enabled ?? true,
+      tags: apiAgent.tags || {},
+    };
   }
 
   /**
@@ -541,10 +697,14 @@ export class Executor {
           throw new Error(`Remote ID not found for notification channel update: ${change.name}`);
         }
 
-        // Get current remote state for comparison
+        // Get current remote state for comparison and store for rollback
         const currentRemoteState = await this.providers.notificationChannelProvider.getById(
           change.remote_id
         );
+        if (currentRemoteState) {
+          this.originalStates.set(`${change.kind}.${change.name}`, currentRemoteState);
+        }
+
         return await this.providers.notificationChannelProvider.update(
           change.remote_id,
           channelConfig,

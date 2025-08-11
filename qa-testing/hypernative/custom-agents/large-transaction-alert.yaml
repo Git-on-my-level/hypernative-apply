@@ -1,0 +1,21 @@
+name: Large Transaction Monitor
+description: Alert on transactions above $100,000 USD equivalent
+type: transaction_monitor
+chain: ethereum
+configuration:
+  threshold:
+    amount: 100000
+    currency: USD
+  addresses:
+    - "0x1234567890123456789012345678901234567890"  # Replace with your wallet address
+  tokens:
+    - "USDC"
+    - "USDT" 
+    - "DAI"
+    - "WETH"
+    - "*"  # Monitor all tokens
+  direction: both  # in, out, or both
+  severity: high
+notification_channels:
+  - "slack-alerts"
+enabled: true

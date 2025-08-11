@@ -1,0 +1,33 @@
+# Example Watchlist Configuration
+name: example-watchlist
+description: "Example watchlist for monitoring"
+enabled: true
+assets:
+  - chain: ethereum
+    type: Wallet
+    address: "0x742d35Cc6637C0532D4B8B1D96A4Bb7E6ad77e3A"
+    name: "Example Treasury Wallet"
+    tags: ["treasury", "example"]
+  - chain: polygon
+    type: Contract
+    address: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
+    name: "USDC Contract"
+    symbol: "USDC"
+alert_config:
+  severity_threshold: medium
+  notification_channels: ["example-slack-channel"]
+  enabled: true
+  rules:
+    - conditions:
+        - type: balance_change
+          threshold: 1000000
+          direction: decrease
+          timeframe: "1h"
+      severity: critical
+      enabled: true
+    - conditions:
+        - type: transaction_volume
+          threshold: 10000000
+          timeframe: "24h"
+      severity: high
+      enabled: true

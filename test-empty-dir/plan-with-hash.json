@@ -1,0 +1,108 @@
+{
+  "version": "1.0.0",
+  "plan": {
+    "metadata": {
+      "plan_id": "8a9e7217-169b-4100-afba-cf9fa4b732f6",
+      "created_at": "2025-08-08T10:52:59.719Z",
+      "cli_version": "0.1.0",
+      "config_hash": "67682c14fe60018333f3d99634f13bab5bb1e8209edca43997c46db439768e1e",
+      "content_hash": "633b5291c549e26fc01b54f95df7da03fdae55937eaa8d2721dd81368e3ff440",
+      "base_directory": "/Users/dazheng/workspace/hypernative-apply/test-config",
+      "config_files": [
+        "hypernative/notification-channels/*.yaml",
+        "hypernative/watchlists/*.yaml",
+        "hypernative/custom-agents/*.yaml"
+      ]
+    },
+    "changes": [
+      {
+        "kind": "notification_channel",
+        "name": "valid-channel-valid-webhook-channel",
+        "remote_id": "channel_12345",
+        "change_type": "NO_CHANGE",
+        "current_hash": "d20c250ad3b14143bd23aaadc8efa803ac3729d41978ec19fb27a16ff163c2f8",
+        "desired_hash": "d20c250ad3b14143bd23aaadc8efa803ac3729d41978ec19fb27a16ff163c2f8",
+        "dependencies": [],
+        "dependents": [
+          "valid-watchlist-test-watchlist",
+          "valid-agent-test-balance-monitor"
+        ],
+        "risk_level": "low"
+      },
+      {
+        "kind": "custom_agent",
+        "name": "valid-agent-test-balance-monitor",
+        "remote_id": "agent_11111",
+        "change_type": "NO_CHANGE",
+        "current_hash": "042f721349dd037db66421ea52a5ee2c00f918f7e828878c7b5c9a93a4d19261",
+        "desired_hash": "042f721349dd037db66421ea52a5ee2c00f918f7e828878c7b5c9a93a4d19261",
+        "dependencies": [
+          "valid-channel-valid-webhook-channel"
+        ],
+        "dependents": [],
+        "risk_level": "low"
+      },
+      {
+        "kind": "watchlist",
+        "name": "valid-watchlist-test-watchlist",
+        "remote_id": "watchlist_67890",
+        "change_type": "NO_CHANGE",
+        "current_hash": "8aa836121ed1a4c76c22b5d6c5e383ae663a6061ab760908403c480d162d66cd",
+        "desired_hash": "8aa836121ed1a4c76c22b5d6c5e383ae663a6061ab760908403c480d162d66cd",
+        "dependencies": [
+          "valid-channel-valid-webhook-channel"
+        ],
+        "dependents": [],
+        "risk_level": "low"
+      }
+    ],
+    "summary": {
+      "total_resources": 3,
+      "to_create": 0,
+      "to_update": 0,
+      "to_replace": 0,
+      "to_delete": 0,
+      "no_change": 3,
+      "by_resource_type": {
+        "notification_channel": {
+          "to_create": 0,
+          "to_update": 0,
+          "to_replace": 0,
+          "to_delete": 0,
+          "no_change": 1
+        },
+        "custom_agent": {
+          "to_create": 0,
+          "to_update": 0,
+          "to_replace": 0,
+          "to_delete": 0,
+          "no_change": 1
+        },
+        "watchlist": {
+          "to_create": 0,
+          "to_update": 0,
+          "to_replace": 0,
+          "to_delete": 0,
+          "no_change": 1
+        }
+      }
+    },
+    "dependencies": [
+      {
+        "resource_name": "valid-watchlist-test-watchlist",
+        "resource_kind": "watchlist",
+        "depends_on_name": "valid-channel-valid-webhook-channel",
+        "depends_on_kind": "notification_channel",
+        "dependency_type": "references"
+      },
+      {
+        "resource_name": "valid-agent-test-balance-monitor",
+        "resource_kind": "custom_agent",
+        "depends_on_name": "valid-channel-valid-webhook-channel",
+        "depends_on_kind": "notification_channel",
+        "dependency_type": "references"
+      }
+    ]
+  },
+  "signature": "bd940f618365d6d760816bf14d636ee2473f700ef9d4ef2f0d607d636d1f8930"
+}

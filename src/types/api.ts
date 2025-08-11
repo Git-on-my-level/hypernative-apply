@@ -84,6 +84,7 @@ export interface ApiWatchlist {
   created_at: string;
   updated_at?: string;
   assets?: ApiWatchlistAsset[];
+  tags?: Record<string, string>;
 }
 
 export interface ApiWatchlistCreatePayload {
@@ -142,6 +143,8 @@ export interface CustomAgent {
   execution_count: number;
   error_count: number;
   last_error?: string;
+  code?: string;
+  tags?: Record<string, string>;
 }
 
 export interface CustomAgentCreatePayload {
@@ -251,6 +254,7 @@ export interface NotificationChannel {
   updated_at: string;
   description?: string;
   tags?: Record<string, string>;
+  settings?: Record<string, any>;
   last_test_result?: {
     success: boolean;
     message: string;

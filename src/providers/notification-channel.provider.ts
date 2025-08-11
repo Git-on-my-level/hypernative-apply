@@ -11,6 +11,7 @@
  */
 
 import { log } from '../lib/logger.js';
+import { unwrapApiResponse, unwrapApiListResponse } from '../lib/api-response.js';
 import { ApiClient } from '../lib/api-client.js';
 import { generateFingerprint } from '../lib/fingerprint.js';
 import {
@@ -76,7 +77,7 @@ export class NotificationChannelProvider {
         },
       });
 
-      return response.data || [];
+      return unwrapApiListResponse<NotificationChannel>(response);
     } catch (error) {
       log.error('Failed to list notification channels:', error);
       throw new Error(`Failed to list notification channels: ${error}`);
@@ -91,7 +92,7 @@ export class NotificationChannelProvider {
 
     try {
       const response = await this.apiClient.get(`/api/v2/notification-channels/${id}`);
-      return response.data;
+      return unwrapApiResponse<NotificationChannel>(response);
     } catch (error: any) {
       if (error.status === 404) {
         return null;
@@ -137,12 +138,14 @@ export class NotificationChannelProvider {
         }
       );
 
+      const result = unwrapApiResponse<NotificationChannelTestResponse>(response);
+
       log.info(`Notification channel test completed: ${id}`, {
-        success: response.data.success,
-        message: response.data.message,
+        success: result.success,
+        message: result.message,
       });
 
-      return response.data;
+      return result;
     } catch (error) {
       log.error(`Failed to test notification channel ${id}:`, error);
       throw new Error(`Failed to test notification channel ${id}: ${error}`);
@@ -172,7 +175,7 @@ export class NotificationChannelProvider {
 
     try {
       const response = await this.apiClient.post('/api/v2/notification-channels', payload);
-      const createdChannel = response.data;
+      const createdChannel = unwrapApiResponse<NotificationChannel>(response);
 
       log.info(`Created notification channel: ${createdChannel.name} (${createdChannel.id})`);
 
@@ -222,7 +225,7 @@ export class NotificationChannelProvider {
 
     try {
       const response = await this.apiClient.patch(`/api/v2/notification-channels/${id}`, payload);
-      const updatedChannel = response.data;
+      const updatedChannel = unwrapApiResponse<NotificationChannel>(response);
 
       log.info(`Updated notification channel: ${updatedChannel.name} (${id})`);
 

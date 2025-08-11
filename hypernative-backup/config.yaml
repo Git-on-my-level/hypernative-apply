@@ -1,0 +1,9 @@
+# Hypernative Configuration
+version: 1
+api:
+  endpoint: "https://api.hypernative.com"
+  timeout: 30000
+
+watchlists: []
+notification_channels: []
+custom_agents: []

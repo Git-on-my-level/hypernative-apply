@@ -3,8 +3,8 @@
     "plan_id": "[NORMALIZED]",
     "created_at": "[NORMALIZED]",
     "cli_version": "0.1.0",
-    "config_hash": "388d84d52fc070463ca190700f661c1c51de9b036e381bb7e6240eac299ddd1d",
-    "content_hash": "01fffb30b334d91cd46a79c331190f0bf09af05464531eb95b9fb72eca29cfb9",
+    "config_hash": "5d0490bfd7544df39b9581309a3d9f10eb264d9e0bde23869da39a9dc746d5ae",
+    "content_hash": "b8c5df296994051603a7291e8971ee351220c7991a2ba91f731cd6368dc4d52e",
     "base_directory": "[NORMALIZED]",
     "config_files": [
       "hypernative/notification-channels/*.yaml",
@@ -17,7 +17,7 @@
       "kind": "notification_channel",
       "name": "create-channel",
       "change_type": "CREATE",
-      "desired_hash": "hash_55",
+      "desired_hash": "9471cf2764da32946ae7387c52089f8bfb271af542720df42b3bfd8c7150e421",
       "dependencies": [],
       "dependents": ["create-watchlist"],
       "risk_level": "low"
@@ -28,7 +28,7 @@
       "remote_id": "nc_update",
       "change_type": "UPDATE",
       "current_hash": "old_update_hash",
-      "desired_hash": "hash_82",
+      "desired_hash": "87c414ebb1418331ef0aa9f0f1494a8f1640f0fc7f352955e991024d489c0d62",
       "field_diffs": [
         {
           "path": "config",
@@ -45,7 +45,7 @@
       "kind": "custom_agent",
       "name": "create-agent",
       "change_type": "CREATE",
-      "desired_hash": "hash_94",
+      "desired_hash": "d32942de7e19fac8e525d71fa698018a7865a0651fb4a584a0d89079209690a6",
       "dependencies": ["update-channel"],
       "dependents": [],
       "risk_level": "low"
@@ -54,7 +54,7 @@
       "kind": "watchlist",
       "name": "create-watchlist",
       "change_type": "CREATE",
-      "desired_hash": "hash_88",
+      "desired_hash": "47e8fb8bf86e1ce8a18c5defd41dc9e9959a6c3b4b1177bba01d93d3e0eeb776",
       "dependencies": ["create-channel"],
       "dependents": [],
       "risk_level": "low"

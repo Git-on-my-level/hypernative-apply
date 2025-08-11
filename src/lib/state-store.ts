@@ -12,6 +12,11 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { log } from './logger.js';
 import {
+  writeFileWithSecurePermissions,
+  createDirectoryWithSecurePermissions,
+  SECURE_FILE_MODE,
+} from './file-security.js';
+import {
   StateFile,
   StateEntry,
   LockFile,
@@ -20,6 +25,8 @@ import {
   StateOperationResult,
   StateEntryMetadata,
 } from '../types/state.js';
+import { SafeJsonParser } from './safe-json-parser.js';
+import { basicStateFileSchema, basicLockFileSchema } from './basic-validation.js';
 import { generateFingerprint, fingerprintsEqual } from './fingerprint.js';
 import type { ParsedConfig } from '../schemas/config.schema.js';
 
@@ -49,9 +56,9 @@ const STATE_VERSION = '1.0.0' as const;
 const CLI_VERSION = '0.1.0'; // TODO: Import from package.json
 
 /**
- * Maximum age for lock files before considering them stale (5 minutes)
+ * Maximum age for lock files before considering them stale (1 hour)
  */
-const LOCK_MAX_AGE_MS = 5 * 60 * 1000;
+const LOCK_MAX_AGE_MS = 60 * 60 * 1000;
 
 export class StateStore {
   private baseDir: string;
@@ -67,11 +74,11 @@ export class StateStore {
   }
 
   /**
-   * Initialize state directory if it doesn't exist
+   * Initialize state directory if it doesn't exist with secure permissions
    */
   private async ensureStateDirectory(): Promise<void> {
     try {
-      await fs.mkdir(this.stateDir, { recursive: true });
+      await createDirectoryWithSecurePermissions(this.stateDir, true);
     } catch (error) {
       throw new Error(
         `Failed to create state directory: ${error instanceof Error ? error.message : String(error)}`
@@ -112,10 +119,12 @@ export class StateStore {
       }
 
       const content = await fs.readFile(this.stateFilePath, 'utf-8');
-      const state: StateFile = JSON.parse(content);
 
-      // Validate state file version
-      if (state.version !== STATE_VERSION) {
+      // Use SafeJsonParser for all JSON parsing to ensure security
+      const state: StateFile = SafeJsonParser.parse(content, basicStateFileSchema) as StateFile;
+
+      // Check version for backward compatibility after security validation
+      if (state.version && state.version !== STATE_VERSION) {
         throw new Error(
           `Unsupported state file version: ${state.version}. Expected: ${STATE_VERSION}`
         );
@@ -127,6 +136,17 @@ export class StateStore {
       if (error instanceof SyntaxError) {
         throw new Error('State file is corrupted (invalid JSON)');
       }
+      if (error instanceof Error && error.message.includes('Invalid JSON syntax')) {
+        throw new Error('State file is corrupted (invalid JSON)');
+      }
+      // Don't override specific error messages we already throw
+      if (
+        error instanceof Error &&
+        (error.message.includes('State file is corrupted') ||
+          error.message.includes('Unsupported state file version'))
+      ) {
+        throw error;
+      }
       throw new Error(
         `Failed to load state: ${error instanceof Error ? error.message : String(error)}`
       );
@@ -134,7 +154,7 @@ export class StateStore {
   }
 
   /**
-   * Save state to file
+   * Save state to file using atomic write (temp file + rename)
    */
   async saveState(state: StateFile): Promise<StateOperationResult> {
     try {
@@ -163,10 +183,31 @@ export class StateStore {
       state.metadata.resource_counts = counts;
 
       const content = JSON.stringify(state, null, 2);
-      await fs.writeFile(this.stateFilePath, content, 'utf-8');
 
-      log.debug(`Saved state with ${state.metadata.total_resources} resources`);
-      return { success: true };
+      // Atomic write using temp file + rename
+      // Use unique temp file name to avoid race conditions
+      const tempFilePath = `${this.stateFilePath}.tmp.${Date.now()}.${Math.random().toString(36).substr(2, 9)}`;
+
+      try {
+        // Write to temp file first
+        await writeFileWithSecurePermissions(tempFilePath, content, 'utf-8');
+
+        // Atomically move temp file to final location
+        await fs.rename(tempFilePath, this.stateFilePath);
+
+        log.debug(`Atomically saved state with ${state.metadata.total_resources} resources`);
+        return { success: true };
+      } catch (renameError) {
+        // Clean up temp file if rename failed
+        try {
+          await fs.unlink(tempFilePath);
+        } catch (unlinkError) {
+          log.debug(
+            `Failed to clean up temp file: ${unlinkError instanceof Error ? unlinkError.message : String(unlinkError)}`
+          );
+        }
+        throw renameError;
+      }
     } catch (error) {
       const message = `Failed to save state: ${error instanceof Error ? error.message : String(error)}`;
       log.error(message);
@@ -250,15 +291,16 @@ export class StateStore {
 
   /**
    * Check if a process is still running (for lock file validation)
+   * Cross-platform implementation for Windows and Unix systems
    */
   private isProcessRunning(pid: number): boolean {
     try {
-      // On Unix systems, sending signal 0 checks if process exists without affecting it
+      // Sending signal 0 checks if process exists without killing it
       process.kill(pid, 0);
       return true;
-    } catch (error) {
-      // Process doesn't exist or we don't have permission (assume it's dead)
-      return false;
+    } catch (error: any) {
+      // ESRCH means process doesn't exist
+      return error.code !== 'ESRCH';
     }
   }
 
@@ -272,7 +314,7 @@ export class StateStore {
       }
 
       const content = await fs.readFile(this.lockFilePath, 'utf-8');
-      const lockInfo: LockFile = JSON.parse(content);
+      const lockInfo: LockFile = SafeJsonParser.parse(content, basicLockFileSchema) as LockFile;
 
       // Check if lock is stale
       const lockAge = Date.now() - new Date(lockInfo.created_at).getTime();
@@ -300,15 +342,10 @@ export class StateStore {
 
   /**
    * Create a lock file to prevent concurrent operations
+   * Uses atomic file operations with 'wx' flag to prevent race conditions
    */
   async createLock(operation: 'plan' | 'apply'): Promise<StateOperationResult> {
     try {
-      const lockCheck = await this.isLocked();
-      if (lockCheck.locked) {
-        const msg = `Another hypernative operation is in progress (PID: ${lockCheck.lockInfo?.pid}, operation: ${lockCheck.lockInfo?.operation})`;
-        return { success: false, message: msg };
-      }
-
       await this.ensureStateDirectory();
 
       const lock: LockFile = {
@@ -319,12 +356,31 @@ export class StateStore {
         cwd: process.cwd(),
       };
 
-      await fs.writeFile(this.lockFilePath, JSON.stringify(lock, null, 2), 'utf-8');
+      // Atomic lock creation with exclusive flag - fails if file exists
+      // Note: We cannot use writeFileWithSecurePermissions here because we need the 'wx' flag
+      // So we write first with secure mode, then explicitly set permissions
+      await fs.writeFile(this.lockFilePath, JSON.stringify(lock, null, 2), {
+        encoding: 'utf-8',
+        flag: 'wx', // Exclusive creation - fails if file exists
+        mode: SECURE_FILE_MODE, // Secure permissions (0600)
+      });
 
       log.debug(`Created lock for ${operation} operation (PID: ${process.pid})`);
       return { success: true };
-    } catch (error) {
-      const message = `Failed to create lock: ${error instanceof Error ? error.message : String(error)}`;
+    } catch (error: any) {
+      if (error.code === 'EEXIST') {
+        // Lock already exists - check if it's stale
+        const lockCheck = await this.isLocked();
+        if (!lockCheck.locked) {
+          // Lock was stale and removed, try creating again
+          return this.createLock(operation);
+        }
+
+        const msg = `Another hypernative operation is in progress (PID: ${lockCheck.lockInfo?.pid}, operation: ${lockCheck.lockInfo?.operation})`;
+        return { success: false, message: msg };
+      }
+
+      const message = `Failed to create lock: ${error.message}`;
       return {
         success: false,
         message,
@@ -359,8 +415,8 @@ export class StateStore {
   private configToResourcesWithHash(config: ParsedConfig): ResourceWithHash[] {
     const resources: ResourceWithHash[] = [];
 
-    // Notification Channels
-    for (const [name, channelConfig] of Object.entries(config.notification_channels)) {
+    // Notification Channels - handle undefined collections gracefully
+    for (const [name, channelConfig] of Object.entries(config.notification_channels || {})) {
       resources.push({
         kind: 'notification_channel',
         name,
@@ -369,8 +425,8 @@ export class StateStore {
       });
     }
 
-    // Watchlists
-    for (const [name, watchlistConfig] of Object.entries(config.watchlists)) {
+    // Watchlists - handle undefined collections gracefully
+    for (const [name, watchlistConfig] of Object.entries(config.watchlists || {})) {
       resources.push({
         kind: 'watchlist',
         name,
@@ -379,8 +435,8 @@ export class StateStore {
       });
     }
 
-    // Custom Agents
-    for (const [name, agentConfig] of Object.entries(config.custom_agents)) {
+    // Custom Agents - handle undefined collections gracefully
+    for (const [name, agentConfig] of Object.entries(config.custom_agents || {})) {
       resources.push({
         kind: 'custom_agent',
         name,
@@ -479,10 +535,39 @@ export class StateStore {
   }
 
   /**
+   * Acquire a lock with retry logic and exponential backoff
+   */
+  async acquireLockWithRetry(
+    operation: 'plan' | 'apply',
+    maxRetries = 3
+  ): Promise<StateOperationResult> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const result = await this.createLock(operation);
+
+      if (result.success) {
+        return result;
+      }
+
+      if (attempt < maxRetries) {
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff, max 5s
+        log.debug(
+          `Lock acquisition failed, retrying in ${delay}ms (attempt ${attempt}/${maxRetries})`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+
+    return {
+      success: false,
+      message: `Failed to acquire lock after ${maxRetries} attempts`,
+    };
+  }
+
+  /**
    * Acquire a lock for the given operation (convenience method)
    */
   async acquireLock(operation: 'plan' | 'apply'): Promise<void> {
-    const result = await this.createLock(operation);
+    const result = await this.acquireLockWithRetry(operation);
     if (!result.success) {
       throw new Error(result.message || 'Failed to acquire lock');
     }

@@ -49,6 +49,31 @@ const globalConfigSchema = z
             performance_tracking: z.boolean().default(true),
           })
           .optional(),
+
+        // Input validation limits
+        validation_limits: z
+          .object({
+            // Maximum file size for uploads (in bytes)
+            max_file_size: z
+              .number()
+              .min(1024)
+              .max(100 * 1024 * 1024)
+              .default(10 * 1024 * 1024), // 10MB default
+
+            // Maximum number of assets per watchlist
+            max_assets_per_watchlist: z.number().min(1).max(10000).default(1000),
+
+            // Maximum number of resources per configuration
+            max_resources_total: z.number().min(1).max(1000).default(100),
+
+            // Maximum string lengths
+            max_name_length: z.number().min(1).max(1000).default(100),
+            max_description_length: z.number().min(1).max(10000).default(1000),
+
+            // Maximum code size for custom agents (in characters)
+            max_agent_code_length: z.number().min(1).max(100000).default(50000), // 50k characters
+          })
+          .optional(),
       })
       .optional(),
 
@@ -146,6 +171,18 @@ const configMetadataSchema = z
       .optional(),
   })
   .optional();
+
+// Schema for validating standalone global configuration files
+export const globalOnlyConfigSchema = z.object({
+  // Metadata about this configuration file
+  config: configMetadataSchema,
+
+  // Global settings
+  global: globalConfigSchema,
+
+  // Resource collections (optional for global-only config)
+  resources: resourceCollectionsSchema,
+});
 
 // Main configuration schema that combines everything
 export const rootConfigSchema = z

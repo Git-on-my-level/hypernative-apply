@@ -4,6 +4,7 @@ import { ResolvedConfig } from './config.js';
 import { log } from './logger.js';
 import { RateLimiter, createRateLimiter, RateLimitConfig } from './rate-limiter.js';
 import { ApiError, RateLimitHeaders } from '../types/api.js';
+import { LogRedactor } from './log-redaction.js';
 
 /**
  * Configuration for the API client
@@ -46,6 +47,9 @@ export class ApiClient {
   private backoffConfig: BackoffConfig;
 
   constructor(config: ApiClientConfig) {
+    // Validate HTTPS enforcement
+    this.validateBaseUrl(config.baseUrl);
+
     this.rateLimiter = createRateLimiter(config.rateLimitConfig);
 
     this.backoffConfig = {
@@ -74,14 +78,17 @@ export class ApiClient {
         (request as any).__requestId = uuidv4();
         (request as any).__startTime = Date.now();
 
-        log.debug('Making API request', {
-          method: request.method?.toUpperCase(),
-          url: request.url,
-          params: request.params,
-          requestId: (request as any).__requestId,
-          // Don't log sensitive data in request body
-          hasData: !!request.data,
-        });
+        log.debug(
+          'Making API request',
+          LogRedactor.safeLog({
+            method: request.method?.toUpperCase(),
+            url: request.url,
+            params: request.params,
+            requestId: (request as any).__requestId,
+            // Don't log sensitive data in request body, just indicate presence
+            hasData: !!request.data,
+          })
+        );
         return request;
       },
       (error) => {
@@ -124,12 +131,15 @@ export class ApiClient {
         }
 
         // Legacy debug log for additional context
-        log.debug('API response received', {
-          status: response.status,
-          url: response.config.url,
-          hasData: !!response.data,
-          requestId: requestId || (response.data as any)?.request_id,
-        });
+        log.debug(
+          'API response received',
+          LogRedactor.safeLog({
+            status: response.status,
+            url: response.config.url,
+            hasData: !!response.data,
+            requestId: requestId || (response.data as any)?.request_id,
+          })
+        );
 
         return response;
       },
@@ -172,24 +182,49 @@ export class ApiClient {
         }
 
         // Legacy debug log for additional context
-        log.debug('API response error', {
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          url: error.config?.url,
-          message: error.message,
-          requestId: requestId || (error.response?.data as any)?.request_id,
-        });
+        log.debug(
+          'API response error',
+          LogRedactor.safeLog({
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            url: error.config?.url,
+            message: error.message,
+            requestId: requestId || (error.response?.data as any)?.request_id,
+          })
+        );
 
         return Promise.reject(error);
       }
     );
 
-    log.debug('API client initialized', {
-      baseUrl: config.baseUrl,
-      clientId: `${config.clientId.slice(0, 4)}****`,
-      timeout: config.timeout || 30000,
-      maxRetries: this.backoffConfig.maxRetries,
-    });
+    log.debug(
+      'API client initialized',
+      LogRedactor.safeLog({
+        baseUrl: config.baseUrl,
+        clientId: config.clientId,
+        clientSecret: config.clientSecret,
+        timeout: config.timeout || 30000,
+        maxRetries: this.backoffConfig.maxRetries,
+      })
+    );
+  }
+
+  /**
+   * Validates baseUrl for HTTPS enforcement
+   */
+  private validateBaseUrl(baseUrl: string): void {
+    // Allow http://localhost for testing/development
+    if (baseUrl.startsWith('http://localhost')) {
+      return;
+    }
+
+    // Enforce HTTPS for all other URLs
+    if (!baseUrl.startsWith('https://')) {
+      throw new Error(
+        `Base URL must use HTTPS: ${baseUrl}. ` +
+          'Only http://localhost is allowed for local development.'
+      );
+    }
   }
 
   /**
@@ -274,25 +309,31 @@ export class ApiClient {
 
         // Check if error is retryable
         if (!this.isRetryableError(axiosError)) {
-          log.debug('Error is not retryable, failing immediately', {
-            status: axiosError.response?.status,
-            code: axiosError.code,
-            requestId: (axiosError.response?.data as any)?.request_id,
-          });
+          log.debug(
+            'Error is not retryable, failing immediately',
+            LogRedactor.safeLog({
+              status: axiosError.response?.status,
+              code: axiosError.code,
+              requestId: (axiosError.response?.data as any)?.request_id,
+            })
+          );
           break;
         }
 
         // Calculate backoff delay with jitter
         const delay = this.calculateBackoffDelay(attempt);
 
-        log.debug('Request failed, retrying with backoff', {
-          attempt: attempt + 1,
-          maxRetries: this.backoffConfig.maxRetries,
-          delayMs: delay,
-          status: axiosError.response?.status,
-          message: axiosError.message,
-          requestId: (axiosError.response?.data as any)?.request_id,
-        });
+        log.debug(
+          'Request failed, retrying with backoff',
+          LogRedactor.safeLog({
+            attempt: attempt + 1,
+            maxRetries: this.backoffConfig.maxRetries,
+            delayMs: delay,
+            status: axiosError.response?.status,
+            message: axiosError.message,
+            requestId: (axiosError.response?.data as any)?.request_id,
+          })
+        );
 
         await new Promise((resolve) => setTimeout(resolve, delay));
       }

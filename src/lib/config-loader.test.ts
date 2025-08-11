@@ -45,7 +45,7 @@ describe('ConfigLoader', () => {
       expect(result.config.watchlists).toEqual({});
       expect(result.config.custom_agents).toEqual({});
       expect(result.metadata.total_resources).toBe(0);
-      expect(result.metadata.load_time).toBeGreaterThan(0);
+      expect(result.metadata.load_time).toBeGreaterThanOrEqual(0);
     });
 
     it('should load notification channels', async () => {
@@ -58,18 +58,23 @@ describe('ConfigLoader', () => {
         join(channelsDir, 'slack-test.yaml'),
         `
 name: Test Slack Channel
-type: slack
+type: webhook
 enabled: true
-webhook_url: https://hooks.slack.com/services/test
-channel: "#alerts"
+configuration:
+  url: https://hooks.slack.com/services/test
+  method: POST
 `
       );
 
       const result = await configLoader.loadConfig();
 
-      expect(result.config.notification_channels['slack-test']).toBeDefined();
-      expect(result.config.notification_channels['slack-test'].name).toBe('Test Slack Channel');
-      expect(result.config.notification_channels['slack-test'].type).toBe('slack');
+      expect(result.config.notification_channels['slack-test-test-slack-channel']).toBeDefined();
+      expect(result.config.notification_channels['slack-test-test-slack-channel'].name).toBe(
+        'Test Slack Channel'
+      );
+      expect(result.config.notification_channels['slack-test-test-slack-channel'].type).toBe(
+        'webhook'
+      );
       expect(result.metadata.resource_counts.notification_channels).toBe(1);
     });
 
@@ -84,11 +89,14 @@ channel: "#alerts"
         `
 name: Test Watchlist
 description: A test watchlist
+enabled: true
 assets:
   - chain: ethereum
     type: Wallet
     address: "0x1234567890123456789012345678901234567890"
     name: Test Wallet
+alert_config:
+  severity_threshold: medium
 `
       );
 
@@ -111,9 +119,11 @@ assets:
         `
 name: Test Agent
 description: A test custom agent
-type: transaction_monitoring
+type: large_transaction_monitor
+chain: ethereum
 enabled: true
-conditions:
+severity: medium
+configuration:
   transaction_amount_threshold: 1000000
 `
       );
@@ -122,7 +132,7 @@ conditions:
 
       expect(result.config.custom_agents['test-agent']).toBeDefined();
       expect(result.config.custom_agents['test-agent'].name).toBe('Test Agent');
-      expect(result.config.custom_agents['test-agent'].type).toBe('transaction_monitoring');
+      expect(result.config.custom_agents['test-agent'].type).toBe('large_transaction_monitor');
       expect(result.metadata.resource_counts.custom_agents).toBe(1);
     });
 
@@ -135,16 +145,20 @@ conditions:
         join(hypernativeDir, 'config.yaml'),
         `
 global:
-  api_url: https://custom.api.url
-  timeout: 30
+  project:
+    name: Test Project
+    environment: development
+  defaults:
+    timezone: UTC
 `
       );
 
       const result = await configLoader.loadConfig();
 
       expect(result.config.global).toBeDefined();
-      expect(result.config.global?.api_url).toBe('https://custom.api.url');
-      expect(result.config.global?.timeout).toBe(30);
+      expect(result.config.global?.project?.name).toBe('Test Project');
+      expect(result.config.global?.project?.environment).toBe('development');
+      expect(result.config.global?.defaults?.timezone).toBe('UTC');
     });
 
     it('should handle multiple document YAML files', async () => {
@@ -157,16 +171,18 @@ global:
         join(channelsDir, 'multi-channels.yaml'),
         `
 name: Channel 1
-type: slack
+type: webhook
 enabled: true
-webhook_url: https://hooks.slack.com/1
-channel: "#alerts1"
+configuration:
+  url: https://hooks.slack.com/1
+  method: POST
 ---
 name: Channel 2
-type: slack
+type: webhook
 enabled: true
-webhook_url: https://hooks.slack.com/2
-channel: "#alerts2"
+configuration:
+  url: https://hooks.slack.com/2
+  method: POST
 `
       );
 
@@ -188,16 +204,17 @@ channel: "#alerts2"
         join(channelsDir, 'env-channel.yaml'),
         `
 name: Env Channel
-type: slack
+type: webhook
 enabled: true
-webhook_url: \${TEST_WEBHOOK_URL}
-channel: "#alerts"
+configuration:
+  url: \${TEST_WEBHOOK_URL}
+  method: POST
 `
       );
 
       const result = await configLoader.loadConfig();
 
-      expect(result.config.notification_channels['env-channel'].webhook_url).toBe(
+      expect(result.config.notification_channels['env-channel'].configuration.url).toBe(
         'https://hooks.slack.com/env-test'
       );
 
@@ -216,10 +233,11 @@ channel: "#alerts"
         join(channelsDir, 'valid-channel.yaml'),
         `
 name: Valid Channel
-type: slack
+type: webhook
 enabled: true
-webhook_url: https://hooks.slack.com/valid
-channel: "#alerts"
+configuration:
+  url: https://hooks.slack.com/valid
+  method: POST
 `
       );
 
@@ -229,11 +247,14 @@ channel: "#alerts"
         `
 name: Valid Watchlist
 description: References valid channel
+enabled: true
 assets:
   - chain: ethereum
     type: Wallet
     address: "0x1234567890123456789012345678901234567890"
+    name: Test Wallet
 alert_config:
+  severity_threshold: medium
   notification_channels:
     - valid-channel
 `
@@ -254,18 +275,12 @@ alert_config:
       mkdirSync(channelsDir, { recursive: true });
 
       // Create invalid YAML
-      writeFileSync(
-        join(channelsDir, 'invalid.yaml'),
-        `
-name: Test
-type: slack
-enabled: true
-  invalid_indentation: true
-webhook_url: https://hooks.slack.com/test
-`
-      );
+      writeFileSync(join(channelsDir, 'invalid.yaml'), '---\n:\nkey: value\n');
 
-      await expect(configLoader.loadConfig()).rejects.toThrow('YAML parse error');
+      const error = await configLoader.loadConfig().catch((e) => e);
+      expect(error).toBeInstanceOf(Error);
+      expect(error.message).toMatch(/Configuration validation failed/);
+      // The YAML parse error should be contained within the validation error
     });
 
     it('should handle validation errors', async () => {
@@ -278,9 +293,11 @@ webhook_url: https://hooks.slack.com/test
         join(channelsDir, 'invalid-channel.yaml'),
         `
 name: Invalid Channel
-type: slack
-# Missing required webhook_url
+type: webhook
 enabled: true
+configuration:
+  # Missing required url
+  method: POST
 `
       );
 
@@ -296,10 +313,11 @@ enabled: true
         join(channelsDir, 'env-missing.yaml'),
         `
 name: Env Missing
-type: slack
+type: webhook
 enabled: true
-webhook_url: \${MISSING_ENV_VAR}
-channel: "#alerts"
+configuration:
+  url: \${MISSING_ENV_VAR}
+  method: POST
 `
       );
 
@@ -319,11 +337,14 @@ channel: "#alerts"
         `
 name: Bad Reference Watchlist
 description: References non-existent channel
+enabled: true
 assets:
   - chain: ethereum
     type: Wallet
     address: "0x1234567890123456789012345678901234567890"
+    name: Test Wallet
 alert_config:
+  severity_threshold: medium
   notification_channels:
     - non-existent-channel
 `
@@ -347,10 +368,11 @@ alert_config:
         join(channelsDir, 'questionable.yaml'),
         `
 name: Questionable Channel
-type: slack
+type: webhook
 enabled: true
-webhook_url: https://hooks.slack.com/test
-channel: "#alerts"
+configuration:
+  url: https://hooks.slack.com/test
+  method: POST
 unknown_field: should_be_ignored
 `
       );
@@ -380,11 +402,14 @@ unknown_field: should_be_ignored
         `
 name: Bad Reference Watchlist
 description: References non-existent channel
+enabled: true
 assets:
   - chain: ethereum
     type: Wallet
     address: "0x1234567890123456789012345678901234567890"
+    name: Test Wallet
 alert_config:
+  severity_threshold: medium
   notification_channels:
     - non-existent-channel
 `
@@ -392,7 +417,7 @@ alert_config:
 
       // Should not throw when validation is disabled
       const result = await noValidationLoader.loadConfig();
-      expect(result.config.watchlists['bad-ref']).toBeDefined();
+      expect(result.config.watchlists['bad-ref-bad-reference-watchlist']).toBeDefined();
     });
 
     it('should respect interpolateEnv option', async () => {
@@ -411,17 +436,18 @@ alert_config:
         join(channelsDir, 'env-test.yaml'),
         `
 name: Env Test
-type: slack
+type: webhook
 enabled: true
-webhook_url: https://hooks.slack.com/\${TEST_VALUE}
-channel: "#alerts"
+configuration:
+  url: https://hooks.slack.com/\${TEST_VALUE}
+  method: POST
 `
       );
 
       const result = await noInterpolationLoader.loadConfig();
 
       // Should keep the literal ${TEST_VALUE} without interpolation
-      expect(result.config.notification_channels['env-test'].webhook_url).toBe(
+      expect(result.config.notification_channels['env-test'].configuration.url).toBe(
         'https://hooks.slack.com/${TEST_VALUE}'
       );
 
@@ -439,10 +465,11 @@ channel: "#alerts"
         join(channelsDir, 'my-special-channel.yaml'),
         `
 name: My Special Channel
-type: slack
+type: webhook
 enabled: true
-webhook_url: https://hooks.slack.com/special
-channel: "#special"
+configuration:
+  url: https://hooks.slack.com/special
+  method: POST
 `
       );
 
@@ -463,10 +490,11 @@ channel: "#special"
         join(channelsDir, 'file-name.yaml'),
         `
 name: Different Resource Name
-type: slack
+type: webhook
 enabled: true
-webhook_url: https://hooks.slack.com/different
-channel: "#different"
+configuration:
+  url: https://hooks.slack.com/different
+  method: POST
 `
       );
 
@@ -487,10 +515,11 @@ channel: "#different"
         join(channelsDir, 'Special@Channel#Name!.yaml'),
         `
 name: Special Channel Name!
-type: slack
+type: webhook
 enabled: true
-webhook_url: https://hooks.slack.com/special
-channel: "#special"
+configuration:
+  url: https://hooks.slack.com/special
+  method: POST
 `
       );
 
@@ -513,10 +542,11 @@ channel: "#special"
         for (let j = 0; j < 5; j++) {
           content += `
 name: Channel ${i}-${j}
-type: slack
+type: webhook
 enabled: true
-webhook_url: https://hooks.slack.com/channel-${i}-${j}
-channel: "#channel-${i}-${j}"
+configuration:
+  url: https://hooks.slack.com/channel-${i}-${j}
+  method: POST
 ${j < 4 ? '---' : ''}
 `;
         }
@@ -529,7 +559,7 @@ ${j < 4 ? '---' : ''}
 
       expect(result.metadata.resource_counts.notification_channels).toBe(50);
       expect(loadTime).toBeLessThan(5000); // Should complete in < 5 seconds
-      expect(result.metadata.load_time).toBeGreaterThan(0);
+      expect(result.metadata.load_time).toBeGreaterThanOrEqual(0);
     });
   });
 

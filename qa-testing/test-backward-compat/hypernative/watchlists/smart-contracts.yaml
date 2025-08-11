@@ -1,0 +1,43 @@
+name: Core Smart Contracts
+description: Monitor all core protocol smart contracts
+assets:
+  # Main protocol contract
+  - chain: ethereum
+    type: Contract
+    address: "0x5555555555555555555555555555555555555555"
+    tags: ["core", "protocol"]
+    
+  # Governance contract
+  - chain: ethereum 
+    type: Contract
+    address: "0x6666666666666666666666666666666666666666"
+    tags: ["governance", "voting"]
+    
+  # Token contract
+  - chain: ethereum
+    type: Contract
+    address: "0x7777777777777777777777777777777777777777"
+    tags: ["token", "erc20"]
+    
+  # Staking contract
+  - chain: ethereum
+    type: Contract
+    address: "0x8888888888888888888888888888888888888888"
+    tags: ["staking", "rewards"]
+    
+  # Liquidity pools
+  - chain: ethereum
+    type: Contract
+    address: "0x9999999999999999999999999999999999999999"
+    tags: ["liquidity", "uniswap-v3"]
+    
+alert_config:
+  notification_channels: ["slack-critical", "discord-community"]
+  severity: critical
+  conditions:
+    - type: contract_interaction
+      include_failed_transactions: true
+    - type: admin_function_calls
+      functions: ["upgrade", "pause", "emergencyWithdraw", "setOwner"]
+      
+enabled: true

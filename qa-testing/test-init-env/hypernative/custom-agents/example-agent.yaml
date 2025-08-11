@@ -1,0 +1,13 @@
+# Example Custom Agent Configuration
+name: example-agent
+description: "Example custom monitoring agent"
+type: large_transaction_monitor
+chain: ethereum
+severity: high
+enabled: true
+configuration:
+  addresses: ["0x742d35Cc6637C0532D4B8B1D96A4Bb7E6ad77e3A"]
+  threshold_value: 100000
+  direction: both
+  time_window: "1h"
+notification_channels: ["example-slack-channel"]

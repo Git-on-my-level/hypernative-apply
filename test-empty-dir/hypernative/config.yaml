@@ -1,0 +1,11 @@
+version: 1
+api:
+  endpoint: "https://api.hypernative.com"
+  timeout: 30000
+
+watchlists:
+  - "./hypernative/watchlists/valid-watchlist.yaml"
+notification_channels:
+  - "./hypernative/notification-channels/valid-channel.yaml"
+custom_agents:
+  - "./hypernative/custom-agents/valid-agent.yaml"

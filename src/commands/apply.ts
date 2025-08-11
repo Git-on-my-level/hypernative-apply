@@ -10,6 +10,8 @@ import { Planner } from '../lib/planner.js';
 import { Executor } from '../lib/executor.js';
 import type { ParsedConfig } from '../schemas/config.schema.js';
 import type { ExecutionPlan, PlanFile, ExecutionOptions } from '../types/plan.js';
+import { SafeJsonParser } from '../lib/safe-json-parser.js';
+import { basicPlanFileSchema } from '../lib/basic-validation.js';
 
 /**
  * Load execution plan from file
@@ -21,7 +23,7 @@ function loadExecutionPlan(planPath: string): ExecutionPlan {
 
   try {
     const planContent = readFileSync(planPath, 'utf-8');
-    const planFile: PlanFile = JSON.parse(planContent);
+    const planFile: PlanFile = SafeJsonParser.parse(planContent, basicPlanFileSchema) as PlanFile;
 
     // Validate plan file structure
     if (!planFile.plan || !planFile.version) {
