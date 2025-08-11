@@ -23,21 +23,21 @@ export class MockApiClient {
    * Mock successful watchlist creation
    */
   mockCreateWatchlist(payload: any, response: ApiWatchlist) {
-    return nock(this.baseUrl).post('/api/v2/watchlists').reply(201, response);
+    return nock(this.baseUrl).post('/watchlists').reply(201, response);
   }
 
   /**
    * Mock successful watchlist update
    */
   mockUpdateWatchlist(id: string, payload: any, response: ApiWatchlist) {
-    return nock(this.baseUrl).patch(`/api/v2/watchlists/${id}`).reply(200, response);
+    return nock(this.baseUrl).patch(`/watchlists/${id}`).reply(200, response);
   }
 
   /**
    * Mock watchlist deletion
    */
   mockDeleteWatchlist(id: string) {
-    return nock(this.baseUrl).delete(`/api/v2/watchlists/${id}`).reply(204);
+    return nock(this.baseUrl).delete(`/watchlists/${id}`).reply(204);
   }
 
   /**
@@ -46,48 +46,48 @@ export class MockApiClient {
   mockGetWatchlist(id: string, response: ApiWatchlist | null) {
     if (response === null) {
       return nock(this.baseUrl)
-        .get(`/api/v2/watchlists/${id}`)
+        .get(`/watchlists/${id}`)
         .reply(404, { error: 'Watchlist not found' });
     }
 
-    return nock(this.baseUrl).get(`/api/v2/watchlists/${id}`).reply(200, response);
+    return nock(this.baseUrl).get(`/watchlists/${id}`).reply(200, response);
   }
 
   /**
    * Mock list watchlists
    */
   mockListWatchlists(response: ApiWatchlist[]) {
-    return nock(this.baseUrl).get('/api/v2/watchlists').reply(200, { data: response });
+    return nock(this.baseUrl).get('/watchlists').reply(200, { data: response });
   }
 
   /**
    * Mock notification channel operations
    */
   mockCreateChannel(payload: any, response: ApiNotificationChannel) {
-    return nock(this.baseUrl).post('/api/v2/notification-channels').reply(201, response);
+    return nock(this.baseUrl).post('/notification-channels').reply(201, response);
   }
 
   mockUpdateChannel(id: string, payload: any, response: ApiNotificationChannel) {
-    return nock(this.baseUrl).patch(`/api/v2/notification-channels/${id}`).reply(200, response);
+    return nock(this.baseUrl).patch(`/notification-channels/${id}`).reply(200, response);
   }
 
   mockDeleteChannel(id: string) {
-    return nock(this.baseUrl).delete(`/api/v2/notification-channels/${id}`).reply(204);
+    return nock(this.baseUrl).delete(`/notification-channels/${id}`).reply(204);
   }
 
   /**
    * Mock custom agent operations
    */
   mockCreateAgent(payload: any, response: ApiCustomAgent) {
-    return nock(this.baseUrl).post('/api/v2/custom-agents').reply(201, response);
+    return nock(this.baseUrl).post('/custom-agents').reply(201, response);
   }
 
   mockUpdateAgent(id: string, payload: any, response: ApiCustomAgent) {
-    return nock(this.baseUrl).patch(`/api/v2/custom-agents/${id}`).reply(200, response);
+    return nock(this.baseUrl).patch(`/custom-agents/${id}`).reply(200, response);
   }
 
   mockDeleteAgent(id: string) {
-    return nock(this.baseUrl).delete(`/api/v2/custom-agents/${id}`).reply(204);
+    return nock(this.baseUrl).delete(`/custom-agents/${id}`).reply(204);
   }
 
   /**

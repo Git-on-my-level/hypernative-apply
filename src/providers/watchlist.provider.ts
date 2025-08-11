@@ -53,7 +53,7 @@ export class WatchlistProvider {
     log.debug('Fetching watchlists', params);
 
     try {
-      const response = await this.apiClient.get('/api/v2/watchlists', {
+      const response = await this.apiClient.get('/watchlists', {
         params: {
           limit: params?.limit ?? 50,
           offset: params?.offset ?? 0,
@@ -74,7 +74,7 @@ export class WatchlistProvider {
     log.debug(`Fetching watchlist: ${id}`);
 
     try {
-      const response = await this.apiClient.get(`/api/v2/watchlists/${id}`);
+      const response = await this.apiClient.get(`/watchlists/${id}`);
       return unwrapApiResponse<ApiWatchlist>(response);
     } catch (error: any) {
       if (error.status === 404) {
@@ -98,7 +98,7 @@ export class WatchlistProvider {
     }
 
     try {
-      const response = await this.apiClient.post('/api/v2/watchlists', payload);
+      const response = await this.apiClient.post('/watchlists', payload);
       const created = unwrapApiResponse<ApiWatchlist>(response);
       log.info(`Created watchlist: ${created.name} (${created.id})`);
       return created;
@@ -140,7 +140,7 @@ export class WatchlistProvider {
     }
 
     try {
-      const response = await this.apiClient.patch(`/api/v2/watchlists/${id}`, payload);
+      const response = await this.apiClient.patch(`/watchlists/${id}`, payload);
       const updated = unwrapApiResponse<ApiWatchlist>(response);
       log.info(`Updated watchlist: ${updated.name} (${id})`);
 
@@ -172,7 +172,7 @@ export class WatchlistProvider {
     }
 
     try {
-      await this.apiClient.delete(`/api/v2/watchlists/${id}`);
+      await this.apiClient.delete(`/watchlists/${id}`);
       log.info(`Deleted watchlist: ${id}`);
     } catch (error) {
       log.error(`Failed to delete watchlist ${id}:`, error);
@@ -216,7 +216,7 @@ export class WatchlistProvider {
       }
 
       const response = await this.apiClient.post(
-        `/api/v2/watchlists/${watchlistId}/upload-csv`,
+        `/watchlists/${watchlistId}/upload-csv`,
         formData,
         {
           headers: {

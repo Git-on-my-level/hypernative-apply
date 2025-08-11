@@ -119,7 +119,7 @@ export class ChannelResolver {
     try {
       log.debug('Refreshing notification channel cache');
 
-      const response = await this.apiClient.get('/api/v2/notification-channels', {
+      const response = await this.apiClient.get('/notification-channels', {
         params: { limit: 200 }, // Get up to 200 channels
       });
 

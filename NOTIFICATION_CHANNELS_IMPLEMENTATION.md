@@ -31,7 +31,7 @@ Successfully implemented the Provider Notification Channels feature for the Hype
   - ✅ Create (with optional validation)
   - ✅ Update (with optional validation)
   - ✅ Delete
-  - ✅ Test (POST `/api/v2/notification-channels/{id}/test`)
+  - ✅ Test (POST `/notification-channels/{id}/test`)
 - **Channel Types Supported**:
   - `webhook` - HTTP/HTTPS webhooks with custom headers
   - `slack` - Slack notifications with threading and mentions
@@ -113,14 +113,14 @@ configuration:
 ## API Endpoints Integrated
 
 ### Core Operations
-- `GET /api/v2/notification-channels` - List channels
-- `POST /api/v2/notification-channels` - Create channel
-- `GET /api/v2/notification-channels/{id}` - Get channel by ID
-- `PATCH /api/v2/notification-channels/{id}` - Update channel
-- `DELETE /api/v2/notification-channels/{id}` - Delete channel
+- `GET /notification-channels` - List channels
+- `POST /notification-channels` - Create channel
+- `GET /notification-channels/{id}` - Get channel by ID
+- `PATCH /notification-channels/{id}` - Update channel
+- `DELETE /notification-channels/{id}` - Delete channel
 
 ### Testing
-- `POST /api/v2/notification-channels/{id}/test` - Test channel connectivity
+- `POST /notification-channels/{id}/test` - Test channel connectivity
 
 ## Testing and Validation
 
@@ -195,7 +195,7 @@ hypernative apply  # Substitutes variables at runtime
 ✅ **ApiClient integration** (follows existing patterns)  
 ✅ **Pattern consistency** (matches watchlist/custom-agent providers)  
 ✅ **TypeScript compliance** (compiles without errors)  
-✅ **Testing integration** (POST `/api/v2/notification-channels/{id}/test`)
+✅ **Testing integration** (POST `/notification-channels/{id}/test`)
 
 ## Next Steps
 

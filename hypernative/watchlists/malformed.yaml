@@ -1,4 +1,0 @@
-name: malformed
-invalid yaml:
-  - unclosed bracket
-    - missing indentation

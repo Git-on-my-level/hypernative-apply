@@ -17,8 +17,7 @@ configuration:
   threshold_value: 10
   direction: "both"
 
-notification_channels:
-  - "Valid Webhook Channel"
+# Simple agent without notification channels for testing
 
 schedule:
   interval: 5

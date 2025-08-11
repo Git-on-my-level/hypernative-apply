@@ -97,7 +97,7 @@ describe('NotificationChannelProvider', () => {
 
       const result = await provider.list();
 
-      expect(mockApiClient.get).toHaveBeenCalledWith('/api/v2/notification-channels', {
+      expect(mockApiClient.get).toHaveBeenCalledWith('/notification-channels', {
         params: { limit: 100, offset: 0, enabled: undefined, type: undefined },
       });
       expect(result).toEqual(mockChannels);
@@ -109,7 +109,7 @@ describe('NotificationChannelProvider', () => {
 
       const result = await provider.list({ limit: 10, offset: 20 });
 
-      expect(mockApiClient.get).toHaveBeenCalledWith('/api/v2/notification-channels', {
+      expect(mockApiClient.get).toHaveBeenCalledWith('/notification-channels', {
         params: { limit: 10, offset: 20, enabled: undefined, type: undefined },
       });
       expect(result).toEqual(mockChannels);
@@ -121,7 +121,7 @@ describe('NotificationChannelProvider', () => {
 
       const result = await provider.list({ type: 'slack' });
 
-      expect(mockApiClient.get).toHaveBeenCalledWith('/api/v2/notification-channels', {
+      expect(mockApiClient.get).toHaveBeenCalledWith('/notification-channels', {
         params: { limit: 100, offset: 0, enabled: undefined, type: 'slack' },
       });
       expect(result).toEqual(mockChannels);
@@ -142,7 +142,7 @@ describe('NotificationChannelProvider', () => {
 
       const result = await provider.getById('nc_slack_123');
 
-      expect(mockApiClient.get).toHaveBeenCalledWith('/api/v2/notification-channels/nc_slack_123');
+      expect(mockApiClient.get).toHaveBeenCalledWith('/notification-channels/nc_slack_123');
       expect(result).toEqual(mockSlackResponse);
     });
 
@@ -169,7 +169,7 @@ describe('NotificationChannelProvider', () => {
 
       const result = await provider.create(mockSlackConfig);
 
-      expect(mockApiClient.post).toHaveBeenCalledWith('/api/v2/notification-channels', {
+      expect(mockApiClient.post).toHaveBeenCalledWith('/notification-channels', {
         name: 'Test Slack Channel',
         type: 'slack',
         description: undefined,
@@ -214,7 +214,7 @@ describe('NotificationChannelProvider', () => {
 
       const result = await provider.create(mockEmailConfig);
 
-      expect(mockApiClient.post).toHaveBeenCalledWith('/api/v2/notification-channels', {
+      expect(mockApiClient.post).toHaveBeenCalledWith('/notification-channels', {
         name: 'Test Email Channel',
         type: 'email',
         description: undefined,
@@ -262,7 +262,7 @@ describe('NotificationChannelProvider', () => {
 
       const result = await provider.create(mockWebhookConfig);
 
-      expect(mockApiClient.post).toHaveBeenCalledWith('/api/v2/notification-channels', {
+      expect(mockApiClient.post).toHaveBeenCalledWith('/notification-channels', {
         name: 'Test Webhook Channel',
         type: 'webhook',
         description: undefined,
@@ -329,7 +329,7 @@ describe('NotificationChannelProvider', () => {
       const result = await provider.update('nc_slack_123', updatedConfig);
 
       expect(mockApiClient.patch).toHaveBeenCalledWith(
-        '/api/v2/notification-channels/nc_slack_123',
+        '/notification-channels/nc_slack_123',
         {
           name: 'Test Slack Channel',
           description: undefined,
@@ -374,7 +374,7 @@ describe('NotificationChannelProvider', () => {
       await provider.delete('nc_slack_123');
 
       expect(mockApiClient.delete).toHaveBeenCalledWith(
-        '/api/v2/notification-channels/nc_slack_123'
+        '/notification-channels/nc_slack_123'
       );
     });
 
@@ -411,7 +411,7 @@ describe('NotificationChannelProvider', () => {
       const result = await provider.test('nc_slack_123');
 
       expect(mockApiClient.post).toHaveBeenCalledWith(
-        '/api/v2/notification-channels/nc_slack_123/test',
+        '/notification-channels/nc_slack_123/test',
         {},
         { timeout: 30000 }
       );
@@ -430,7 +430,7 @@ describe('NotificationChannelProvider', () => {
       const result = await provider.test('nc_slack_123', { testMessage: 'Custom test' });
 
       expect(mockApiClient.post).toHaveBeenCalledWith(
-        '/api/v2/notification-channels/nc_slack_123/test',
+        '/notification-channels/nc_slack_123/test',
         { message: 'Custom test' },
         { timeout: 30000 }
       );

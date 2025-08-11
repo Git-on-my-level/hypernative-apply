@@ -138,12 +138,12 @@ A comprehensive test script (`test-custom-agent-provider.js`) demonstrates:
 
 ## API Endpoints Used
 
-- `GET /api/v2/custom-agents` - List agents
-- `POST /api/v2/custom-agents` - Create agent  
-- `PATCH /api/v2/custom-agents/{id}` - Update agent
-- `DELETE /api/v2/custom-agents/{id}` - Delete agent
-- `GET /api/v2/custom-agents/{id}/status` - Get status
-- `GET /api/v2/notification-channels` - Resolve channels
+- `GET /custom-agents` - List agents
+- `POST /custom-agents` - Create agent  
+- `PATCH /custom-agents/{id}` - Update agent
+- `DELETE /custom-agents/{id}` - Delete agent
+- `GET /custom-agents/{id}/status` - Get status
+- `GET /notification-channels` - Resolve channels
 
 ## Architecture Alignment
 

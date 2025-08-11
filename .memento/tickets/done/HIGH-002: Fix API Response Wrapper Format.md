@@ -93,7 +93,7 @@ import { unwrapApiListResponse } from '../lib/api-response.js';
 
 async list(limit = 50, offset = 0): Promise<Watchlist[]> {
   try {
-    const response = await this.apiClient.get('/api/v2/watchlists', {
+    const response = await this.apiClient.get('/watchlists', {
       params: { limit, offset },
     });
 
@@ -113,7 +113,7 @@ import { unwrapApiResponse } from '../lib/api-response.js';
 
 async getById(id: string): Promise<Watchlist | null> {
   try {
-    const response = await this.apiClient.get(`/api/v2/watchlists/${id}`);
+    const response = await this.apiClient.get(`/watchlists/${id}`);
     return unwrapApiResponse<Watchlist>(response);
   } catch (error: any) {
     if (error.status === 404) {
@@ -132,7 +132,7 @@ Fix methods that access nested response properties:
 async create(config: WatchlistConfig): Promise<Watchlist> {
   try {
     const payload = this.buildWatchlistPayload(config);
-    const response = await this.apiClient.post('/api/v2/watchlists', payload);
+    const response = await this.apiClient.post('/watchlists', payload);
     const created = unwrapApiResponse<Watchlist>(response);
     
     log.info(`Created watchlist: ${created.name} (${created.id})`);
@@ -153,7 +153,7 @@ async uploadCsv(watchlistId: string, csvPath: string, replaceAssets = false): Pr
     // ... form data creation ...
     
     const response = await this.apiClient.post(
-      `/api/v2/watchlists/${watchlistId}/upload-csv`,
+      `/watchlists/${watchlistId}/upload-csv`,
       formData,
       { headers: formData.getHeaders() }
     );

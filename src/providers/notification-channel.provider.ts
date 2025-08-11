@@ -68,7 +68,7 @@ export class NotificationChannelProvider {
     log.debug('Fetching notification channels', createSafeConfigForLogging(params, 'query params'));
 
     try {
-      const response = await this.apiClient.get('/api/v2/notification-channels', {
+      const response = await this.apiClient.get('/notification-channels', {
         params: {
           limit: params?.limit ?? 100,
           offset: params?.offset ?? 0,
@@ -91,7 +91,7 @@ export class NotificationChannelProvider {
     log.debug(`Fetching notification channel: ${id}`);
 
     try {
-      const response = await this.apiClient.get(`/api/v2/notification-channels/${id}`);
+      const response = await this.apiClient.get(`/notification-channels/${id}`);
       return unwrapApiResponse<NotificationChannel>(response);
     } catch (error: any) {
       if (error.status === 404) {
@@ -131,7 +131,7 @@ export class NotificationChannelProvider {
       }
 
       const response = await this.apiClient.post(
-        `/api/v2/notification-channels/${id}/test`,
+        `/notification-channels/${id}/test`,
         payload,
         {
           timeout: (options.timeout || 30) * 1000, // Convert to milliseconds
@@ -174,7 +174,7 @@ export class NotificationChannelProvider {
     }
 
     try {
-      const response = await this.apiClient.post('/api/v2/notification-channels', payload);
+      const response = await this.apiClient.post('/notification-channels', payload);
       const createdChannel = unwrapApiResponse<NotificationChannel>(response);
 
       log.info(`Created notification channel: ${createdChannel.name} (${createdChannel.id})`);
@@ -224,7 +224,7 @@ export class NotificationChannelProvider {
     }
 
     try {
-      const response = await this.apiClient.patch(`/api/v2/notification-channels/${id}`, payload);
+      const response = await this.apiClient.patch(`/notification-channels/${id}`, payload);
       const updatedChannel = unwrapApiResponse<NotificationChannel>(response);
 
       log.info(`Updated notification channel: ${updatedChannel.name} (${id})`);
@@ -263,7 +263,7 @@ export class NotificationChannelProvider {
     }
 
     try {
-      await this.apiClient.delete(`/api/v2/notification-channels/${id}`);
+      await this.apiClient.delete(`/notification-channels/${id}`);
       log.info(`Deleted notification channel: ${id}`);
     } catch (error) {
       log.error(`Failed to delete notification channel ${id}:`, error);

@@ -17,6 +17,6 @@ Acceptance Criteria
  - CSV upload supports dry-run mode to preview import counts
 
 References
-- GET/POST/PATCH/DELETE `/api/v2/watchlists`
-- POST `/api/v2/watchlists/{id}/upload-csv`
+- GET/POST/PATCH/DELETE `/watchlists`
+- POST `/watchlists/{id}/upload-csv`
 
