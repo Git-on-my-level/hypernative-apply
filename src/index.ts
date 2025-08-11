@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { planCommand } from './commands/plan.js';
 import { applyCommand } from './commands/apply.js';
 import { initCommand } from './commands/init.js';
@@ -8,13 +11,18 @@ import { doctorCommand } from './commands/doctor.js';
 import { versionCommand } from './commands/version.js';
 import { updateGlobalFlags } from './lib/logger.js';
 
-// Note: Package version is handled by the version command
+// Get package version
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJsonPath = join(__dirname, '..', 'package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
 
 const program = new Command();
 
 program
   .name('hypernative')
   .description('Hypernative configuration management CLI')
+  .version(packageJson.version, '-v, --version', 'output the version number')
   .option('--profile <name>', 'Configuration profile to use')
   .option('--base-url <url>', 'Override base API URL')
   .option('--json', 'Output in JSON format for machine parsing')
