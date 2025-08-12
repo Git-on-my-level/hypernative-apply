@@ -7,7 +7,7 @@ import { join } from 'path';
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import type { ParsedConfig } from '../../src/schemas/config.schema.js';
 import type { StateFile } from '../../src/types/state.js';
-import type { ApiWatchlist, ApiNotificationChannel, ApiCustomAgent } from '../../src/types/api.js';
+import type { ApiWatchlist, NotificationChannel, CustomAgent } from '../../src/types/api.js';
 
 /**
  * Mock API client responses
@@ -63,11 +63,11 @@ export class MockApiClient {
   /**
    * Mock notification channel operations
    */
-  mockCreateChannel(payload: any, response: ApiNotificationChannel) {
+  mockCreateChannel(payload: any, response: NotificationChannel) {
     return nock(this.baseUrl).post('/notification-channels').reply(201, response);
   }
 
-  mockUpdateChannel(id: string, payload: any, response: ApiNotificationChannel) {
+  mockUpdateChannel(id: string, payload: any, response: NotificationChannel) {
     return nock(this.baseUrl).patch(`/notification-channels/${id}`).reply(200, response);
   }
 
@@ -239,7 +239,7 @@ export class TestFixture {
     };
   }
 
-  static createMockNotificationChannel(): ApiNotificationChannel {
+  static createMockNotificationChannel(): NotificationChannel {
     return {
       id: 'nc_test_123',
       name: 'Test Slack',

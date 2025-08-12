@@ -170,6 +170,7 @@ export class NotificationChannelProvider {
     }
 
     try {
+      // Send single payload (not array)
       const response = await this.apiClient.post('/notification-channels', payload);
       const createdChannel = unwrapApiResponse<NotificationChannel>(response);
 
@@ -312,6 +313,14 @@ export class NotificationChannelProvider {
   }
 
   /**
+   * Map schema type to API type (capitalize as API expects capitalized types)
+   */
+  private mapTypeToApiFormat(type: string): string {
+    // API expects capitalized types, so capitalize first letter
+    return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+  }
+
+  /**
    * Build create payload from notification channel config
    */
   private async buildCreatePayload(
@@ -328,7 +337,7 @@ export class NotificationChannelProvider {
 
     return {
       name: config.name,
-      type: config.type,
+      type: this.mapTypeToApiFormat(config.type) as any, // Map to API format
       description: config.description,
       enabled: config.enabled ?? true,
       configuration: envResult.substituted,
@@ -357,6 +366,7 @@ export class NotificationChannelProvider {
       enabled: config.enabled,
       configuration: envResult.substituted,
       tags: config.tags,
+      // Note: type is usually not updatable, so we don't include it in update payload
     };
   }
 

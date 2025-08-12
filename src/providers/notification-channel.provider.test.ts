@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { NotificationChannelProvider } from './notification-channel.provider.js';
 import { ApiClient } from '../lib/api-client.js';
 import type { NotificationChannelConfig } from '../schemas/notification-channel.schema.js';
-import type { ApiNotificationChannel } from '../types/api.js';
+import type { NotificationChannel } from '../types/api.js';
 
 describe('NotificationChannelProvider', () => {
   let provider: NotificationChannelProvider;
@@ -75,7 +75,7 @@ describe('NotificationChannelProvider', () => {
     },
   };
 
-  const mockSlackResponse: ApiNotificationChannel = {
+  const mockSlackResponse: NotificationChannel = {
     id: 'nc_slack_123',
     name: 'Test Slack Channel',
     type: 'slack',
@@ -186,7 +186,7 @@ describe('NotificationChannelProvider', () => {
     });
 
     it('should create an email notification channel', async () => {
-      const mockEmailResponse: ApiNotificationChannel = {
+      const mockEmailResponse: NotificationChannel = {
         id: 'nc_email_123',
         name: 'Test Email Channel',
         type: 'email',
@@ -240,7 +240,7 @@ describe('NotificationChannelProvider', () => {
     });
 
     it('should create a webhook notification channel', async () => {
-      const mockWebhookResponse: ApiNotificationChannel = {
+      const mockWebhookResponse: NotificationChannel = {
         id: 'nc_webhook_123',
         name: 'Test Webhook Channel',
         type: 'webhook',
@@ -501,7 +501,7 @@ describe('NotificationChannelProvider', () => {
         },
       };
 
-      const mockResponse: ApiNotificationChannel = {
+      const mockResponse: NotificationChannel = {
         id: 'nc_complex_123',
         name: 'Complex Webhook',
         type: 'webhook',

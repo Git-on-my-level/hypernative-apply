@@ -87,6 +87,9 @@ export class ApiClient {
             requestId: (request as any).__requestId,
             // Don't log sensitive data in request body, just indicate presence
             hasData: !!request.data,
+            dataType: request.data ? typeof request.data : 'undefined',
+            // Log a safe snippet of the payload for debugging
+            dataSnippet: request.data ? JSON.stringify(request.data).substring(0, 300) : 'no data',
           })
         );
         return request;
@@ -368,16 +371,102 @@ export class ApiClient {
     const response = axiosError.response;
     const requestId = (response?.data as any)?.request_id;
 
+    // Add debug logging for error response
+    log.debug(
+      'Processing API error response',
+      LogRedactor.safeLog({
+        status: response?.status,
+        statusText: response?.statusText,
+        hasData: !!response?.data,
+        dataType: response?.data ? typeof response.data : 'undefined',
+        isDataObject: response?.data && typeof response.data === 'object',
+        hasErrorField: !!(response?.data as any)?.error,
+        rawData: response?.data ? JSON.stringify(response.data).substring(0, 500) : 'no data',
+        requestId,
+      })
+    );
+
+    // Debug logging for error response (can be enabled for troubleshooting)
+    if (response?.data && process.env.DEBUG_API_ERRORS) {
+      console.error('DEBUG: Raw API error response:', JSON.stringify(response.data, null, 2));
+      // Also log the original request data for context
+      if (axiosError.config?.data) {
+        console.error(
+          'DEBUG: Request payload was:',
+          typeof axiosError.config.data === 'string'
+            ? axiosError.config.data
+            : JSON.stringify(axiosError.config.data, null, 2)
+        );
+      }
+    }
+
     if ((response?.data as any)?.error && response) {
-      // API returned structured error
-      const apiError = (response.data as any).error as ApiError;
-      const message = `${apiError.message}${requestId ? ` (request_id: ${requestId})` : ''}`;
+      // API returned error - handle both object and string formats
+      const errorField = (response.data as any).error;
+      let message: string;
+      let code: string;
+      let details: any;
+
+      if (typeof errorField === 'string') {
+        // Simple string error format: { "error": "Error message" }
+        message = errorField;
+        code = `HTTP_${response.status}`;
+        details = undefined;
+      } else if (typeof errorField === 'object' && errorField.message) {
+        // Structured error format: { "error": { "code": "...", "message": "..." } }
+        const apiError = errorField as ApiError;
+        message = apiError.message;
+        code = apiError.code;
+        details = apiError.details;
+      } else {
+        // Unknown error object format
+        message = `API error: ${JSON.stringify(errorField)}`;
+        code = `HTTP_${response.status}`;
+        details = undefined;
+      }
+
+      // Add request ID if available
+      if (requestId) {
+        message += ` (request_id: ${requestId})`;
+      }
 
       const error = new Error(message);
-      (error as any).code = apiError.code;
+      (error as any).code = code;
       (error as any).status = response.status;
       (error as any).requestId = requestId;
-      (error as any).details = apiError.details;
+      (error as any).details = details;
+
+      return error;
+    }
+
+    // Handle cases where response.data exists but doesn't have structured error
+    if (response?.data) {
+      let errorMessage = 'Unknown API error';
+
+      if (typeof response.data === 'string') {
+        errorMessage = response.data;
+      } else if (typeof response.data === 'object') {
+        // Try to extract any error information from the response
+        const data = response.data as any;
+        if (data.message) {
+          errorMessage = data.message;
+        } else if (data.error && typeof data.error === 'string') {
+          errorMessage = data.error;
+        } else if (data.detail) {
+          errorMessage = data.detail;
+        } else {
+          errorMessage = `API returned error data: ${JSON.stringify(data).substring(0, 200)}`;
+        }
+      }
+
+      const code = `HTTP_${response.status}`;
+      const message = `${errorMessage}${requestId ? ` (request_id: ${requestId})` : ''}`;
+
+      const error = new Error(message);
+      (error as any).code = code;
+      (error as any).status = response.status;
+      (error as any).requestId = requestId;
+      (error as any).originalError = axiosError;
 
       return error;
     }
@@ -387,7 +476,7 @@ export class ApiClient {
     let code: string;
 
     if (response) {
-      // HTTP error response
+      // HTTP error response without data
       code = `HTTP_${response.status}`;
       message = `HTTP ${response.status}: ${response.statusText}`;
     } else if (axiosError.code === 'ECONNABORTED') {

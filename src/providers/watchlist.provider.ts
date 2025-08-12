@@ -98,8 +98,10 @@ export class WatchlistProvider {
     }
 
     try {
-      const response = await this.apiClient.post('/watchlists', payload);
-      const created = unwrapApiResponse<ApiWatchlist>(response);
+      // Try sending as an array (API might expect batch creation like notification channels)
+      const response = await this.apiClient.post('/watchlists', [payload]);
+      const result = unwrapApiResponse<ApiWatchlist[]>(response);
+      const created = result[0]; // Get the first (and only) item from the array
       log.info(`Created watchlist: ${created.name} (${created.id})`);
       return created;
     } catch (error) {
