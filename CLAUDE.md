@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Documentation
+There are several documents that dive deeper into the codebase and the Hypernative platform in `docs/`
+For the official documentation on the Hypernative platform and API, see: `docs/reference/platform-api.md`
+
 ## Common Development Commands
 
 ### Build and Development
