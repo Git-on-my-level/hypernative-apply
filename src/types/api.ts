@@ -90,16 +90,13 @@ export interface ApiWatchlist {
 export interface ApiWatchlistCreatePayload {
   name: string;
   description?: string;
-  assets: ApiWatchlistAsset[];
-  alert_policy_id?: string;
 }
 
 export interface ApiWatchlistUpdatePayload {
   name?: string;
   description?: string;
-  alert_policy_id?: string;
-  assets_to_add?: ApiWatchlistAsset[];
-  assets_to_remove?: Omit<ApiWatchlistAsset, 'name' | 'symbol' | 'tags'>[];
+  assets?: ApiWatchlistAsset[];
+  mode?: 'add' | 'remove' | 'replaceAll';
 }
 
 export interface CsvUploadResult {
@@ -148,23 +145,24 @@ export interface CustomAgent {
 }
 
 export interface CustomAgentCreatePayload {
-  name: string;
-  type: string;
-  description?: string;
-  enabled?: boolean;
-  severity?: 'critical' | 'high' | 'medium' | 'low';
-  chain?: string;
-  configuration: Record<string, any>;
-  notification_channels?: string[];
+  agentName: string;
+  agentType: string;
+  severity: 'High' | 'Medium';
+  muteDuration?: number;
+  state: 'enabled' | 'disabled';
+  rule: Record<string, any>;
+  channelsConfigurations: { id: number }[];
+  remindersConfigurations?: { id: number }[];
 }
 
 export interface CustomAgentUpdatePayload {
-  name?: string;
-  description?: string;
-  enabled?: boolean;
-  severity?: 'critical' | 'high' | 'medium' | 'low';
-  configuration?: Record<string, any>;
-  notification_channels?: string[];
+  agentName?: string;
+  severity?: 'High' | 'Medium';
+  muteDuration?: number;
+  state?: 'enabled' | 'disabled';
+  rule?: Record<string, any>;
+  channelsConfigurations?: { id: number }[];
+  remindersConfigurations?: { id: number }[];
 }
 
 export interface CustomAgentStatusResponse {

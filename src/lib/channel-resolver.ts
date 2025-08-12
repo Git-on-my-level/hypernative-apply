@@ -168,6 +168,20 @@ export class ChannelResolver {
   }
 
   /**
+   * Force refresh the channel cache immediately
+   * This is useful when channels are created/updated/deleted during execution
+   * and we need to ensure the cache reflects the latest state
+   */
+  async forceRefresh(): Promise<void> {
+    // Clear the cache and reset timestamp to force a refresh
+    this.channelCache.clear();
+    this.lastCacheUpdate = 0;
+
+    // Immediately refresh the cache
+    await this.refreshChannelCache();
+  }
+
+  /**
    * Get suggestions for similar channel names (for better error messages)
    */
   getSuggestions(invalidName: string): string[] {

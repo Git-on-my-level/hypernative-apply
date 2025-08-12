@@ -90,7 +90,7 @@ export class WatchlistProvider {
    */
   async create(config: WatchlistConfig): Promise<ApiWatchlist> {
     const payload = this.buildCreatePayload(config);
-    log.debug('Creating watchlist:', { name: payload.name, assets: payload.assets.length });
+    log.debug('Creating watchlist:', { name: payload.name });
 
     if (this.dryRun) {
       log.info(`[DRY RUN] Would create watchlist: ${payload.name}`);
@@ -98,11 +98,35 @@ export class WatchlistProvider {
     }
 
     try {
-      // Try sending as an array (API might expect batch creation like notification channels)
-      const response = await this.apiClient.post('/watchlists', [payload]);
-      const result = unwrapApiResponse<ApiWatchlist[]>(response);
-      const created = result[0]; // Get the first (and only) item from the array
+      // Send as single object as required by API
+      const response = await this.apiClient.post('/watchlists', payload);
+      const created = unwrapApiResponse<ApiWatchlist>(response);
       log.info(`Created watchlist: ${created.name} (${created.id})`);
+
+      // If config has assets, add them after creation
+      if (config.assets && config.assets.length > 0) {
+        log.debug(`Adding ${config.assets.length} assets to watchlist: ${created.id}`);
+        const updatePayload: ApiWatchlistUpdatePayload = {
+          assets: config.assets.map((asset) => ({
+            chain: asset.chain,
+            type: asset.type,
+            address: asset.address,
+            name: asset.name,
+            symbol: asset.symbol,
+            tags: asset.tags,
+          })),
+          mode: 'add', // Add assets to the existing (empty) watchlist
+        };
+
+        const updateResponse = await this.apiClient.patch(
+          `/watchlists/${created.id}`,
+          updatePayload
+        );
+        const updatedWatchlist = unwrapApiResponse<ApiWatchlist>(updateResponse);
+        log.info(`Added ${config.assets.length} assets to watchlist: ${created.name}`);
+        return updatedWatchlist;
+      }
+
       return created;
     } catch (error) {
       log.error('Failed to create watchlist:', error);
@@ -288,18 +312,11 @@ export class WatchlistProvider {
    * Build create payload from watchlist config
    */
   private buildCreatePayload(config: WatchlistConfig): ApiWatchlistCreatePayload {
+    // API documentation shows only name and description for creation
+    // Assets are added separately after creation
     return {
       name: config.name,
       description: config.description,
-      assets: config.assets.map((asset) => ({
-        chain: asset.chain,
-        type: asset.type,
-        address: asset.address,
-        name: asset.name,
-        symbol: asset.symbol,
-        tags: asset.tags,
-      })),
-      alert_policy_id: config.alert_policy_id,
     };
   }
 
@@ -313,13 +330,14 @@ export class WatchlistProvider {
     const payload: ApiWatchlistUpdatePayload = {
       name: config.name,
       description: config.description,
-      alert_policy_id: config.alert_policy_id,
     };
 
     // Include asset changes if we have reconciliation data
     if (reconciliation) {
+      // For now, handle assets_to_add case (most common)
+      // TODO: Handle more complex scenarios with assets_to_remove and mixed operations
       if (reconciliation.assets_to_add.length > 0) {
-        payload.assets_to_add = reconciliation.assets_to_add.map((asset) => ({
+        payload.assets = reconciliation.assets_to_add.map((asset) => ({
           chain: asset.chain,
           type: asset.type,
           address: asset.address,
@@ -327,14 +345,17 @@ export class WatchlistProvider {
           symbol: asset.symbol,
           tags: asset.tags,
         }));
-      }
-
-      if (reconciliation.assets_to_remove.length > 0) {
-        payload.assets_to_remove = reconciliation.assets_to_remove.map((asset) => ({
+        payload.mode = 'add';
+      } else if (reconciliation.assets_to_remove.length > 0) {
+        payload.assets = reconciliation.assets_to_remove.map((asset) => ({
           chain: asset.chain,
           type: asset.type,
           address: asset.address,
+          name: asset.name,
+          symbol: asset.symbol,
+          tags: asset.tags,
         }));
+        payload.mode = 'remove';
       }
     }
 
@@ -418,16 +439,20 @@ export class WatchlistProvider {
   private createMockWatchlist(
     payload: ApiWatchlistCreatePayload | ApiWatchlistUpdatePayload
   ): ApiWatchlist {
+    // Handle assets field (only exists in update payloads)
+    const assets = 'assets' in payload ? payload.assets : undefined;
+    const assetCount = assets ? assets.length : 0;
+
     return {
       id: `mock_${Date.now()}`,
       name: payload.name || 'Mock Watchlist',
       description: payload.description,
-      asset_count: 'assets' in payload ? payload.assets.length : 0,
-      alert_policy: payload.alert_policy_id || 'default_policy',
+      asset_count: assetCount,
+      alert_policy: 'default_policy',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       enabled: true,
-      assets: 'assets' in payload ? payload.assets : undefined,
+      assets: assets,
     };
   }
 

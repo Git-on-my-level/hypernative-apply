@@ -22,14 +22,14 @@ describe('CustomAgentProvider', () => {
 
     // Mock the notification channels API endpoint for channel resolution
     const mockNotificationChannels = [
-      { id: 'nc_slack_123', name: 'slack-alerts', type: 'slack' },
-      { id: 'nc_email_456', name: 'email-alerts', type: 'email' },
-      { id: 'nc_telegram_789', name: 'telegram-alerts', type: 'telegram' },
-      { id: 'nc_multi_001', name: 'multi-channel', type: 'webhook' },
-      { id: 'nc_basic_001', name: 'basic-alerts', type: 'webhook' },
+      { id: 123, name: 'slack-alerts', type: 'slack' },
+      { id: 456, name: 'email-alerts', type: 'email' },
+      { id: 789, name: 'telegram-alerts', type: 'telegram' },
+      { id: 1, name: 'multi-channel', type: 'webhook' },
+      { id: 2, name: 'basic-alerts', type: 'webhook' },
       // Add channels for the large channel list test
       ...Array.from({ length: 10 }, (_, i) => ({
-        id: `nc_channel_${i}`,
+        id: 1000 + i,
         name: `channel-${i}`,
         type: 'webhook',
       })),
@@ -184,18 +184,18 @@ describe('CustomAgentProvider', () => {
       const result = await provider.create(mockTransactionMonitoringConfig);
 
       expect(mockApiClient.post).toHaveBeenCalledWith('/custom-agents', {
-        name: 'Transaction Monitoring Agent',
-        description: 'Monitors high-value transactions',
-        type: 'large_transaction_monitor',
-        enabled: true,
-        severity: 'medium',
-        chain: 'ethereum',
-        configuration: {
+        agentName: 'Transaction Monitoring Agent',
+        agentType: 'large_transaction_monitor',
+        severity: 'Medium',
+        muteDuration: 0,
+        state: 'enabled',
+        rule: {
           transaction_amount_threshold: 1000000,
           asset_addresses: ['0xA0b86991c431e8c5F2cfae5C4F1b2A4c0b48F8C7'],
           exclude_addresses: ['0x123...'],
         },
-        notification_channels: ['nc_slack_123', 'nc_email_456'],
+        channelsConfigurations: [{ id: 123 }, { id: 456 }],
+        remindersConfigurations: [],
       });
       expect(result).toEqual(mockApiResponse);
     });
@@ -229,14 +229,14 @@ describe('CustomAgentProvider', () => {
       const result = await provider.create(mockPriceMonitoringConfig);
 
       expect(mockApiClient.post).toHaveBeenCalledWith('/custom-agents', {
-        name: 'Price Monitoring Agent',
-        description: 'Monitors price changes',
-        type: 'whale_movement_monitor',
-        enabled: true,
-        severity: 'medium',
-        chain: 'ethereum',
-        configuration: mockPriceMonitoringConfig.configuration,
-        notification_channels: ['nc_telegram_789'],
+        agentName: 'Price Monitoring Agent',
+        agentType: 'whale_movement_monitor',
+        severity: 'Medium',
+        muteDuration: 0,
+        state: 'enabled',
+        rule: mockPriceMonitoringConfig.configuration,
+        channelsConfigurations: [{ id: 789 }],
+        remindersConfigurations: [],
       });
       expect(result).toEqual(mockPriceResponse);
     });
@@ -280,12 +280,13 @@ describe('CustomAgentProvider', () => {
       const result = await provider.update('ca_test_123', updatedConfig);
 
       expect(mockApiClient.patch).toHaveBeenCalledWith('/custom-agents/ca_test_123', {
-        name: 'Transaction Monitoring Agent',
-        description: 'Updated description',
-        enabled: false,
-        severity: undefined,
-        configuration: mockTransactionMonitoringConfig.configuration,
-        notification_channels: ['nc_slack_123', 'nc_email_456'],
+        agentName: 'Transaction Monitoring Agent',
+        severity: 'Medium',
+        muteDuration: 0,
+        state: 'disabled',
+        rule: mockTransactionMonitoringConfig.configuration,
+        channelsConfigurations: [{ id: 123 }, { id: 456 }],
+        remindersConfigurations: [],
       });
       expect(result).toEqual(expectedResponse);
     });
@@ -346,18 +347,18 @@ describe('CustomAgentProvider', () => {
       const payload = await (provider as any).buildCreatePayload(mockTransactionMonitoringConfig);
 
       expect(payload).toEqual({
-        name: 'Transaction Monitoring Agent',
-        description: 'Monitors high-value transactions',
-        type: 'large_transaction_monitor',
-        enabled: true,
-        severity: 'medium',
-        chain: 'ethereum',
-        configuration: {
+        agentName: 'Transaction Monitoring Agent',
+        agentType: 'large_transaction_monitor',
+        severity: 'Medium',
+        muteDuration: 0,
+        state: 'enabled',
+        rule: {
           transaction_amount_threshold: 1000000,
           asset_addresses: ['0xA0b86991c431e8c5F2cfae5C4F1b2A4c0b48F8C7'],
           exclude_addresses: ['0x123...'],
         },
-        notification_channels: ['nc_slack_123', 'nc_email_456'],
+        channelsConfigurations: [{ id: 123 }, { id: 456 }],
+        remindersConfigurations: [],
       });
     });
 
@@ -365,13 +366,12 @@ describe('CustomAgentProvider', () => {
       const payload = await (provider as any).buildCreatePayload(mockPriceMonitoringConfig);
 
       expect(payload).toEqual({
-        name: 'Price Monitoring Agent',
-        description: 'Monitors price changes',
-        type: 'whale_movement_monitor',
-        enabled: true,
-        severity: 'medium',
-        chain: 'ethereum',
-        configuration: {
+        agentName: 'Price Monitoring Agent',
+        agentType: 'whale_movement_monitor',
+        severity: 'Medium',
+        muteDuration: 0,
+        state: 'enabled',
+        rule: {
           price_change_percentage: 10,
           assets: [
             {
@@ -382,7 +382,8 @@ describe('CustomAgentProvider', () => {
           ],
           timeframe: '1h',
         },
-        notification_channels: ['nc_telegram_789'],
+        channelsConfigurations: [{ id: 789 }],
+        remindersConfigurations: [],
       });
     });
 
@@ -400,8 +401,8 @@ describe('CustomAgentProvider', () => {
 
       const payload = await (provider as any).buildCreatePayload(minimalConfig);
 
-      expect(payload.description).toBeUndefined();
-      expect(payload.configuration.transaction_amount_threshold).toBe(1000);
+      expect(payload.agentName).toBe('Minimal Agent');
+      expect(payload.rule.transaction_amount_threshold).toBe(1000);
     });
   });
 
@@ -464,9 +465,9 @@ describe('CustomAgentProvider', () => {
       };
 
       const payload = await (provider as any).buildCreatePayload(complexConfig);
-      expect(payload.configuration.asset_addresses).toHaveLength(3);
-      expect(payload.configuration.exclude_addresses).toHaveLength(2);
-      expect(payload.configuration.monitor_internal_transactions).toBe(true);
+      expect(payload.rule.asset_addresses).toHaveLength(3);
+      expect(payload.rule.exclude_addresses).toHaveLength(2);
+      expect(payload.rule.monitor_internal_transactions).toBe(true);
     });
 
     it('should handle agents with large notification channel lists', async () => {

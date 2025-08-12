@@ -12,6 +12,7 @@
 import { ApiClient } from './api-client.js';
 import { StateStore } from './state-store.js';
 import { log } from './logger.js';
+import { ChannelResolver } from './channel-resolver.js';
 import { WatchlistProvider } from '../providers/watchlist.provider.js';
 import { CustomAgentProvider } from '../providers/custom-agent.provider.js';
 import { NotificationChannelProvider } from '../providers/notification-channel.provider.js';
@@ -51,6 +52,7 @@ export class Executor {
   private parallelism: number;
   private continueOnError: boolean;
   private providers: ProviderContext;
+  private channelResolver: ChannelResolver; // Shared resolver instance to avoid cache issues
   private originalStates: Map<string, any> = new Map(); // Store original remote states for rollback
 
   constructor(options: ExecutorOptions) {
@@ -60,7 +62,10 @@ export class Executor {
     this.parallelism = options.parallelism ?? 1;
     this.continueOnError = options.continueOnError ?? false;
 
-    // Initialize providers
+    // Initialize shared channel resolver to avoid cache timing issues
+    this.channelResolver = new ChannelResolver(this.apiClient);
+
+    // Initialize providers with shared channel resolver
     this.providers = {
       watchlistProvider: new WatchlistProvider({
         apiClient: this.apiClient,
@@ -68,6 +73,7 @@ export class Executor {
       }),
       customAgentProvider: new CustomAgentProvider({
         apiClient: this.apiClient,
+        channelResolver: this.channelResolver, // Share resolver to ensure cache consistency
         dryRun: this.dryRun,
       }),
       notificationChannelProvider: new NotificationChannelProvider({
@@ -688,9 +694,17 @@ export class Executor {
     // Check if validation is requested
     const testOptions = channelConfig.validate ? { validate: channelConfig.validate } : {};
 
+    let result: NotificationChannel | null = null;
+
     switch (change.change_type) {
       case ChangeType.CREATE:
-        return await this.providers.notificationChannelProvider.create(channelConfig, testOptions);
+        result = await this.providers.notificationChannelProvider.create(
+          channelConfig,
+          testOptions
+        );
+        // Refresh channel resolver cache after creation to make new channel available immediately
+        await this.channelResolver.forceRefresh();
+        return result;
 
       case ChangeType.UPDATE:
         if (!change.remote_id) {
@@ -705,12 +719,15 @@ export class Executor {
           this.originalStates.set(`${change.kind}.${change.name}`, currentRemoteState);
         }
 
-        return await this.providers.notificationChannelProvider.update(
+        result = await this.providers.notificationChannelProvider.update(
           change.remote_id,
           channelConfig,
           currentRemoteState || undefined,
           testOptions
         );
+        // Refresh channel resolver cache after update to reflect changes
+        await this.channelResolver.forceRefresh();
+        return result;
 
       case ChangeType.REPLACE:
         if (!change.remote_id) {
@@ -721,13 +738,21 @@ export class Executor {
 
         // Delete the old channel and create a new one
         await this.providers.notificationChannelProvider.delete(change.remote_id);
-        return await this.providers.notificationChannelProvider.create(channelConfig, testOptions);
+        result = await this.providers.notificationChannelProvider.create(
+          channelConfig,
+          testOptions
+        );
+        // Refresh channel resolver cache after replacement
+        await this.channelResolver.forceRefresh();
+        return result;
 
       case ChangeType.DELETE:
         if (!change.remote_id) {
           throw new Error(`Remote ID not found for notification channel deletion: ${change.name}`);
         }
         await this.providers.notificationChannelProvider.delete(change.remote_id);
+        // Refresh channel resolver cache after deletion to remove deleted channel
+        await this.channelResolver.forceRefresh();
         return null;
 
       default:

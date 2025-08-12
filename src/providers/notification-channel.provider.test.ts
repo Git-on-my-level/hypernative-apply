@@ -165,23 +165,25 @@ describe('NotificationChannelProvider', () => {
 
   describe('create', () => {
     it('should create a Slack notification channel', async () => {
-      mockApiClient.post = vi.fn().mockResolvedValue({ data: mockSlackResponse });
+      mockApiClient.post = vi.fn().mockResolvedValue({ data: [mockSlackResponse] });
 
       const result = await provider.create(mockSlackConfig);
 
-      expect(mockApiClient.post).toHaveBeenCalledWith('/notification-channels', {
-        name: 'Test Slack Channel',
-        type: 'slack',
-        description: undefined,
-        enabled: true,
-        configuration: {
-          webhook_url: 'https://hooks.slack.com/services/test',
-          channel: '#alerts',
-          username: 'hypernative-bot',
-          icon_emoji: ':warning:',
+      expect(mockApiClient.post).toHaveBeenCalledWith('/notification-channels', [
+        {
+          name: 'Test Slack Channel',
+          type: 'Slack',
+          description: undefined,
+          enabled: true,
+          configuration: {
+            webhook_url: 'https://hooks.slack.com/services/test',
+            channel: '#alerts',
+            username: 'hypernative-bot',
+            icon_emoji: ':warning:',
+          },
+          tags: undefined,
         },
-        tags: undefined,
-      });
+      ]);
       expect(result).toEqual(mockSlackResponse);
     });
 
@@ -210,32 +212,34 @@ describe('NotificationChannelProvider', () => {
         },
       };
 
-      mockApiClient.post = vi.fn().mockResolvedValue({ data: mockEmailResponse });
+      mockApiClient.post = vi.fn().mockResolvedValue({ data: [mockEmailResponse] });
 
       const result = await provider.create(mockEmailConfig);
 
-      expect(mockApiClient.post).toHaveBeenCalledWith('/notification-channels', {
-        name: 'Test Email Channel',
-        type: 'email',
-        description: undefined,
-        enabled: true,
-        configuration: {
-          smtp: {
-            host: 'smtp.example.com',
-            port: 587,
-            auth: {
-              user: 'alerts@company.com',
-              pass: 'secret123',
+      expect(mockApiClient.post).toHaveBeenCalledWith('/notification-channels', [
+        {
+          name: 'Test Email Channel',
+          type: 'Email',
+          description: undefined,
+          enabled: true,
+          configuration: {
+            smtp: {
+              host: 'smtp.example.com',
+              port: 587,
+              auth: {
+                user: 'alerts@company.com',
+                pass: 'secret123',
+              },
+              secure: true,
             },
-            secure: true,
+            recipients: {
+              to: ['test@example.com', 'alerts@company.com'],
+            },
+            subject_prefix: '[HYPERNATIVE]',
           },
-          recipients: {
-            to: ['test@example.com', 'alerts@company.com'],
-          },
-          subject_prefix: '[HYPERNATIVE]',
+          tags: undefined,
         },
-        tags: undefined,
-      });
+      ]);
       expect(result).toEqual(mockEmailResponse);
     });
 
@@ -258,26 +262,28 @@ describe('NotificationChannelProvider', () => {
         },
       };
 
-      mockApiClient.post = vi.fn().mockResolvedValue({ data: mockWebhookResponse });
+      mockApiClient.post = vi.fn().mockResolvedValue({ data: [mockWebhookResponse] });
 
       const result = await provider.create(mockWebhookConfig);
 
-      expect(mockApiClient.post).toHaveBeenCalledWith('/notification-channels', {
-        name: 'Test Webhook Channel',
-        type: 'webhook',
-        description: undefined,
-        enabled: true,
-        configuration: {
-          url: 'https://api.example.com/webhook',
-          method: 'POST',
-          headers: {
-            Authorization: 'Bearer token123',
-            'Content-Type': 'application/json',
+      expect(mockApiClient.post).toHaveBeenCalledWith('/notification-channels', [
+        {
+          name: 'Test Webhook Channel',
+          type: 'Webhook',
+          description: undefined,
+          enabled: true,
+          configuration: {
+            url: 'https://api.example.com/webhook',
+            method: 'POST',
+            headers: {
+              Authorization: 'Bearer token123',
+              'Content-Type': 'application/json',
+            },
+            timeout: 30,
           },
-          timeout: 30,
+          tags: undefined,
         },
-        tags: undefined,
-      });
+      ]);
       expect(result).toEqual(mockWebhookResponse);
     });
 
@@ -511,7 +517,7 @@ describe('NotificationChannelProvider', () => {
         configuration: complexWebhookConfig.configuration,
       };
 
-      mockApiClient.post = vi.fn().mockResolvedValue({ data: mockResponse });
+      mockApiClient.post = vi.fn().mockResolvedValue({ data: [mockResponse] });
 
       const result = await provider.create(complexWebhookConfig);
       expect(result.configuration).toEqual(complexWebhookConfig.configuration);
@@ -524,7 +530,7 @@ describe('NotificationChannelProvider', () => {
       };
 
       mockApiClient.post = vi.fn().mockResolvedValue({
-        data: { ...mockSlackResponse, name: specialConfig.name },
+        data: [{ ...mockSlackResponse, name: specialConfig.name }],
       });
 
       const result = await provider.create(specialConfig);
@@ -538,7 +544,7 @@ describe('NotificationChannelProvider', () => {
       };
 
       mockApiClient.post = vi.fn().mockResolvedValue({
-        data: { id: 'nc_email_long', recipients: longEmailConfig.recipients },
+        data: [{ id: 'nc_email_long', recipients: longEmailConfig.recipients }],
       });
 
       const result = await provider.create(longEmailConfig);
