@@ -1,0 +1,23 @@
+# Placeholder for comprehensive oracle monitoring agents
+# These are managed via API directly, not through YAML configuration
+# Agent IDs:
+# - Sonic v3 (ID: 28283) - 12 assets
+# - Fraxtal v3 (ID: 28284) - 13 assets
+name: "Oracle Monitor Comprehensive"
+description: "Managed via API - see agent scripts"
+enabled: false
+type: "address_balance_change"
+chain: "ethereum"
+severity: "high"
+tags:
+  managed_by: "api"
+  version: "v3"
+configuration:
+  addresses:
+    - "0x0000000000000000000000000000000000000000"
+  threshold_type: "percentage"
+  threshold_value: 100
+  direction: "both"
+schedule:
+  interval: 60
+  timezone: "UTC"

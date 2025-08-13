@@ -12,8 +12,8 @@ async function fetchCustomAgent(agentId: number) {
       headers: {
         'x-client-id': CLIENT_ID,
         'x-client-secret': CLIENT_SECRET,
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     });
     return response.data;
   } catch (error: any) {
@@ -24,23 +24,23 @@ async function fetchCustomAgent(agentId: number) {
 
 async function main() {
   console.log('Fetching custom agent examples...\n');
-  
+
   // Fetch both agents
   const agent1 = await fetchCustomAgent(28201);
   const agent2 = await fetchCustomAgent(28202);
-  
+
   if (agent1) {
     console.log('=== Agent 28201 ===');
     console.log(JSON.stringify(agent1, null, 2));
     console.log();
   }
-  
+
   if (agent2) {
     console.log('=== Agent 28202 ===');
     console.log(JSON.stringify(agent2, null, 2));
     console.log();
   }
-  
+
   // Try to list all agents to see the structure
   try {
     console.log('=== Listing all custom agents ===');
@@ -48,22 +48,26 @@ async function main() {
       headers: {
         'x-client-id': CLIENT_ID,
         'x-client-secret': CLIENT_SECRET,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       params: {
-        limit: 100
-      }
+        limit: 100,
+      },
     });
-    
+
     console.log(`Total agents: ${listResponse.data.length}`);
-    
+
     // Find our specific agents - check both id formats
-    const ourAgents = listResponse.data.filter((agent: any) => 
-      agent.id === 28201 || agent.id === 28202 || 
-      agent.agentId === 28201 || agent.agentId === 28202 ||
-      agent.id === '28201' || agent.id === '28202'
+    const ourAgents = listResponse.data.filter(
+      (agent: any) =>
+        agent.id === 28201 ||
+        agent.id === 28202 ||
+        agent.agentId === 28201 ||
+        agent.agentId === 28202 ||
+        agent.id === '28201' ||
+        agent.id === '28202'
     );
-    
+
     if (ourAgents.length > 0) {
       console.log('Found our agents in the list:');
       console.log(JSON.stringify(ourAgents, null, 2));
@@ -74,7 +78,7 @@ async function main() {
         id: agent.id || agent.agentId,
         name: agent.agentName || agent.name,
         type: agent.agentType || agent.type,
-        state: agent.state || agent.enabled
+        state: agent.state || agent.enabled,
       }));
       console.log(JSON.stringify(recentAgents, null, 2));
     }

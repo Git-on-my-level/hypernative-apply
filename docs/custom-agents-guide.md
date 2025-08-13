@@ -186,15 +186,48 @@ Key endpoints:
 - `/oracle-agents/deploy-oracle-agents.ts` - Full deployment script
 - `/oracle-agents/oracle-configs.json` - Configuration templates
 
+## Critical Discoveries from Implementation
+
+### 1. GraphData is REQUIRED for UI Visualization
+**Issue:** Agents appear blank in UI despite valid logic
+**Solution:** Must include complete `graphData` structure with nodes and edges for `blankAgentBuilder` type
+
+### 2. Channel Configuration API Quirk
+**Issue:** GET `/custom-agents/{id}` doesn't return `channelsConfigurations` even when properly configured
+**Impact:** Cannot programmatically verify channel linkage via API
+**Workaround:** Configuration IS working (visible in UI), just not returned in API response
+
+### 3. Agent Consolidation Strategy
+**Problem:** Platform limits on number of custom agents per account
+**Solution:** Consolidate multiple asset monitors into single agents:
+- Instead of 25 individual agents → 2 comprehensive agents (one per chain)
+- Use OR conditions or max() functions to check multiple assets
+- Practical limit: 3-5 assets per agent for clear UI, 12-13 for comprehensive monitoring
+
+### 4. Actions via Notification Channels
+**Discovery:** Actions are NOT configured directly on agents
+**Implementation:**
+1. Agents detect conditions
+2. Notification channels execute actions (Slack, Webhook, AdvancedContractCall)
+3. Link channels using PATCH endpoint: `/custom-agents/{id}`
+
+### 5. Update Endpoint Behavior
+- **PUT** `/custom-agents/{id}` - Returns 404 (doesn't exist)
+- **PATCH** `/custom-agents/{id}` - Works for channel updates
+- **POST** - Only for creation
+
 ## Best Practices
 
-1. **Use both agent types** for redundancy
-2. **Start with low severity** during testing
-3. **Enable data retention** for trending
-4. **Set appropriate sampling periods** (blocks for high precision, time for efficiency)
-5. **Include contract ABI** for proper decoding
-6. **Version control** all agent configurations
-7. **Test on testnet** before mainnet deployment
+1. **Always include graphData** for blankAgentBuilder agents
+2. **Use both agent types** for redundancy
+3. **Start with low severity** during testing
+4. **Enable data retention** for trending
+5. **Set appropriate sampling periods** (blocks for high precision, time for efficiency)
+6. **Include contract ABI** for proper decoding
+7. **Version control** all agent configurations
+8. **Test on testnet** before mainnet deployment
+9. **Consolidate agents** to stay within platform limits
+10. **Add delays** between API calls (1-2 seconds for rate limiting)
 
 ## Quick Reference
 
