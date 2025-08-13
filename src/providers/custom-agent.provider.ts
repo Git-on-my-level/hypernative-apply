@@ -112,13 +112,13 @@ export class CustomAgentProvider {
   async create(config: CustomAgentConfig): Promise<CustomAgent> {
     const payload = await this.buildCreatePayload(config);
     log.debug('Creating custom agent:', {
-      name: payload.name,
-      type: payload.type,
-      channels: payload.notification_channels?.length || 0,
+      name: payload.agentName,
+      type: payload.agentType,
+      channels: payload.channelsConfigurations?.length || 0,
     });
 
     if (this.dryRun) {
-      log.info(`[DRY RUN] Would create custom agent: ${payload.name} (${payload.type})`);
+      log.info(`[DRY RUN] Would create custom agent: ${payload.agentName} (${payload.agentType})`);
       return this.createMockAgent(payload);
     }
 
@@ -144,9 +144,9 @@ export class CustomAgentProvider {
   ): Promise<CustomAgent> {
     const payload = await this.buildUpdatePayload(config);
     log.debug(`Updating custom agent: ${id}`, {
-      name: payload.name,
+      name: payload.agentName,
       type: config.type,
-      channels: payload.notification_channels?.length || 0,
+      channels: payload.channelsConfigurations?.length || 0,
     });
 
     if (this.dryRun) {
@@ -253,26 +253,33 @@ export class CustomAgentProvider {
    * Build create payload from custom agent config
    */
   private async buildCreatePayload(config: CustomAgentConfig): Promise<CustomAgentCreatePayload> {
-    // Resolve notification channels
-    let resolvedChannels: string[] | undefined;
+    // Resolve notification channels to ID numbers
+    let channelsConfigurations: { id: number }[] = [];
     if (config.notification_channels && config.notification_channels.length > 0) {
       const resolution = await this.channelResolver.resolveChannels(config.notification_channels);
       if (resolution.failed.length > 0) {
         const errorMessage = this.channelResolver.generateErrorMessage(resolution);
         throw new Error(`Channel resolution failed:\n${errorMessage}`);
       }
-      resolvedChannels = Object.values(resolution.resolved);
+      // Convert resolved channel IDs to numbers and wrap in objects
+      channelsConfigurations = Object.values(resolution.resolved).map((id) => {
+        const numericId = typeof id === 'number' ? id : parseInt(String(id), 10);
+        if (isNaN(numericId)) {
+          throw new Error(`Invalid channel ID: ${id} - must be a valid number`);
+        }
+        return { id: numericId };
+      });
     }
 
     return {
-      name: config.name,
-      type: config.type,
-      description: config.description,
-      enabled: config.enabled ?? true,
-      severity: config.severity ?? 'medium',
-      chain: config.chain,
-      configuration: config.configuration || {},
-      notification_channels: resolvedChannels,
+      agentName: config.name,
+      agentType: config.type,
+      severity: config.severity === 'high' ? 'High' : 'Medium', // Map to API format
+      muteDuration: 0, // Default value
+      state: config.enabled === false ? 'disabled' : 'enabled', // Map boolean to string
+      rule: config.configuration || {},
+      channelsConfigurations,
+      remindersConfigurations: [], // Default empty
     };
   }
 
@@ -280,24 +287,32 @@ export class CustomAgentProvider {
    * Build update payload from custom agent config
    */
   private async buildUpdatePayload(config: CustomAgentConfig): Promise<CustomAgentUpdatePayload> {
-    // Resolve notification channels
-    let resolvedChannels: string[] | undefined;
+    // Resolve notification channels to ID numbers
+    let channelsConfigurations: { id: number }[] | undefined;
     if (config.notification_channels && config.notification_channels.length > 0) {
       const resolution = await this.channelResolver.resolveChannels(config.notification_channels);
       if (resolution.failed.length > 0) {
         const errorMessage = this.channelResolver.generateErrorMessage(resolution);
         throw new Error(`Channel resolution failed:\n${errorMessage}`);
       }
-      resolvedChannels = Object.values(resolution.resolved);
+      // Convert resolved channel IDs to numbers and wrap in objects
+      channelsConfigurations = Object.values(resolution.resolved).map((id) => {
+        const numericId = typeof id === 'number' ? id : parseInt(String(id), 10);
+        if (isNaN(numericId)) {
+          throw new Error(`Invalid channel ID: ${id} - must be a valid number`);
+        }
+        return { id: numericId };
+      });
     }
 
     return {
-      name: config.name,
-      description: config.description,
-      enabled: config.enabled,
-      severity: config.severity,
-      configuration: config.configuration,
-      notification_channels: resolvedChannels,
+      agentName: config.name,
+      severity: config.severity === 'high' ? 'High' : 'Medium', // Map to API format
+      muteDuration: 0, // Default value
+      state: config.enabled === false ? 'disabled' : 'enabled', // Map boolean to string
+      rule: config.configuration,
+      channelsConfigurations,
+      remindersConfigurations: [], // Default empty
     };
   }
 
@@ -389,11 +404,11 @@ export class CustomAgentProvider {
   ): CustomAgent {
     return {
       id: `mock_${Date.now()}`,
-      name: payload.name || 'Mock Agent',
-      description: payload.description,
-      type: 'type' in payload ? payload.type : 'mock_type',
-      enabled: payload.enabled ?? true,
-      configuration: payload.configuration || {},
+      name: payload.agentName || 'Mock Agent',
+      description: undefined, // API response doesn't include description in the example
+      type: 'agentType' in payload ? payload.agentType : 'mock_type',
+      enabled: 'state' in payload ? payload.state !== 'disabled' : true,
+      configuration: 'rule' in payload ? payload.rule || {} : {},
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       execution_count: 0,

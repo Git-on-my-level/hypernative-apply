@@ -170,9 +170,10 @@ export class NotificationChannelProvider {
     }
 
     try {
-      // Send single payload (not array)
-      const response = await this.apiClient.post('/notification-channels', payload);
-      const createdChannel = unwrapApiResponse<NotificationChannel>(response);
+      // Send as array as required by API
+      const response = await this.apiClient.post('/notification-channels', [payload]);
+      const result = unwrapApiResponse<NotificationChannel[]>(response);
+      const createdChannel = result[0]; // Get the first (and only) item from the array
 
       log.info(`Created notification channel: ${createdChannel.name} (${createdChannel.id})`);
 
@@ -321,6 +322,38 @@ export class NotificationChannelProvider {
   }
 
   /**
+   * Transform configuration from schema format to API format
+   */
+  private transformConfigurationForApi(type: string, config: any): any {
+    switch (type) {
+      case 'webhook':
+        return this.transformWebhookConfig(config);
+      default:
+        // Other channel types pass configuration as-is
+        return config;
+    }
+  }
+
+  /**
+   * Transform webhook configuration for API compatibility
+   */
+  private transformWebhookConfig(config: any): any {
+    const transformed: any = {
+      value: config.url, // API expects 'value' field instead of 'url'
+    };
+
+    // Transform headers from object to array format
+    if (config.headers && typeof config.headers === 'object') {
+      transformed.headers = Object.entries(config.headers).map(([key, value]) => ({
+        key,
+        value: String(value),
+      }));
+    }
+
+    return transformed;
+  }
+
+  /**
    * Build create payload from notification channel config
    */
   private async buildCreatePayload(
@@ -335,12 +368,15 @@ export class NotificationChannelProvider {
       );
     }
 
+    // Transform configuration based on channel type
+    const transformedConfig = this.transformConfigurationForApi(config.type, envResult.substituted);
+
     return {
       name: config.name,
       type: this.mapTypeToApiFormat(config.type) as any, // Map to API format
       description: config.description,
       enabled: config.enabled ?? true,
-      configuration: envResult.substituted,
+      configuration: transformedConfig,
       tags: config.tags,
     };
   }
@@ -360,11 +396,14 @@ export class NotificationChannelProvider {
       );
     }
 
+    // Transform configuration based on channel type (we assume type doesn't change in updates)
+    const transformedConfig = this.transformConfigurationForApi(config.type, envResult.substituted);
+
     return {
       name: config.name,
       description: config.description,
       enabled: config.enabled,
-      configuration: envResult.substituted,
+      configuration: transformedConfig,
       tags: config.tags,
       // Note: type is usually not updatable, so we don't include it in update payload
     };
@@ -546,7 +585,7 @@ export class NotificationChannelProvider {
     return {
       id: `mock_${Date.now()}`,
       name: payload.name || 'Mock Channel',
-      type: 'type' in payload ? payload.type : ('webhook' as const),
+      type: 'type' in payload ? (payload.type.toLowerCase() as any) : ('webhook' as const),
       description: payload.description,
       enabled: payload.enabled ?? true,
       configuration: redactSecrets(payload.configuration || {}),

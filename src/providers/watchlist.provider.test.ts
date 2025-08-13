@@ -139,14 +139,20 @@ describe('WatchlistProvider', () => {
   describe('create', () => {
     it('should create a new watchlist', async () => {
       mockApiClient.post = vi.fn().mockResolvedValue({ data: mockApiWatchlist });
+      mockApiClient.patch = vi.fn().mockResolvedValue({ data: mockApiWatchlist });
 
       const result = await provider.create(mockWatchlistConfig);
 
       expect(mockApiClient.post).toHaveBeenCalledWith('/watchlists', {
         name: 'Test Watchlist',
         description: 'Test watchlist for unit tests',
-        assets: mockWatchlistConfig.assets,
+        assets: [], // Initially empty as per API documentation
         alert_policy_id: 'policy_123',
+      });
+
+      // Should also call patch to add assets
+      expect(mockApiClient.patch).toHaveBeenCalledWith('/watchlists/wl_test_123', {
+        assets_to_add: mockWatchlistConfig.assets,
       });
       expect(result).toEqual(mockApiWatchlist);
     });
