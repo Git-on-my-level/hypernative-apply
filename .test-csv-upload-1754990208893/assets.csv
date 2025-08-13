@@ -1,0 +1,4 @@
+address,chain,type,name,symbol,tags
+0x1234567890123456789012345678901234567890,ethereum,Wallet,Test Wallet,,
+0xa0b86991c431e8c5f2f1b2a4c0b48f8c7aabbccd,ethereum,Token,USD Coin,USDC,stablecoin
+0x742d35cc6e7e7c59cc51a0c8ff7f4d5b6e6f7f7f,polygon,Protocol,Test Protocol,,defi
