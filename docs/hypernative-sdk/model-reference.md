@@ -1,188 +1,150 @@
-# SDK V2 Reference | Hypernative Product Docs
+---
+description: >-
+  This section provides comprehensive documentation for all classes, methods,
+  and parameters in the Invariantive SDK.
+icon: hammer-brush
+---
 
-### 
+# SDK V2 Reference
 
-Current Version - 2.0
+### Current Version - 2.0
 
 This version enables faster development of your Onchain Agents and powerful new features:
 
--   **Strongly-typed objects and IntelliSense support** in your code editor, enabling faster and more efficient development of Onchain Agents.
-    
--   New out-of-the-box utility functions:
-    
-    -   Retrieve an Asset's price
-        
-    -   Call a smart contract
-        
-    
--   Execute custom Python code
-    
--   Analyze data across multiple blocks using the new `HistoricalEventsVariable`
-    
--   Store values during one block execution and retrieve them in the next
-    
--   Conditionally execute specific steps
-    
--   Securely store and access third-party passwords and secrets
-    
--   **Integrate Hypernative operations directly** into your Agents' flow, such as:
-    
-    -   Update the asset address list in a Watchlist or Custom Agent
-        
-    -   Retrieve existing Watchlist configurations
-        
-    -   Trigger Automated Responses
-        
-    
+* **Strongly-typed objects and IntelliSense support** in your code editor, enabling faster and more efficient development of Onchain Agents.
+* New out-of-the-box utility functions:
+  * Retrieve an Asset's price
+  * Call a smart contract
+* Execute custom Python code
+* Analyze data across multiple blocks using the new `HistoricalEventsVariable`
+* Store values during one block execution and retrieve them in the next
+* Conditionally execute specific steps
+* Securely store and access third-party passwords and secrets
+* **Integrate Hypernative operations directly** into your Agents' flow, such as:
+  * Update the asset address list in a Watchlist or Custom Agent
+  * Retrieve existing Watchlist configurations
+  * Trigger Automated Responses
 
 There are no breaking changes compared to Hypernative Agents SDK V1, which remains fully supported.
 
 To upgrade to the latest version, please reinstall the Hypernative library using the personal access token provided to you by Hypernative.
 
-### 
-
-Agent
+### Agent
 
 The main orchestrator class that coordinates triggers, variables, and alerts.
 
-#### 
+#### Class: `Agent`
 
-Class: `Agent`
-
-```
+```python
 class Agent:
     def __init__(self, trigger: Trigger)
 ```
 
 **Constructor Parameters**
 
-Parameter
-
-Type
-
-Description
-
-`trigger`
-
-`Trigger`
-
-The trigger that defines when the agent executes
+| Parameter | Type      | Description                                      |
+| --------- | --------- | ------------------------------------------------ |
+| `trigger` | `Trigger` | The trigger that defines when the agent executes |
 
 **Methods**
 
-`**add_variable(variable: Variable) -> Agent**`
+**`add_variable(variable: Variable) -> Agent`**
 
 Add a variable to the agent for data extraction and processing.
 
 **Parameters:**
 
--   `variable` (Variable): A variable instance for data extraction
-    
+* `variable` (Variable): A variable instance for data extraction
 
 **Returns:** The agent instance for method chaining
 
 **Example:**
 
-```
+```python
 agent.add_variable(ContextVariable(
     output_index="block_number",
     var_name="current_block"
 ))
 ```
 
-`**add_trigger_condition(condition: Condition) -> Agent**`
+**`add_trigger_condition(condition: Condition) -> Agent`**
 
 Add a condition to the trigger for additional filtering.
 
 **Parameters:**
 
--   `condition` (Condition): A condition instance
-    
+* `condition` (Condition): A condition instance
 
 **Returns:** The agent instance for method chaining
 
-`**set_alert(alert_config: AlertConfig) -> Agent**`
+**`set_alert(alert_config: AlertConfig) -> Agent`**
 
 Configure alert conditions and notifications.
 
 **Parameters:**
 
--   `alert_config` (AlertConfig): Alert configuration
-    
+* `alert_config` (AlertConfig): Alert configuration
 
 **Returns:** The agent instance for method chaining
 
-`**save_secret(secret_name: str, secret_value: str) -> Agent**`
+**`save_secret(secret_name: str, secret_value: str) -> Agent`**
 
 Store a secret for use in variables.
 
 **Parameters:**
 
--   `secret_name` (str): Name to reference the secret
-    
--   `secret_value` (str): The secret value to store
-    
+* `secret_name` (str): Name to reference the secret
+* `secret_value` (str): The secret value to store
 
 **Returns:** The agent instance for method chaining
 
-`**run(run_config: RunConfig) -> Dict[str, Any]**`
+**`run(run_config: RunConfig) -> Dict[str, Any]`**
 
 Execute the agent with the specified configuration.
 
 **Parameters:**
 
--   `run_config` (RunConfig): Execution configuration
-    
+* `run_config` (RunConfig): Execution configuration
 
 **Returns:** Dictionary containing findings and extracted variables
 
-`**deploy(agent_name: str, **kwargs) -> int**`
+**`deploy(agent_name: str, **kwargs) -> int`**
 
 Deploy the agent to the Hypernative platform.
 
 **Parameters:**
 
--   `agent_name` (str): Unique name for the agent
-    
--   `severity` (str, optional): Alert severity ("Low", "Medium", "High")
-    
--   `channels_configurations` (List\[Dict\], optional): Notification channels
-    
--   `security_suit_ids` (List\[int\], optional): Security suite IDs
-    
--   `reminders_configurations` (List\[Dict\], optional): Reminder settings
-    
+* `agent_name` (str): Unique name for the agent
+* `severity` (str, optional): Alert severity ("Low", "Medium", "High")
+* `channels_configurations` (List\[Dict], optional): Notification channels
+* `security_suit_ids` (List\[int], optional): Security suite IDs
+* `reminders_configurations` (List\[Dict], optional): Reminder settings
 
 **Returns:** Agent ID if successful, -1 if failed
 
-`**save_config(file_name: str) -> None**`
+**`save_config(file_name: str) -> None`**
 
 Save agent configuration to a JSON file.
 
 **Parameters:**
 
--   `file_name` (str): Output file name
-    
+* `file_name` (str): Output file name
 
-`**generate_config() -> Tuple[Dict, Dict]**`
+**`generate_config() -> Tuple[Dict, Dict]`**
 
 Generate agent configuration as dictionaries.
 
 **Returns:** Tuple of (agent\_config, metadata)
 
-### 
-
-Triggers
+### Triggers
 
 Triggers define when your agent should execute.
 
-#### 
-
-Class: `BlockTrigger`
+#### Class: `BlockTrigger`
 
 Execute agent periodically based on blocks or time.
 
-```
+```python
 @dataclass
 class BlockTrigger(Trigger):
     period: int
@@ -192,43 +154,15 @@ class BlockTrigger(Trigger):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`period`
-
-`int`
-
-Yes
-
-How often to execute
-
-`period_unit`
-
-`str`
-
-Yes
-
-Unit: "blocks" or "seconds"
-
-`chain`
-
-`Chain`
-
-No
-
-Blockchain to monitor (default from environment)
+| Parameter     | Type    | Required | Description                                      |
+| ------------- | ------- | -------- | ------------------------------------------------ |
+| `period`      | `int`   | Yes      | How often to execute                             |
+| `period_unit` | `str`   | Yes      | Unit: "blocks" or "seconds"                      |
+| `chain`       | `Chain` | No       | Blockchain to monitor (default from environment) |
 
 **Example**
 
-```
-
-
+```python
 # Execute every block
 trigger = BlockTrigger(period=1, period_unit="blocks", chain=Chain.ethereum)
 
@@ -236,13 +170,11 @@ trigger = BlockTrigger(period=1, period_unit="blocks", chain=Chain.ethereum)
 trigger = BlockTrigger(period=30, period_unit="seconds", chain=Chain.ethereum)
 ```
 
-#### 
-
-Class: `EventTrigger`
+#### Class: `EventTrigger`
 
 Execute agent when specific events are emitted.
 
-```
+```python
 @dataclass
 class EventTrigger(Trigger):
     contract_address: str
@@ -256,97 +188,33 @@ class EventTrigger(Trigger):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`contract_address`
-
-`str`
-
-Yes
-
-Contract address to monitor
-
-`event_sig`
-
-`str`
-
-Yes
-
-Event signature (e.g., "Transfer")
-
-`operator`
-
-`str`
-
-Yes
-
-Comparison operator
-
-`output_index`
-
-`str`
-
-Yes
-
-What to compare (e.g., "emitting\_contract")
-
-`operands`
-
-`List[str]`
-
-Yes
-
-Values to compare against
-
-`output_data_type`
-
-`List[str]`
-
-No
-
-ABI types for event arguments when contract is unverified
-
-`chain`
-
-`Chain`
-
-No
-
-Blockchain to monitor
+| Parameter          | Type        | Required | Description                                               |
+| ------------------ | ----------- | -------- | --------------------------------------------------------- |
+| `contract_address` | `str`       | Yes      | Contract address to monitor                               |
+| `event_sig`        | `str`       | Yes      | Event signature (e.g., "Transfer")                        |
+| `operator`         | `str`       | Yes      | Comparison operator                                       |
+| `output_index`     | `str`       | Yes      | What to compare (e.g., "emitting\_contract")              |
+| `operands`         | `List[str]` | Yes      | Values to compare against                                 |
+| `output_data_type` | `List[str]` | No       | ABI types for event arguments when contract is unverified |
+| `chain`            | `Chain`     | No       | Blockchain to monitor                                     |
 
 **Available Operators**
 
--   `compare_exact`: Exact match
-    
--   `one_of`: Value is in the list
-    
--   `not_one_of`: Value is not in the list
-    
--   `any`: Any value (no filtering)
-    
+* `compare_exact`: Exact match
+* `one_of`: Value is in the list
+* `not_one_of`: Value is not in the list
+* `any`: Any value (no filtering)
 
 **Available Output Indices**
 
--   `emitting_contract`: Contract that emitted the event
-    
--   `emitted_arg_0`, `emitted_arg_1`, etc.: Event arguments
-    
--   `tx_from`, `tx_to`: Transaction sender/recipient
-    
--   `block_number`, `block_timestamp`: Block information
-    
+* `emitting_contract`: Contract that emitted the event
+* `emitted_arg_0`, `emitted_arg_1`, etc.: Event arguments
+* `tx_from`, `tx_to`: Transaction sender/recipient
+* `block_number`, `block_timestamp`: Block information
 
 **Example**
 
-```
-
-
+```python
 # Monitor Transfer events from USDT contract (verified contract)
 trigger = EventTrigger(
     contract_address="0xdAC17F958D2ee523a2206206994597C13D831ec7",
@@ -367,13 +235,11 @@ trigger = EventTrigger(
 )
 ```
 
-#### 
-
-Class: `FunctionCallTrigger`
+#### Class: `FunctionCallTrigger`
 
 Execute agent when specific functions are called.
 
-```
+```python
 @dataclass
 class FunctionCallTrigger(Trigger):
     contract_address: str
@@ -389,100 +255,27 @@ class FunctionCallTrigger(Trigger):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`contract_address`
-
-`str`
-
-Yes
-
-Contract address to monitor
-
-`trace_sig`
-
-`str`
-
-Yes
-
-Function signature (e.g., "transfer")
-
-`operator`
-
-`str`
-
-Yes
-
-Comparison operator
-
-`output_index`
-
-`str`
-
-Yes
-
-What to compare
-
-`operands`
-
-`List[str]`
-
-Yes
-
-Values to compare against
-
-`input_data_type`
-
-`List[str]`
-
-No
-
-ABI types for function inputs when contract is unverified
-
-`output_data_type`
-
-`List[str]`
-
-No
-
-ABI types for function outputs when contract is unverified
-
-`chain`
-
-`Chain`
-
-No
-
-Blockchain to monitor
-
-`idl_json`
-
-`Dict`
-
-No
-
-Interface definition for solana contracts
+| Parameter          | Type        | Required | Description                                                |
+| ------------------ | ----------- | -------- | ---------------------------------------------------------- |
+| `contract_address` | `str`       | Yes      | Contract address to monitor                                |
+| `trace_sig`        | `str`       | Yes      | Function signature (e.g., "transfer")                      |
+| `operator`         | `str`       | Yes      | Comparison operator                                        |
+| `output_index`     | `str`       | Yes      | What to compare                                            |
+| `operands`         | `List[str]` | Yes      | Values to compare against                                  |
+| `input_data_type`  | `List[str]` | No       | ABI types for function inputs when contract is unverified  |
+| `output_data_type` | `List[str]` | No       | ABI types for function outputs when contract is unverified |
+| `chain`            | `Chain`     | No       | Blockchain to monitor                                      |
+| `idl_json`         | `Dict`      | No       | Interface definition for solana contracts                  |
 
 **Available Output Indices**
 
--   `trace_from`, `trace_to`: Function call sender/recipient
-    
--   `input_arg_0`, `input_arg_1`, etc.: Function arguments
-    
--   All event trigger indices are also available
-    
+* `trace_from`, `trace_to`: Function call sender/recipient
+* `input_arg_0`, `input_arg_1`, etc.: Function arguments
+* All event trigger indices are also available
 
 **Example**
 
-```
-
-
+```python
 # Monitor deposit function calls (verified contract)
 trigger = FunctionCallTrigger(
     contract_address="0x1234567890abcdef1234567890abcdef12345678",
@@ -504,13 +297,11 @@ trigger = FunctionCallTrigger(
 )
 ```
 
-#### 
-
-Class: `RITrigger`
+#### Class: `RITrigger`
 
 Execute agent flows after specific Risk Insights alert types are triggered.
 
-```
+```python
 @dataclass
 class RITrigger(Trigger):
     type_ids: List[str]
@@ -519,29 +310,10 @@ class RITrigger(Trigger):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`type_ids`
-
-`List[str]`
-
-Yes
-
-List of Risk Insights alert type IDs to monitor
-
-`chain`
-
-`Chain`
-
-No
-
-Blockchain to monitor (uses default)
+| Parameter  | Type        | Required | Description                                     |
+| ---------- | ----------- | -------- | ----------------------------------------------- |
+| `type_ids` | `List[str]` | Yes      | List of Risk Insights alert type IDs to monitor |
+| `chain`    | `Chain`     | No       | Blockchain to monitor (uses default)            |
 
 **Overview**
 
@@ -551,20 +323,14 @@ RITrigger allows you to create automated response flows that execute when specif
 
 **Example Use Cases**
 
--   **Automated Response**: Execute immediate actions when critical alerts are triggered
-    
--   **Enhanced Analysis**: Perform additional on-chain analysis when risks are detected
-    
--   **Cross-Protocol Monitoring**: React to alerts from multiple protocols simultaneously
-    
--   **Escalation Workflows**: Create multi-step response procedures for different alert types
-    
+* **Automated Response**: Execute immediate actions when critical alerts are triggered
+* **Enhanced Analysis**: Perform additional on-chain analysis when risks are detected
+* **Cross-Protocol Monitoring**: React to alerts from multiple protocols simultaneously
+* **Escalation Workflows**: Create multi-step response procedures for different alert types
 
 **Example**
 
-```
-
-
+```python
 # React to specific Risk Insights alert types
 ri_trigger = RITrigger(
     type_ids=["A-4102", "A-4010"],  # Exploit Suspected & Potential Targets alerts
@@ -633,9 +399,7 @@ agent.set_alert(response_alert)
 
 Monitor multiple alert types for comprehensive coverage:
 
-```
-
-
+```python
 # Comprehensive risk monitoring
 comprehensive_ri_trigger = RITrigger(
     type_ids=[
@@ -696,19 +460,15 @@ response_categorization_var = PythonProcessingVariable(
 agent.add_variable(response_categorization_var)
 ```
 
-### 
-
-Variables
+### Variables
 
 Variables extract and process data from various sources.
 
-#### 
-
-Base Class: `Variable`
+#### Base Class: `Variable`
 
 All variables inherit from this base class.
 
-```
+```python
 @dataclass
 class Variable(Model, ABC):
     var_name: str
@@ -716,29 +476,15 @@ class Variable(Model, ABC):
 
 **Common Parameters**
 
-Parameter
+| Parameter  | Type  | Required | Description                     |
+| ---------- | ----- | -------- | ------------------------------- |
+| `var_name` | `str` | Yes      | Name to reference this variable |
 
-Type
-
-Required
-
-Description
-
-`var_name`
-
-`str`
-
-Yes
-
-Name to reference this variable
-
-#### 
-
-Class: `ContextVariable`
+#### Class: `ContextVariable`
 
 Extract data from transaction and block context.
 
-```
+```python
 @dataclass
 class ContextVariable(Variable):
     output_index: str
@@ -746,84 +492,47 @@ class ContextVariable(Variable):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`output_index`
-
-`str`
-
-Yes
-
-What data to extract
-
-`var_name`
-
-`str`
-
-Yes
-
-Variable name
+| Parameter      | Type  | Required | Description          |
+| -------------- | ----- | -------- | -------------------- |
+| `output_index` | `str` | Yes      | What data to extract |
+| `var_name`     | `str` | Yes      | Variable name        |
 
 **Available Output Indices**
 
 **Block Information:**
 
--   `block_number`: Block height (int)
-    
--   `block_timestamp`: UTC timestamp (str)
-    
+* `block_number`: Block height (int)
+* `block_timestamp`: UTC timestamp (str)
 
 **Transaction Information (Event/Function triggers only):**
 
--   `tx_from`: Transaction sender (str)
-    
--   `tx_to`: Transaction recipient (str)
-    
--   `tx_value`: ETH value transferred (int, in wei)
-    
--   `txhash`: Transaction hash (str)
-    
--   `gas`, `gas_price`, `gas_used`: Gas information
-    
--   `nonce`: Transaction nonce
-    
--   `tx_status`: "tx\_success", "tx\_failed", or "tx\_partial\_fail"
-    
+* `tx_from`: Transaction sender (str)
+* `tx_to`: Transaction recipient (str)
+* `tx_value`: ETH value transferred (int, in wei)
+* `txhash`: Transaction hash (str)
+* `gas`, `gas_price`, `gas_used`: Gas information
+* `nonce`: Transaction nonce
+* `tx_status`: "tx\_success", "tx\_failed", or "tx\_partial\_fail"
 
 **Event Information (Event triggers only):**
 
--   `emitted_arg_0`, `emitted_arg_1`, etc.: Event arguments
-    
--   `emitting_contract`: Contract that emitted the event
-    
+* `emitted_arg_0`, `emitted_arg_1`, etc.: Event arguments
+* `emitting_contract`: Contract that emitted the event
 
 **Function Call Information (Function triggers only):**
 
--   `input_arg_0`, `input_arg_1`, etc.: Function arguments
-    
--   `trace_from`, `trace_to`: Call sender/recipient
-    
--   `trace_value`: ETH transferred in the call
-    
+* `input_arg_0`, `input_arg_1`, etc.: Function arguments
+* `trace_from`, `trace_to`: Call sender/recipient
+* `trace_value`: ETH transferred in the call
 
 **Raw Data:**
 
--   `logs`: Raw transaction logs (List)
-    
--   `traces`: Raw transaction traces (List)
-    
+* `logs`: Raw transaction logs (List)
+* `traces`: Raw transaction traces (List)
 
 **Example**
 
-```
-
-
+```python
 # Get current block number
 block_var = ContextVariable(
     output_index="block_number",
@@ -837,13 +546,11 @@ sender_var = ContextVariable(
 )
 ```
 
-#### 
-
-Class: `GenericContractReadVariable`
+#### Class: `GenericContractReadVariable`
 
 Read data from smart contracts using function calls.
 
-```
+```python
 @dataclass
 class GenericContractReadVariable(Variable):
     contract_address: str
@@ -857,88 +564,24 @@ class GenericContractReadVariable(Variable):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`contract_address`
-
-`str`
-
-Yes
-
-Contract address to call
-
-`func_sig`
-
-`str`
-
-Yes
-
-Function signature
-
-`output_index`
-
-`str`
-
-Yes
-
-Which output to capture
-
-`input`
-
-`List[str]`
-
-No
-
-Function arguments
-
-`input_data_type`
-
-`List[str]`
-
-No
-
-ABI types for function inputs when contract is unverified
-
-`output_data_type`
-
-`List[str]`
-
-No
-
-ABI types for function outputs when contract is unverified
-
-`chain`
-
-`Chain`
-
-No
-
-Blockchain to query
-
-`var_name`
-
-`str`
-
-Yes
-
-Variable name
+| Parameter          | Type        | Required | Description                                                |
+| ------------------ | ----------- | -------- | ---------------------------------------------------------- |
+| `contract_address` | `str`       | Yes      | Contract address to call                                   |
+| `func_sig`         | `str`       | Yes      | Function signature                                         |
+| `output_index`     | `str`       | Yes      | Which output to capture                                    |
+| `input`            | `List[str]` | No       | Function arguments                                         |
+| `input_data_type`  | `List[str]` | No       | ABI types for function inputs when contract is unverified  |
+| `output_data_type` | `List[str]` | No       | ABI types for function outputs when contract is unverified |
+| `chain`            | `Chain`     | No       | Blockchain to query                                        |
+| `var_name`         | `str`       | Yes      | Variable name                                              |
 
 **Output Indices**
 
--   `output_arg_0`, `output_arg_1`, etc.: Function return values
-    
+* `output_arg_0`, `output_arg_1`, etc.: Function return values
 
 **Example**
 
-```
-
-
+```python
 # Get USDT total supply (verified contract)
 supply_var = GenericContractReadVariable(
     contract_address="0xdAC17F958D2ee523a2206206994597C13D831ec7",
@@ -968,13 +611,11 @@ rate_var = GenericContractReadVariable(
 )
 ```
 
-#### 
-
-Class: `PythonProcessingVariable`
+#### Class: `PythonProcessingVariable`
 
 Execute custom Python code for complex logic.
 
-```
+```python
 @dataclass
 class PythonProcessingVariable(Variable):
     source_code: Union[Callable, str]
@@ -983,37 +624,11 @@ class PythonProcessingVariable(Variable):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`source_code`
-
-`Union[Callable, str]`
-
-Yes
-
-Python function or code string
-
-`entry_point`
-
-`str`
-
-No
-
-Function name if using code string
-
-`var_name`
-
-`str`
-
-Yes
-
-Variable name
+| Parameter     | Type                   | Required | Description                        |
+| ------------- | ---------------------- | -------- | ---------------------------------- |
+| `source_code` | `Union[Callable, str]` | Yes      | Python function or code string     |
+| `entry_point` | `str`                  | No       | Function name if using code string |
+| `var_name`    | `str`                  | Yes      | Variable name                      |
 
 **Function Signature**
 
@@ -1023,22 +638,14 @@ Your function must accept one parameter: `extracted_variables` (dict)
 
 **Standard Python Libraries:**
 
--   `json`: JSON operations
-    
--   `requests`: HTTP requests
-    
--   `pandas` (as `pd`): Data analysis
-    
--   `numpy` (as `np`): Numerical computing
-    
--   `datetime`: Date/time operations
-    
--   `math`: Mathematical functions
-    
--   `hashlib`: Cryptographic hashing
-    
--   `Web3`: Blockchain interactions
-    
+* `json`: JSON operations
+* `requests`: HTTP requests
+* `pandas` (as `pd`): Data analysis
+* `numpy` (as `np`): Numerical computing
+* `datetime`: Date/time operations
+* `math`: Mathematical functions
+* `hashlib`: Cryptographic hashing
+* `Web3`: Blockchain interactions
 
 **Available Global Functions**
 
@@ -1046,79 +653,46 @@ PythonProcessingVariable provides access to 16 utility functions for blockchain 
 
 **Blockchain Interaction Functions:**
 
--   `get_node(chain)` - Get Web3 instance for any supported chain
-    
-    -   Returns a Web3 instance connected to the specified blockchain
-        
-    -   Usage: `w3 = get_node('ethereum').w3`
-        
-    
--   `eth_call(chain, contract_address, func_sig, input_data_type, input, output_data_type, block_number="latest")` - Direct smart contract calls
-    
-    -   Makes direct contract calls using eth\_call
-        
-    -   Returns contract function output data
-        
-    
--   `generic_function_call(chain, contract_address, input, input_data_type, output_data_type, func_sig, block_number="latest", output_index=0)` - Generic contract interaction
-    
-    -   Returns: `{'output_args': [...]}` - Access results via `result["output_args"][0]`
-        
-    -   More flexible than eth\_call for complex contract interactions
-        
-    
--   `get_bitcoin_tx(txhash)` - Retrieve Bitcoin transaction data by hash
-    
-    -   Returns complete Bitcoin transaction object
-        
-    
+* `get_node(chain)` - Get Web3 instance for any supported chain
+  * Returns a Web3 instance connected to the specified blockchain
+  * Usage: `w3 = get_node('ethereum').w3`
+* `eth_call(chain, contract_address, func_sig, input_data_type, input, output_data_type, block_number="latest")` - Direct smart contract calls
+  * Makes direct contract calls using eth\_call
+  * Returns contract function output data
+* `generic_function_call(chain, contract_address, input, input_data_type, output_data_type, func_sig, block_number="latest", output_index=0)` - Generic contract interaction
+  * Returns: `{'output_args': [...]}` - Access results via `result["output_args"][0]`
+  * More flexible than eth\_call for complex contract interactions
+* `get_bitcoin_tx(txhash)` - Retrieve Bitcoin transaction data by hash
+  * Returns complete Bitcoin transaction object
 
 **Price & Data Functions:**
 
--   `get_price(price_source, asset, chain, ts=None, amount=1)` - Get asset prices
-    
-    -   `asset` parameter: Token contract address on the specified chain
-        
-    -   Returns: `{"price": price, "usd_value": usd_value, "decimals": decimals, "symbol": symbol}`
-        
-    -   `price_source`: "coingecko" or other supported sources
-        
-    
--   `get_contract_data(address, chain)` - Retrieve contract metadata
-    
-    -   Returns contract information and metadata
-        
-    
+* `get_price(price_source, asset, chain, ts=None, amount=1)` - Get asset prices
+  * `asset` parameter: Token contract address on the specified chain
+  * Returns: `{"price": price, "usd_value": usd_value, "decimals": decimals, "symbol": symbol}`
+  * `price_source`: "coingecko" or other supported sources
+* `get_contract_data(address, chain)` - Retrieve contract metadata
+  * Returns contract information and metadata
 
 **Hypernative API Functions:**
 
--   `hn_api_get(url, params=None)` - GET requests to Hypernative API
-    
--   `hn_api_post(url, data=None)` - POST requests to Hypernative API
-    
--   `hn_api_patch(url, data=None)` - PATCH requests to Hypernative API
-    
--   `hn_api_delete(url, params=None)` - DELETE requests to Hypernative API
-    
+* `hn_api_get(url, params=None)` - GET requests to Hypernative API
+* `hn_api_post(url, data=None)` - POST requests to Hypernative API
+* `hn_api_patch(url, data=None)` - PATCH requests to Hypernative API
+* `hn_api_delete(url, params=None)` - DELETE requests to Hypernative API
 
 **Utility Functions:**
 
--   `is_eoa(address, chain, block_number=None)` - Check if address is an Externally Owned Account
-    
--   `get_selector_from_func_sig(func_sig, chain)` - Calculate function selectors from signatures
-    
--   `disassemble_bytecode(code)` - Disassemble bytecode into human-readable assembly
-    
--   `is_hex(s, length=0)` - Validate hexadecimal strings with optional length check
-    
--   `sanitize_key(key)` - Sanitize strings for use as keys
-    
--   `read_contract_data(x)` - Process and normalize contract data structures
-    
+* `is_eoa(address, chain, block_number=None)` - Check if address is an Externally Owned Account
+* `get_selector_from_func_sig(func_sig, chain)` - Calculate function selectors from signatures
+* `disassemble_bytecode(code)` - Disassemble bytecode into human-readable assembly
+* `is_hex(s, length=0)` - Validate hexadecimal strings with optional length check
+* `sanitize_key(key)` - Sanitize strings for use as keys
+* `read_contract_data(x)` - Process and normalize contract data structures
 
 **Global Functions Examples**
 
-```
+```python
 def treasury_balance_analysis(extracted_variables):
     """Real example showing actual function usage patterns"""
     
@@ -1182,20 +756,14 @@ def multi_chain_web3_example(extracted_variables):
 
 **Important:** Python processing has specific limitations:
 
--   **No in-place operators**: Avoid `+=`, `-=`, `*=`, `/=`
-    
--   **No tuple unpacking in loops**: Avoid `for key, value in dict.items()`
-    
--   **Import statements**: Must be inside the function
-    
--   **Single line statements**: Avoid inline if statements
-    
+* **No in-place operators**: Avoid `+=`, `-=`, `*=`, `/=`
+* **No tuple unpacking in loops**: Avoid `for key, value in dict.items()`
+* **Import statements**: Must be inside the function
+* **Single line statements**: Avoid inline if statements
 
 **Good Patterns:**
 
-```
-
-
+```python
 # Good: Explicit addition
 total = total + new_value
 
@@ -1212,9 +780,7 @@ else:
 
 **Bad Patterns:**
 
-```
-
-
+```python
 # Bad: In-place operators
 total += new_value
 
@@ -1228,7 +794,7 @@ result = value_a if condition else value_b
 
 **Example**
 
-```
+```python
 def calculate_percentage(extracted_variables):
     old_value = extracted_variables["old_value"]
     new_value = extracted_variables["new_value"]
@@ -1273,13 +839,11 @@ python_var = PythonProcessingVariable(
 )
 ```
 
-#### 
-
-Class: `JsonEndpointVariable`
+#### Class: `JsonEndpointVariable`
 
 Fetch data from external APIs.
 
-```
+```python
 @dataclass
 class JsonEndpointVariable(Variable):
     url: str
@@ -1290,75 +854,29 @@ class JsonEndpointVariable(Variable):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`url`
-
-`str`
-
-Yes
-
-API endpoint URL
-
-`method`
-
-`str`
-
-Yes
-
-HTTP method ("get", "post", "patch")
-
-`json_path`
-
-`str`
-
-Yes
-
-Path to extract from response
-
-`json_path_engine`
-
-`str`
-
-Yes
-
-Path engine to use
-
-`var_name`
-
-`str`
-
-Yes
-
-Variable name
+| Parameter          | Type  | Required | Description                          |
+| ------------------ | ----- | -------- | ------------------------------------ |
+| `url`              | `str` | Yes      | API endpoint URL                     |
+| `method`           | `str` | Yes      | HTTP method ("get", "post", "patch") |
+| `json_path`        | `str` | Yes      | Path to extract from response        |
+| `json_path_engine` | `str` | Yes      | Path engine to use                   |
+| `var_name`         | `str` | Yes      | Variable name                        |
 
 **Supported Path Engines**
 
 **Recommended:**
 
--   `jsonata`: Advanced expressions, transformations, and calculations - **Default engine**
-    
+* `jsonata`: Advanced expressions, transformations, and calculations - **Default engine**
 
 **Alternatives:**
 
--   `jmespath`: Simple JSON field extraction (legacy compatibility)
-    
--   `jq`: Complex JSON processing (for jq experts)
-    
--   `jsonpath-ng`: XPath-like syntax
-    
+* `jmespath`: Simple JSON field extraction (legacy compatibility)
+* `jq`: Complex JSON processing (for jq experts)
+* `jsonpath-ng`: XPath-like syntax
 
 **Example**
 
-```
-
-
+```python
 # Get ETH price with category from CoinGecko (recommended: jsonata)
 price_var = JsonEndpointVariable(
     url="https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",
@@ -1378,13 +896,11 @@ simple_price_var = JsonEndpointVariable(
 )
 ```
 
-#### 
-
-Class: `HistoricalEventsVariable`
+#### Class: `HistoricalEventsVariable`
 
 Query historical blockchain events.
 
-```
+```python
 @dataclass
 class HistoricalEventsVariable(Variable):
     chain: Chain
@@ -1398,83 +914,20 @@ class HistoricalEventsVariable(Variable):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`chain`
-
-`Chain`
-
-Yes
-
-Blockchain to query
-
-`contract_address`
-
-`str`
-
-Yes
-
-Contract to query
-
-`event_name`
-
-`str`
-
-Yes
-
-Event name to fetch
-
-`event_filters`
-
-`Dict[str, str]`
-
-No
-
-Filters for indexed parameters
-
-`abi_string`
-
-`str`
-
-No
-
-Full ABI JSON string for unverified contracts
-
-`from_block`
-
-`str`
-
-No
-
-Starting block number
-
-`to_block`
-
-`str`
-
-No
-
-Ending block number
-
-`var_name`
-
-`str`
-
-Yes
-
-Variable name
+| Parameter          | Type             | Required | Description                                   |
+| ------------------ | ---------------- | -------- | --------------------------------------------- |
+| `chain`            | `Chain`          | Yes      | Blockchain to query                           |
+| `contract_address` | `str`            | Yes      | Contract to query                             |
+| `event_name`       | `str`            | Yes      | Event name to fetch                           |
+| `event_filters`    | `Dict[str, str]` | No       | Filters for indexed parameters                |
+| `abi_string`       | `str`            | No       | Full ABI JSON string for unverified contracts |
+| `from_block`       | `str`            | No       | Starting block number                         |
+| `to_block`         | `str`            | No       | Ending block number                           |
+| `var_name`         | `str`            | Yes      | Variable name                                 |
 
 **Example**
 
-```
-
-
+```python
 # Get Transfer events from Binance wallet (verified contract)
 history_var = HistoricalEventsVariable(
     chain=Chain.ETHEREUM,
@@ -1494,13 +947,11 @@ pool_events_var = HistoricalEventsVariable(
 )
 ```
 
-#### 
-
-Class: `ContractDataServiceVariable`
+#### Class: `ContractDataServiceVariable`
 
 Retrieve comprehensive contract data and analytics.
 
-```
+```python
 @dataclass
 class ContractDataServiceVariable(Variable):
     address: str
@@ -1510,49 +961,16 @@ class ContractDataServiceVariable(Variable):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`address`
-
-`str`
-
-Yes
-
-Contract address to analyze
-
-`chain`
-
-`Chain`
-
-No
-
-Blockchain to query
-
-`output_index`
-
-`str`
-
-No
-
-Specific data field to extract
-
-`var_name`
-
-`str`
-
-Yes
-
-Variable name
+| Parameter      | Type    | Required | Description                    |
+| -------------- | ------- | -------- | ------------------------------ |
+| `address`      | `str`   | Yes      | Contract address to analyze    |
+| `chain`        | `Chain` | No       | Blockchain to query            |
+| `output_index` | `str`   | No       | Specific data field to extract |
+| `var_name`     | `str`   | Yes      | Variable name                  |
 
 **Example**
 
-```
+```python
 cds_var = ContractDataServiceVariable(
     address="0x1234567890abcdef1234567890abcdef12345678",
     chain=Chain.ETHEREUM,
@@ -1561,13 +979,11 @@ cds_var = ContractDataServiceVariable(
 )
 ```
 
-#### 
-
-Class: `JsonProcessingVariable`
+#### Class: `JsonProcessingVariable`
 
 Process and extract data from JSON structures.
 
-```
+```python
 @dataclass
 class JsonProcessingVariable(Variable):
     json_path: str
@@ -1576,70 +992,34 @@ class JsonProcessingVariable(Variable):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`json_path`
-
-`str`
-
-Yes
-
-Path to extract from JSON
-
-`json_path_engine`
-
-`str`
-
-No
-
-Engine for path processing
-
-`var_name`
-
-`str`
-
-Yes
-
-Variable name
+| Parameter          | Type  | Required | Description                |
+| ------------------ | ----- | -------- | -------------------------- |
+| `json_path`        | `str` | Yes      | Path to extract from JSON  |
+| `json_path_engine` | `str` | No       | Engine for path processing |
+| `var_name`         | `str` | Yes      | Variable name              |
 
 **Supported Engines**
 
 **Recommended (Primary Choice):**
 
--   `jsonata`: Advanced transformations, calculations, and conditional logic - **Default engine**
-    
+* `jsonata`: Advanced transformations, calculations, and conditional logic - **Default engine**
 
 **Alternative Engines:**
 
--   `jmespath`: Simple JSON field extraction (legacy compatibility)
-    
--   `jq`: Complex JSON transformations (for advanced users familiar with jq)
-    
--   `jsonpath-ng`: XPath-like syntax (for users with XPath background)
-    
+* `jmespath`: Simple JSON field extraction (legacy compatibility)
+* `jq`: Complex JSON transformations (for advanced users familiar with jq)
+* `jsonpath-ng`: XPath-like syntax (for users with XPath background)
 
 **Engine Selection Guide:**
 
--   **Use jsonata for**: Calculations, transformations, conditionals, complex expressions
-    
--   **Use jmespath for**: Simple field access like `data.field` or `items[0].name`
-    
--   **Use jq for**: Advanced users who prefer jq syntax for complex transformations
-    
--   **Use jsonpath-ng for**: Users familiar with XPath syntax patterns
-    
+* **Use jsonata for**: Calculations, transformations, conditionals, complex expressions
+* **Use jmespath for**: Simple field access like `data.field` or `items[0].name`
+* **Use jq for**: Advanced users who prefer jq syntax for complex transformations
+* **Use jsonpath-ng for**: Users familiar with XPath syntax patterns
 
 **Example**
 
-```
-
-
+```python
 # Recommended: JSONata for complex processing
 json_var = JsonProcessingVariable(
     json_path="data.transactions[0].amount > 1000000 ? 'large' : 'small'",
@@ -1655,13 +1035,11 @@ simple_var = JsonProcessingVariable(
 )
 ```
 
-#### 
-
-Class: `GetSecretVariable`
+#### Class: `GetSecretVariable`
 
 Retrieve stored secrets.
 
-```
+```python
 @dataclass
 class GetSecretVariable(Variable):
     secret_name: str
@@ -1669,20 +1047,18 @@ class GetSecretVariable(Variable):
 
 **Example**
 
-```
+```python
 secret_var = GetSecretVariable(
     secret_name="api_key",
     var_name="my_api_key"
 )
 ```
 
-#### 
-
-Class: `PriceServiceVariable`
+#### Class: `PriceServiceVariable`
 
 Retrieve asset prices using Hypernative's integrated price service.
 
-```
+```python
 @dataclass
 class PriceServiceVariable(Variable):
     price_source: str
@@ -1695,75 +1071,19 @@ class PriceServiceVariable(Variable):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`price_source`
-
-`str`
-
-Yes
-
-Price data source (e.g., "coingecko")
-
-`asset`
-
-`str`
-
-Yes
-
-Asset identifier (contract address or coin ID)
-
-`amount`
-
-`Optional[int]`
-
-No
-
-Amount for price calculation (default: 1)
-
-`chain`
-
-`Chain`
-
-No
-
-Blockchain to query (uses default if not set)
-
-`scale_to_decimals`
-
-`Optional[bool]`
-
-No
-
-Whether to scale the price to token decimals
-
-`pre_conditions`
-
-`Optional[List[str]]`
-
-No
-
-Conditions that must be met before execution
-
-`var_name`
-
-`str`
-
-Yes
-
-Variable name
+| Parameter           | Type                  | Required | Description                                    |
+| ------------------- | --------------------- | -------- | ---------------------------------------------- |
+| `price_source`      | `str`                 | Yes      | Price data source (e.g., "coingecko")          |
+| `asset`             | `str`                 | Yes      | Asset identifier (contract address or coin ID) |
+| `amount`            | `Optional[int]`       | No       | Amount for price calculation (default: 1)      |
+| `chain`             | `Chain`               | No       | Blockchain to query (uses default if not set)  |
+| `scale_to_decimals` | `Optional[bool]`      | No       | Whether to scale the price to token decimals   |
+| `pre_conditions`    | `Optional[List[str]]` | No       | Conditions that must be met before execution   |
+| `var_name`          | `str`                 | Yes      | Variable name                                  |
 
 **Example**
 
-```
-
-
+```python
 # Get token price using contract address
 token_price_var = PriceServiceVariable(
     price_source="coingecko",
@@ -1785,13 +1105,11 @@ eth_price_var = PriceServiceVariable(
 agent.add_variable(eth_price_var)
 ```
 
-#### 
-
-Class: `TokenBalanceVariable`
+#### Class: `TokenBalanceVariable`
 
 Monitor token balances for any address and token with automatic decimal scaling.
 
-```
+```python
 @dataclass
 class TokenBalanceVariable(Variable):
     token_holder_address: str
@@ -1803,67 +1121,18 @@ class TokenBalanceVariable(Variable):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`token_holder_address`
-
-`str`
-
-Yes
-
-Address whose balance to check
-
-`token_address`
-
-`str`
-
-No
-
-ERC-20 token contract address (omit for native)
-
-`native_token`
-
-`bool`
-
-No
-
-Set to True for native token balance (ETH, BNB)
-
-`scale_to_decimals`
-
-`bool`
-
-No
-
-Automatically scale to human-readable format
-
-`chain`
-
-`Chain`
-
-No
-
-Blockchain to query (uses default if not set)
-
-`var_name`
-
-`str`
-
-Yes
-
-Variable name
+| Parameter              | Type    | Required | Description                                     |
+| ---------------------- | ------- | -------- | ----------------------------------------------- |
+| `token_holder_address` | `str`   | Yes      | Address whose balance to check                  |
+| `token_address`        | `str`   | No       | ERC-20 token contract address (omit for native) |
+| `native_token`         | `bool`  | No       | Set to True for native token balance (ETH, BNB) |
+| `scale_to_decimals`    | `bool`  | No       | Automatically scale to human-readable format    |
+| `chain`                | `Chain` | No       | Blockchain to query (uses default if not set)   |
+| `var_name`             | `str`   | Yes      | Variable name                                   |
 
 **Examples**
 
-```
-
-
+```python
 # Monitor USDT balance for whale wallet
 whale_usdt_var = TokenBalanceVariable(
     token_holder_address="0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643",
@@ -1890,13 +1159,11 @@ raw_token_var = TokenBalanceVariable(
 agent.add_variable(raw_token_var)
 ```
 
-#### 
-
-Class: `GetValueVariable`
+#### Class: `GetValueVariable`
 
 Retrieve previously stored values from persistent storage.
 
-```
+```python
 @dataclass
 class GetValueVariable(Variable):
     key: str
@@ -1904,35 +1171,14 @@ class GetValueVariable(Variable):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`key`
-
-`str`
-
-Yes
-
-Storage key to retrieve value from
-
-`var_name`
-
-`str`
-
-Yes
-
-Variable name
+| Parameter  | Type  | Required | Description                        |
+| ---------- | ----- | -------- | ---------------------------------- |
+| `key`      | `str` | Yes      | Storage key to retrieve value from |
+| `var_name` | `str` | Yes      | Variable name                      |
 
 **Example**
 
-```
-
-
+```python
 # Retrieve previously stored balance
 get_var = GetValueVariable(
     key="last_balance",
@@ -1952,13 +1198,11 @@ def calculate_change(extracted_variables):
     return {"change": change, "is_first_run": False}
 ```
 
-#### 
-
-Class: `SetValueVariable`
+#### Class: `SetValueVariable`
 
 Store values in persistent storage for future retrieval.
 
-```
+```python
 @dataclass
 class SetValueVariable(Variable):
     key: str
@@ -1967,43 +1211,15 @@ class SetValueVariable(Variable):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`key`
-
-`str`
-
-Yes
-
-Storage key for the value
-
-`value`
-
-`str`
-
-Yes
-
-Value to store (use extracted\_variables reference)
-
-`var_name`
-
-`str`
-
-Yes
-
-Variable name
+| Parameter  | Type  | Required | Description                                         |
+| ---------- | ----- | -------- | --------------------------------------------------- |
+| `key`      | `str` | Yes      | Storage key for the value                           |
+| `value`    | `str` | Yes      | Value to store (use extracted\_variables reference) |
+| `var_name` | `str` | Yes      | Variable name                                       |
 
 **Example**
 
-```
-
-
+```python
 # Store current balance for next execution
 set_var = SetValueVariable(
     key="last_balance",
@@ -2037,7 +1253,7 @@ agent.add_variable(store_var)
 
 Use GetValueVariable and SetValueVariable together for stateful monitoring:
 
-```
+```python
 from invariantive.model.variable import GetValueVariable, SetValueVariable, PythonProcessingVariable
 
 # 1. Retrieve previous state
@@ -2099,13 +1315,11 @@ supply_alert = AlertConfig(
 agent.set_alert(supply_alert)
 ```
 
-#### 
-
-Class: `IsInListVariable`
+#### Class: `IsInListVariable`
 
 Check if an address exists in a managed address list.
 
-```
+```python
 @dataclass
 class IsInListVariable(Variable):
     list_uuid: str
@@ -2115,51 +1329,16 @@ class IsInListVariable(Variable):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`list_uuid`
-
-`str`
-
-Yes
-
-UUID of the managed address list
-
-`address`
-
-`str`
-
-Yes
-
-Address to check for existence in list
-
-`chain`
-
-`Chain`
-
-No
-
-Blockchain to check on (uses default)
-
-`var_name`
-
-`str`
-
-Yes
-
-Variable name
+| Parameter   | Type    | Required | Description                            |
+| ----------- | ------- | -------- | -------------------------------------- |
+| `list_uuid` | `str`   | Yes      | UUID of the managed address list       |
+| `address`   | `str`   | Yes      | Address to check for existence in list |
+| `chain`     | `Chain` | No       | Blockchain to check on (uses default)  |
+| `var_name`  | `str`   | Yes      | Variable name                          |
 
 **Example**
 
-```
-
-
+```python
 # Check if sender is in whitelist
 whitelist_check_var = IsInListVariable(
     list_uuid="550e8400-e29b-41d4-a716-446655440000",
@@ -2178,13 +1357,11 @@ whitelist_alert = AlertConfig(
 agent.set_alert(whitelist_alert)
 ```
 
-#### 
-
-Class: `AddToListVariable`
+#### Class: `AddToListVariable`
 
 Dynamically add addresses to a managed address list.
 
-```
+```python
 @dataclass
 class AddToListVariable(Variable):
     list_uuid: str
@@ -2195,59 +1372,17 @@ class AddToListVariable(Variable):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`list_uuid`
-
-`str`
-
-Yes
-
-UUID of the managed address list
-
-`address`
-
-`str`
-
-Yes
-
-Address to add to the list
-
-`note`
-
-`str`
-
-No
-
-Optional note or reason for addition
-
-`chain`
-
-`Chain`
-
-No
-
-Blockchain context (uses default)
-
-`var_name`
-
-`str`
-
-Yes
-
-Variable name
+| Parameter   | Type    | Required | Description                          |
+| ----------- | ------- | -------- | ------------------------------------ |
+| `list_uuid` | `str`   | Yes      | UUID of the managed address list     |
+| `address`   | `str`   | Yes      | Address to add to the list           |
+| `note`      | `str`   | No       | Optional note or reason for addition |
+| `chain`     | `Chain` | No       | Blockchain context (uses default)    |
+| `var_name`  | `str`   | Yes      | Variable name                        |
 
 **Example**
 
-```
-
-
+```python
 # Add large transfer recipient to watchlist
 add_to_watchlist_var = AddToListVariable(
     list_uuid="550e8400-e29b-41d4-a716-446655440001",
@@ -2279,17 +1414,13 @@ conditional_add_var = AddToListVariable(
 agent.add_variable(conditional_add_var)
 ```
 
-### 
-
-Alert Configuration
+### Alert Configuration
 
 Define when and how to send notifications.
 
-#### 
+#### Class: `AlertConfig`
 
-Class: `AlertConfig`
-
-```
+```python
 @dataclass
 class AlertConfig(Model):
     var_name: str
@@ -2303,118 +1434,48 @@ class AlertConfig(Model):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`var_name`
-
-`str`
-
-Yes
-
-Variable to monitor
-
-`operator`
-
-`str`
-
-Yes
-
-Comparison operator
-
-`operands`
-
-`List[Union[float, int, bool]]`
-
-Yes
-
-Values to compare against
-
-`description`
-
-`str`
-
-Yes
-
-Alert message template
-
-`involved_assets`
-
-`Dict[str, str]`
-
-No
-
-Map variable names to asset aliases
-
-`is_one_shot`
-
-`bool`
-
-No
-
-Whether alert triggers only once
-
-`type_id`
-
-`str`
-
-No
-
-Custom alert type identifier
+| Parameter         | Type                            | Required | Description                         |
+| ----------------- | ------------------------------- | -------- | ----------------------------------- |
+| `var_name`        | `str`                           | Yes      | Variable to monitor                 |
+| `operator`        | `str`                           | Yes      | Comparison operator                 |
+| `operands`        | `List[Union[float, int, bool]]` | Yes      | Values to compare against           |
+| `description`     | `str`                           | Yes      | Alert message template              |
+| `involved_assets` | `Dict[str, str]`                | No       | Map variable names to asset aliases |
+| `is_one_shot`     | `bool`                          | No       | Whether alert triggers only once    |
+| `type_id`         | `str`                           | No       | Custom alert type identifier        |
 
 **Available Operators**
 
 **Comparison Operators:**
 
--   `gt`: Greater than
-    
--   `gte`: Greater than or equal
-    
--   `lt`: Less than
-    
--   `lte`: Less than or equal
-    
--   `compare_exact`: Exact match
-    
--   `ne`: Not equal
-    
--   `one_of`: Value is in list
-    
--   `not_one_of`: Value is not in list
-    
--   `in_range`: Value is between two numbers (inclusive)
-    
--   `out_range`: Value is outside range
-    
--   `any`: Always true
-    
+* `gt`: Greater than
+* `gte`: Greater than or equal
+* `lt`: Less than
+* `lte`: Less than or equal
+* `compare_exact`: Exact match
+* `ne`: Not equal
+* `one_of`: Value is in list
+* `not_one_of`: Value is not in list
+* `in_range`: Value is between two numbers (inclusive)
+* `out_range`: Value is outside range
+* `any`: Always true
 
 **Address Operators:**
 
--   `is_contract`: Address is a smart contract
-    
--   `is_eoa`: Address is an externally owned account
-    
+* `is_contract`: Address is a smart contract
+* `is_eoa`: Address is an externally owned account
 
 **Time-Based Operators:**
 
--   `changed_by`: Value changed by threshold over time period
-    
--   `increased_by`: Value increased by threshold over time period
-    
--   `decreased_by`: Value decreased by threshold over time period
-    
+* `changed_by`: Value changed by threshold over time period
+* `increased_by`: Value increased by threshold over time period
+* `decreased_by`: Value decreased by threshold over time period
 
 **Time-Based Operator Parameters**
 
 For `changed_by`, `increased_by`, and `decreased_by`, use this operand format:
 
-```
+```python
 operands=[{
     "threshold": 10,                    # Amount of change
     "threshold_type": "absolute",       # "absolute" or "relative"
@@ -2427,7 +1488,7 @@ operands=[{
 
 Use `{{variable_name}}` in descriptions to include variable values:
 
-```
+```python
 description="Balance changed from {{old_balance}} to {{new_balance}}"
 ```
 
@@ -2437,7 +1498,7 @@ When deploying agents to production, configure notification channels to receive 
 
 **Channel Configuration Format:**
 
-```
+```python
 channels_configurations = [
     {"id": 1337},  # Channel ID from Hypernative platform
     {"id": 1275},  # Multiple channels supported
@@ -2447,14 +1508,12 @@ channels_configurations = [
 
 **Getting Channel IDs:**
 
--   **Platform UI**: Navigate to notification channels, click on desired channel, copy ID from URL
-    
+* **Platform UI**: Navigate to notification channels, click on desired channel, copy ID from URL
+* **API**: Use [Get Notification Channels API](https://docs.hypernative.xyz/hypernative-product-docs/hypernative-api/notification-channels/getnotificationchannels)
 
 **Deployment with Channels:**
 
-```
-
-
+```python
 # Deploy agent with notification channels
 agent_id = agent.deploy(
     agent_name="my_monitoring_agent",
@@ -2465,9 +1524,7 @@ agent_id = agent.deploy(
 
 **Example**
 
-```
-
-
+```python
 # Basic alert configuration
 alert = AlertConfig(
     var_name="total_supply",
@@ -2501,17 +1558,13 @@ else:
     print("Deployment failed - check channel IDs and configuration")
 ```
 
-### 
-
-Run Configuration
+### Run Configuration
 
 Configure how to execute your agent.
 
-#### 
+#### Class: `RunConfig`
 
-Class: `RunConfig`
-
-```
+```python
 @dataclass
 class RunConfig(Model):
     chain: Chain = field(default_factory=get_default_chain)
@@ -2521,52 +1574,22 @@ class RunConfig(Model):
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`chain`
-
-`Chain`
-
-No
-
-Blockchain to run on
-
-`hashes`
-
-`List[str]`
-
-No
-
-Specific transaction hashes
-
-`blocks`
-
-`List[int]`
-
-No
-
-Specific block numbers
+| Parameter | Type        | Required | Description                 |
+| --------- | ----------- | -------- | --------------------------- |
+| `chain`   | `Chain`     | No       | Blockchain to run on        |
+| `hashes`  | `List[str]` | No       | Specific transaction hashes |
+| `blocks`  | `List[int]` | No       | Specific block numbers      |
 
 **Note:** Either `hashes` or `blocks` must be provided.
 
 **Special Values**
 
--   `blocks=[0]`: Run on the latest block
-    
--   Multiple values: Run on all specified blocks/transactions
-    
+* `blocks=[0]`: Run on the latest block
+* Multiple values: Run on all specified blocks/transactions
 
 **Example**
 
-```
-
-
+```python
 # Test on specific blocks
 run_config = RunConfig(
     chain=Chain.ETHEREUM,
@@ -2586,17 +1609,13 @@ run_config = RunConfig(
 )
 ```
 
-### 
-
-Conditions
+### Conditions
 
 Add additional filtering to triggers.
 
-#### 
+#### Class: `Condition`
 
-Class: `Condition`
-
-```
+```python
 @dataclass
 class Condition:
     output_index: str
@@ -2606,43 +1625,15 @@ class Condition:
 
 **Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`output_index`
-
-`str`
-
-Yes
-
-What to compare
-
-`operator`
-
-`str`
-
-Yes
-
-Comparison operator
-
-`operands`
-
-`List[str]`
-
-Yes
-
-Values to compare against
+| Parameter      | Type        | Required | Description               |
+| -------------- | ----------- | -------- | ------------------------- |
+| `output_index` | `str`       | Yes      | What to compare           |
+| `operator`     | `str`       | Yes      | Comparison operator       |
+| `operands`     | `List[str]` | Yes      | Values to compare against |
 
 **Example**
 
-```
-
-
+```python
 # Only process large transfers
 condition = Condition(
     output_index="emitted_arg_2",  # Transfer amount
@@ -2653,17 +1644,13 @@ condition = Condition(
 trigger.add_condition(condition)
 ```
 
-### 
+### Base Classes
 
-Base Classes
-
-#### 
-
-Class: `Model`
+#### Class: `Model`
 
 Abstract base class for all SDK models with type validation and serialization.
 
-```
+```python
 from abc import ABC, abstractmethod
 
 class Model(ABC):
@@ -2677,24 +1664,19 @@ class Model(ABC):
 
 **Features**
 
--   **Automatic Type Validation**: All fields are validated against their type hints
-    
--   **JSON Serialization**: Abstract method for converting to dictionary format
-    
--   **Beartype Integration**: Runtime type checking for all model fields
-    
+* **Automatic Type Validation**: All fields are validated against their type hints
+* **JSON Serialization**: Abstract method for converting to dictionary format
+* **Beartype Integration**: Runtime type checking for all model fields
 
 **Usage**
 
 All model classes (Agent, AlertConfig, RunConfig, etc.) inherit from this base class and benefit from automatic type validation.
 
-#### 
-
-Class: `Variable` (Abstract)
+#### Class: `Variable` (Abstract)
 
 Base class for all variable types used in data extraction.
 
-```
+```python
 @dataclass
 class Variable(Model, ABC):
     var_name: str
@@ -2702,50 +1684,28 @@ class Variable(Model, ABC):
 
 **Common Parameters**
 
-Parameter
-
-Type
-
-Required
-
-Description
-
-`var_name`
-
-`str`
-
-Yes
-
-Unique name to reference this variable
+| Parameter  | Type  | Required | Description                            |
+| ---------- | ----- | -------- | -------------------------------------- |
+| `var_name` | `str` | Yes      | Unique name to reference this variable |
 
 **Inheritance**
 
 All variable classes inherit from this base:
 
--   `ContextVariable`
-    
--   `ContractDataServiceVariable`
-    
--   `GenericContractReadVariable`
-    
--   `PythonProcessingVariable`
-    
--   `JsonEndpointVariable`
-    
--   `HistoricalEventsVariable`
-    
--   `GetSecretVariable`
-    
--   `JsonProcessingVariable`
-    
+* `ContextVariable`
+* `ContractDataServiceVariable`
+* `GenericContractReadVariable`
+* `PythonProcessingVariable`
+* `JsonEndpointVariable`
+* `HistoricalEventsVariable`
+* `GetSecretVariable`
+* `JsonProcessingVariable`
 
-#### 
-
-Class: `Trigger` (Abstract)
+#### Class: `Trigger` (Abstract)
 
 Base class for all trigger types that define when agents execute.
 
-```
+```python
 @dataclass
 class Trigger(Model, ABC):
     @abstractmethod
@@ -2761,198 +1721,117 @@ class Trigger(Model, ABC):
 
 **Features**
 
--   **Condition Support**: Most triggers can have conditions added
-    
--   **Runtime Creation**: Creates internal trigger objects for execution
-    
--   **Type Safety**: Ensures proper trigger configuration
-    
+* **Condition Support**: Most triggers can have conditions added
+* **Runtime Creation**: Creates internal trigger objects for execution
+* **Type Safety**: Ensures proper trigger configuration
 
 **Inheritance**
 
 All trigger classes inherit from this base:
 
--   `EventTrigger`
-    
--   `FunctionCallTrigger`
-    
--   `BlockTrigger`
-    
+* `EventTrigger`
+* `FunctionCallTrigger`
+* `BlockTrigger`
 
-### 
+### Enums and Constants
 
-Enums and Constants
-
-#### 
-
-Enum: `Chain`
+#### Enum: `Chain`
 
 Comprehensive list of supported blockchain networks.
 
-```
+```python
 from invariantive.common.consts import Chain
 ```
 
 **Major EVM Chains**
 
--   `Chain.ethereum`: Ethereum Mainnet
-    
--   `Chain.arbitrum`: Arbitrum One
-    
--   `Chain.base`: Base (Coinbase L2)
-    
--   `Chain.polygon`: Polygon (formerly Matic)
-    
--   `Chain.optimism`: Optimism
-    
--   `Chain.avalanche`: Avalanche C-Chain
-    
--   `Chain.bsc`: Binance Smart Chain
-    
--   `Chain.fantom`: Fantom Opera
-    
--   `Chain.gnosis`: Gnosis Chain (formerly xDai)
-    
+* `Chain.ethereum`: Ethereum Mainnet
+* `Chain.arbitrum`: Arbitrum One
+* `Chain.base`: Base (Coinbase L2)
+* `Chain.polygon`: Polygon (formerly Matic)
+* `Chain.optimism`: Optimism
+* `Chain.avalanche`: Avalanche C-Chain
+* `Chain.bsc`: Binance Smart Chain
+* `Chain.fantom`: Fantom Opera
+* `Chain.gnosis`: Gnosis Chain (formerly xDai)
 
 **Layer 2 & Scaling Solutions**
 
--   `Chain.linea`: Linea
-    
--   `Chain.scroll`: Scroll
-    
--   `Chain.zksync_era_mainnet`: zkSync Era
-    
--   `Chain.polygon_zkevm`: Polygon zkEVM
-    
--   `Chain.blast`: Blast L2
-    
--   `Chain.mode`: Mode Network
-    
--   `Chain.fraxtal`: Fraxtal
-    
--   `Chain.mantle`: Mantle Network
-    
--   `Chain.astar`: Astar
-    
--   `Chain.astar_zkevm`: Astar zkEVM
-    
--   `Chain.zkatana`: zkKatana Testnet
-    
+* `Chain.linea`: Linea
+* `Chain.scroll`: Scroll
+* `Chain.zksync_era_mainnet`: zkSync Era
+* `Chain.polygon_zkevm`: Polygon zkEVM
+* `Chain.blast`: Blast L2
+* `Chain.mode`: Mode Network
+* `Chain.fraxtal`: Fraxtal
+* `Chain.mantle`: Mantle Network
+* `Chain.astar`: Astar
+* `Chain.astar_zkevm`: Astar zkEVM
+* `Chain.zkatana`: zkKatana Testnet
 
 **Emerging EVM Chains**
 
--   `Chain.b3`: B3
-    
--   `Chain.berachain`: Berachain
-    
--   `Chain.hyperliquid_evm`: Hyperliquid EVM
-    
--   `Chain.ink`: Ink
-    
--   `Chain.ink_sand`: Ink Sandbox
-    
--   `Chain.ink_sepolia`: Ink Sepolia
-    
--   `Chain.kinto`: Kinto
-    
--   `Chain.manta_pacific`: Manta Pacific
-    
--   `Chain.sei_evm`: Sei EVM
-    
--   `Chain.zircuit`: Zircuit
-    
--   `Chain.zircuit_beta`: Zircuit Beta
-    
--   `Chain.zircuit_mainnet`: Zircuit Mainnet
-    
--   `Chain.core`: Core Chain
-    
--   `Chain.corn`: Corn Network
-    
--   `Chain.deri`: Deri Protocol
-    
--   `Chain.flare`: Flare Network
-    
--   `Chain.haven1`: Haven1
-    
--   `Chain.hemi`: Hemi Network
-    
--   `Chain.hychain`: HyChain
-    
--   `Chain.hyperliquid_evm_testnet`: Hyperliquid EVM Testnet
-    
--   `Chain.karak`: Karak
-    
--   `Chain.kava`: Kava EVM
-    
--   `Chain.moonbeam`: Moonbeam
-    
--   `Chain.moonriver`: Moonriver
-    
--   `Chain.orderly`: Orderly Network
-    
--   `Chain.plume`: Plume Network
-    
--   `Chain.songbird`: Songbird
-    
--   `Chain.sonic`: Sonic
-    
--   `Chain.tac`: TAC
-    
--   `Chain.tac_spb`: TAC SPB
-    
--   `Chain.tac_turin`: TAC Turin
-    
--   `Chain.unichain`: Unichain
-    
--   `Chain.x_layer`: X Layer
-    
--   `Chain.zeta`: ZetaChain
-    
--   `Chain.celo`: Celo
-    
+* `Chain.b3`: B3
+* `Chain.berachain`: Berachain
+* `Chain.hyperliquid_evm`: Hyperliquid EVM
+* `Chain.ink`: Ink
+* `Chain.ink_sand`: Ink Sandbox
+* `Chain.ink_sepolia`: Ink Sepolia
+* `Chain.kinto`: Kinto
+* `Chain.manta_pacific`: Manta Pacific
+* `Chain.sei_evm`: Sei EVM
+* `Chain.zircuit`: Zircuit
+* `Chain.zircuit_beta`: Zircuit Beta
+* `Chain.zircuit_mainnet`: Zircuit Mainnet
+* `Chain.core`: Core Chain
+* `Chain.corn`: Corn Network
+* `Chain.deri`: Deri Protocol
+* `Chain.flare`: Flare Network
+* `Chain.haven1`: Haven1
+* `Chain.hemi`: Hemi Network
+* `Chain.hychain`: HyChain
+* `Chain.hyperliquid_evm_testnet`: Hyperliquid EVM Testnet
+* `Chain.karak`: Karak
+* `Chain.kava`: Kava EVM
+* `Chain.moonbeam`: Moonbeam
+* `Chain.moonriver`: Moonriver
+* `Chain.orderly`: Orderly Network
+* `Chain.plume`: Plume Network
+* `Chain.songbird`: Songbird
+* `Chain.sonic`: Sonic
+* `Chain.tac`: TAC
+* `Chain.tac_spb`: TAC SPB
+* `Chain.tac_turin`: TAC Turin
+* `Chain.unichain`: Unichain
+* `Chain.x_layer`: X Layer
+* `Chain.zeta`: ZetaChain
+* `Chain.celo`: Celo
 
 **Non-EVM Blockchains**
 
--   `Chain.bitcoin`: Bitcoin
-    
--   `Chain.solana`: Solana
-    
--   `Chain.starknet`: StarkNet
-    
--   `Chain.aptos`: Aptos
-    
--   `Chain.movement`: Movement
-    
--   `Chain.injective`: Injective
-    
--   `Chain.sei_cosmos`: Sei (Cosmos)
-    
--   `Chain.stellar`: Stellar
-    
--   `Chain.stacks`: Stacks
-    
--   `Chain.thorchain`: THORChain
-    
+* `Chain.bitcoin`: Bitcoin
+* `Chain.solana`: Solana
+* `Chain.starknet`: StarkNet
+* `Chain.aptos`: Aptos
+* `Chain.movement`: Movement
+* `Chain.injective`: Injective
+* `Chain.sei_cosmos`: Sei (Cosmos)
+* `Chain.stellar`: Stellar
+* `Chain.stacks`: Stacks
+* `Chain.thorchain`: THORChain
 
 **Testnets**
 
--   `Chain.ethereum_sepolia`: Ethereum Sepolia
-    
--   `Chain.ethereum_holesky`: Ethereum Holesky
-    
--   `Chain.berachain_testnet`: Berachain Testnet
-    
--   `Chain.caldera_testnet`: Caldera Testnet
-    
--   `Chain.sei_evm_testnet`: Sei EVM Testnet
-    
--   `Chain.hn_assessment`: Hypernative Assessment Chain
-    
+* `Chain.ethereum_sepolia`: Ethereum Sepolia
+* `Chain.ethereum_holesky`: Ethereum Holesky
+* `Chain.berachain_testnet`: Berachain Testnet
+* `Chain.caldera_testnet`: Caldera Testnet
+* `Chain.sei_evm_testnet`: Sei EVM Testnet
+* `Chain.hn_assessment`: Hypernative Assessment Chain
 
 **Example**
 
-```
+```python
 from invariantive.common.consts import Chain
 
 # Ethereum mainnet agent
@@ -2968,60 +1847,39 @@ for chain in chains:
     agent_config = RunConfig(chain=chain, blocks=[0])
 ```
 
-#### 
-
-Supported Operators
+#### Supported Operators
 
 Constants for comparison operations used in alerts and conditions.
 
-```
+```python
 from invariantive.common.consts import OPERATORS
 ```
 
 **Available Operators**
 
--   `"lte"`: Less than or equal
-    
--   `"lt"`: Less than
-    
--   `"gte"`: Greater than or equal
-    
--   `"gt"`: Greater than
-    
--   `"compare_exact"`: Exact equality
-    
--   `"ne"`: Not equal
-    
--   `"one_of"`: Value in list
-    
--   `"not_one_of"`: Value not in list
-    
--   `"in_range"`: Value within range
-    
--   `"out_range"`: Value outside range
-    
--   `"is_contract"`: Address is smart contract
-    
--   `"is_eoa"`: Address is externally owned account
-    
--   `"any"`: Always true (no filtering)
-    
--   `"decreased_by"`: Value decreased by threshold
-    
--   `"increased_by"`: Value increased by threshold
-    
--   `"changed_by"`: Value changed by threshold
-    
--   `"changed"`: Value changed
-    
+* `"lte"`: Less than or equal
+* `"lt"`: Less than
+* `"gte"`: Greater than or equal
+* `"gt"`: Greater than
+* `"compare_exact"`: Exact equality
+* `"ne"`: Not equal
+* `"one_of"`: Value in list
+* `"not_one_of"`: Value not in list
+* `"in_range"`: Value within range
+* `"out_range"`: Value outside range
+* `"is_contract"`: Address is smart contract
+* `"is_eoa"`: Address is externally owned account
+* `"any"`: Always true (no filtering)
+* `"decreased_by"`: Value decreased by threshold
+* `"increased_by"`: Value increased by threshold
+* `"changed_by"`: Value changed by threshold
+* `"changed"`: Value changed
 
-### 
-
-Type Hints
+### Type Hints
 
 The SDK uses comprehensive type hints for better IDE support:
 
-```
+```python
 from typing import Dict, List, Optional, Union, Any
 from invariantive.model.agent import Agent
 from invariantive.model.trigger import BlockTrigger
@@ -3029,3 +1887,5 @@ from invariantive.model.variable import Variable
 from invariantive.model.alert import AlertConfig
 from invariantive.model.run import RunConfig
 ```
+
+This completes the comprehensive Model reference for the Invariantive SDK.

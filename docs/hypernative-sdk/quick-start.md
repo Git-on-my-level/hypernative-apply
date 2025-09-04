@@ -1,16 +1,19 @@
-# Quick Start | Hypernative Product Docs
+---
+description: >-
+  This guide will walk you through creating your first Invariantive agent in
+  minutes.
+icon: rocket-launch
+---
 
-### 
+# Quick Start
 
-Your First Agent
+### Your First Agent
 
 Let's create a simple agent that runs every block, gets the block number from context, and alerts when block numbers are greater than 0.
 
-#### 
+#### Step 1: Import Required Classes
 
-Step 1: Import Required Classes
-
-```
+```python
 from invariantive.model.agent import Agent
 from invariantive.model.trigger import BlockTrigger
 from invariantive.model.variable import ContextVariable
@@ -20,13 +23,9 @@ from invariantive.common.consts import Chain
 from invariantive.common.environment import set_default_chain
 ```
 
-#### 
+#### Step 2: Set Default Chain and Create a Trigger
 
-Step 2: Set Default Chain and Create a Trigger
-
-```
-
-
+```python
 # Set default chain for the session
 set_default_chain(Chain.ethereum)
 
@@ -37,21 +36,15 @@ trigger = BlockTrigger(
 )
 ```
 
-#### 
+#### Step 3: Create an Agent
 
-Step 3: Create an Agent
-
-```
+```python
 agent = Agent(trigger=trigger)
 ```
 
-#### 
+#### Step 4: Add Variables
 
-Step 4: Add Variables
-
-```
-
-
+```python
 # Get current block number from context
 block_var = ContextVariable(
     output_index="block_number",
@@ -61,11 +54,9 @@ block_var = ContextVariable(
 agent.add_variable(block_var)
 ```
 
-#### 
+#### Step 5: Configure Alert
 
-Step 5: Configure Alert
-
-```
+```python
 alert = AlertConfig(
     var_name="current_block",
     operator="gt",
@@ -76,13 +67,9 @@ alert = AlertConfig(
 agent.set_alert(alert)
 ```
 
-#### 
+#### Step 6: Test Your Agent
 
-Step 6: Test Your Agent
-
-```
-
-
+```python
 # Test on latest block
 findings = agent.run(RunConfig(blocks=[0]))
 print("num findings:", len(findings["findings"]))
@@ -91,13 +78,11 @@ for f in findings["findings"]:
     print("extracted variables during the run:", f["extracted_variables"])
 ```
 
-#### 
-
-Complete Working Example
+#### Complete Working Example
 
 Here's the complete script that you can copy and run:
 
-```
+```python
 from invariantive.model.agent import Agent
 from invariantive.model.trigger import BlockTrigger
 from invariantive.model.variable import ContextVariable
@@ -142,34 +127,20 @@ for f in findings["findings"]:
     print("extracted variables during the run:", f["extracted_variables"])
 
 # 7. Deploy to production (uncomment when ready)
-
-
 # agent.deploy(
-
-
 #     agent_name="Block_Number_Monitor", 
-
-
 #     severity="Low",
-
-
 #     channels_configurations=[{"id": 1337}]  # Replace with your channel ID
-
-
 # )
 ```
 
-### 
+### More Examples
 
-More Examples
-
-#### 
-
-Contract Data Monitoring
+#### Contract Data Monitoring
 
 Monitor USDT total supply:
 
-```
+```python
 from invariantive.model.agent import Agent
 from invariantive.model.trigger import BlockTrigger
 from invariantive.model.variable import GenericContractReadVariable
@@ -216,30 +187,18 @@ for f in findings["findings"]:
     print("extracted variables during the run:", f["extracted_variables"])
 
 # Deploy to production (uncomment when ready)
-
-
 # agent.deploy(
-
-
 #     agent_name="USDT_Supply_Monitor", 
-
-
 #     severity="Medium",
-
-
 #     channels_configurations=[{"id": 1337}]  # Replace with your channel ID
-
-
 # )
 ```
 
-#### 
-
-Custom Python Logic
+#### Custom Python Logic
 
 Use Python for complex calculations:
 
-```
+```python
 from invariantive.model.agent import Agent
 from invariantive.model.trigger import BlockTrigger
 from invariantive.model.variable import ContextVariable, PythonProcessingVariable
@@ -301,30 +260,18 @@ for f in findings["findings"]:
     print("extracted variables during the run:", f["extracted_variables"])
 
 # Deploy to production (uncomment when ready)
-
-
 # agent.deploy(
-
-
 #     agent_name="Block_Milestone_Analyzer", 
-
-
 #     severity="Low",
-
-
 #     channels_configurations=[{"id": 1337}]  # Replace with your channel ID
-
-
 # )
 ```
 
-#### 
-
-External API Integration
+#### External API Integration
 
 Fetch data from external APIs:
 
-```
+```python
 from invariantive.model.agent import Agent
 from invariantive.model.trigger import BlockTrigger
 from invariantive.model.variable import JsonEndpointVariable
@@ -372,30 +319,18 @@ for f in findings["findings"]:
     print("extracted variables during the run:", f["extracted_variables"])
 
 # Deploy to production (uncomment when ready)
-
-
 # agent.deploy(
-
-
 #     agent_name="External_API_Data_Monitor", 
-
-
 #     severity="Medium",
-
-
 #     channels_configurations=[{"id": 1337}]  # Replace with your channel ID
-
-
 # )
 ```
 
-#### 
-
-Event-Based Monitoring
+#### Event-Based Monitoring
 
 Monitor large USDT transfers:
 
-```
+```python
 from invariantive.model.agent import Agent
 from invariantive.model.trigger import EventTrigger
 from invariantive.model.variable import ContextVariable, PythonProcessingVariable
@@ -461,34 +396,18 @@ for f in findings["findings"]:
     print("extracted variables during the run:", f["extracted_variables"])
 
 # Deploy to production (uncomment when ready)  
-
-
 # agent.deploy(
-
-
 #     agent_name="Large_USDT_Transfer_Monitor",
-
-
 #     severity="High", 
-
-
 #     channels_configurations=[{"id": 1337}]  # Replace with your channel ID
-
-
 # )
 ```
 
-### 
+### Testing Strategies
 
-Testing Strategies
+#### Test on Multiple Blocks
 
-#### 
-
-Test on Multiple Blocks
-
-```
-
-
+```python
 # Test on multiple specific blocks
 findings = agent.run(RunConfig(blocks=[21202357, 21202358, 21202359]))
 print("num findings:", len(findings["findings"]))
@@ -497,13 +416,9 @@ for f in findings["findings"]:
     print("extracted variables during the run:", f["extracted_variables"])
 ```
 
-#### 
+#### Test on Specific Transactions
 
-Test on Specific Transactions
-
-```
-
-
+```python
 # Test on specific transaction hashes
 findings = agent.run(RunConfig(hashes=[
     "0xbe110429f51279921ec95367234f3ca04e299c654b2386c102eb023081fed3cc",
@@ -515,13 +430,9 @@ for f in findings["findings"]:
     print("extracted variables during the run:", f["extracted_variables"])
 ```
 
-#### 
+#### Test on Latest Block
 
-Test on Latest Block
-
-```
-
-
+```python
 # Test on latest block (0 means latest)
 findings = agent.run(RunConfig(blocks=[0]))
 print("num findings:", len(findings["findings"]))
@@ -530,32 +441,22 @@ for f in findings["findings"]:
     print("extracted variables during the run:", f["extracted_variables"])
 ```
 
-### 
-
-Deployment
+### Deployment
 
 Once you've tested your agent locally:
 
-#### 
+#### Option 1: Save Configuration
 
-Option 1: Save Configuration
-
-```
-
-
+```python
 # Save to JSON file
 agent.save_config("my_agent.json")
 
 # Then upload via the Hypernative UI
 ```
 
-#### 
+#### Option 2: Direct Deployment
 
-Option 2: Direct Deployment
-
-```
-
-
+```python
 # Deploy directly from code
 agent_id = agent.deploy(
     agent_name='my_unique_agent_name',
@@ -573,9 +474,7 @@ else:
 
 For production deployments, configure multiple notification channels and additional settings:
 
-```
-
-
+```python
 # Production-ready deployment
 agent_id = agent.deploy(
     agent_name='production_usdt_monitor_v1',
@@ -603,16 +502,13 @@ else:
 
 **Method 1: Platform UI**
 
-1.  Navigate to Hypernative platform → Notification Channels
-    
-2.  Click on your desired channel (Slack, Email, Webhook, etc.)
-    
-3.  Copy the channel ID from the URL
-    
+1. Navigate to Hypernative platform → Notification Channels
+2. Click on your desired channel (Slack, Email, Webhook, etc.)
+3. Copy the channel ID from the URL
 
 **Method 2: API**
 
-```
+```python
 import requests
 
 # Get all available notification channels
@@ -632,20 +528,13 @@ for channel in channels:
 
 **Deployment Best Practices**
 
-1.  **Test First**: Always test your agent with `RunConfig` before deploying
-    
-2.  **Unique Names**: Agent names must be unique across your organization
-    
-3.  **Multiple Channels**: Configure multiple notification channels for redundancy
-    
-4.  **Appropriate Severity**: Set severity levels that match your alerting strategy
-    
-5.  **Channel Validation**: Verify channel IDs exist before deployment
-    
+1. **Test First**: Always test your agent with `RunConfig` before deploying
+2. **Unique Names**: Agent names must be unique across your organization
+3. **Multiple Channels**: Configure multiple notification channels for redundancy
+4. **Appropriate Severity**: Set severity levels that match your alerting strategy
+5. **Channel Validation**: Verify channel IDs exist before deployment
 
-```
-
-
+```python
 # Validation example
 def deploy_with_validation():
     # Test agent locally first
@@ -671,3 +560,10 @@ def deploy_with_validation():
         print("✗ Agent test failed - no findings generated")
         return None
 ```
+
+### Next Steps
+
+* Explore more Examples for advanced patterns
+* Read the Model Reference for complete documentation
+* Learn about Advanced Features like conditions and templating
+* Check Best Practices for production deployments

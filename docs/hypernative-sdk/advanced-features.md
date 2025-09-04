@@ -1,18 +1,18 @@
-# Advanced Features | Hypernative Product Docs
+---
+icon: scroll-old
+---
+
+# Advanced Features
 
 This guide covers advanced features and patterns for building sophisticated monitoring agents.
 
-## 
-
-Variable Templating
+## Variable Templating
 
 Variables can reference previously defined variables using the `extracted_variables` notation.
 
-### 
+### Basic Templating
 
-Basic Templating
-
-```
+```python
 from invariantive.model.agent import Agent
 from invariantive.model.trigger import EventTrigger
 from invariantive.model.variable import ContextVariable, GenericContractReadVariable, PythonProcessingVariable
@@ -58,15 +58,11 @@ balance_var = GenericContractReadVariable(
 agent.add_variable(balance_var)
 ```
 
-### 
-
-Dynamic Contract Calls
+### Dynamic Contract Calls
 
 Use templating for dynamic contract interactions:
 
-```
-
-
+```python
 # Get token decimals dynamically
 decimals_var = GenericContractReadVariable(
     contract_address="extracted_variables.token_address",
@@ -90,13 +86,11 @@ human_amount_var = PythonProcessingVariable(
 agent.add_variable(human_amount_var)
 ```
 
-### 
-
-JSON Path Templating
+### JSON Path Templating
 
 Use extracted variables in JSON processing:
 
-```
+```python
 from invariantive.model.variable import JsonProcessingVariable
 
 # Create a JSON structure using extracted variables
@@ -125,13 +119,11 @@ analysis_var = JsonProcessingVariable(
 agent.add_variable(analysis_var)
 ```
 
-#### 
-
-Script Parameter Templating
+#### Script Parameter Templating
 
 Template hardcoded script parameters into `extracted_variables` for use in `PythonProcessingVariable` functions:
 
-```
+```python
 from invariantive.model.variable import JsonProcessingVariable, PythonProcessingVariable
 
 # Script-level parameter
@@ -166,17 +158,13 @@ agent.add_variable(risk_var)
 
 This pattern allows `PythonProcessingVariable` functions to access script-level configuration while maintaining clean separation.
 
-## 
+## Conditional Execution
 
-Conditional Execution
-
-### 
-
-Pre-conditions
+### Pre-conditions
 
 Control variable execution based on previous results:
 
-```
+```python
 from invariantive.model.variable import PythonProcessingVariable
 
 # Check if amount is significant
@@ -205,13 +193,11 @@ reputation_var = PythonProcessingVariable(
 agent.add_variable(reputation_var)
 ```
 
-### 
-
-Trigger Conditions
+### Trigger Conditions
 
 Add conditions to triggers for fine-grained filtering:
 
-```
+```python
 from invariantive.model.trigger import Condition
 
 # Only process transfers above threshold
@@ -240,17 +226,13 @@ trigger.add_condition(min_amount_condition)
 trigger.add_condition(max_amount_condition)
 ```
 
-## 
+## State Management
 
-State Management
-
-### 
-
-Persistent Storage
+### Persistent Storage
 
 Store and retrieve data across agent executions:
 
-```
+```python
 from invariantive.model.variable import SetValueVariable, GetValueVariable
 
 # Store last seen balance
@@ -296,13 +278,11 @@ change_var = PythonProcessingVariable(
 agent.add_variable(change_var)
 ```
 
-### 
-
-State-Based Alerts
+### State-Based Alerts
 
 Create alerts that track state changes:
 
-```
+```python
 alert = AlertConfig(
     var_name="balance_change",
     operator="gt",
@@ -312,31 +292,23 @@ alert = AlertConfig(
 agent.set_alert(alert)
 ```
 
-## 
+## Secret Management
 
-Secret Management
-
-### 
-
-Storing Secrets
+### Storing Secrets
 
 Store sensitive data securely:
 
-```
-
-
+```python
 # Store API credentials
 agent.save_secret("coingecko_api_key", "your-api-key-here")
 agent.save_secret("telegram_bot_token", "your-bot-token")
 ```
 
-### 
-
-Using Secrets
+### Using Secrets
 
 Retrieve secrets in variables:
 
-```
+```python
 from invariantive.model.variable import GetSecretVariable
 
 # Get API key
@@ -369,13 +341,11 @@ agent.add_variable(price_var)
 agent.save_secret("coingecko_api_key", "your-api-key-here") # Will only execute during creation of the agent
 ```
 
-### 
-
-Alternative: JsonEndpointVariable
+### Alternative: JsonEndpointVariable
 
 For simpler API calls without complex authentication, you can use JsonEndpointVariable:
 
-```
+```python
 from invariantive.model.variable import JsonEndpointVariable
 
 # Simple API call without authentication
@@ -389,17 +359,13 @@ simple_api_var = JsonEndpointVariable(
 agent.add_variable(simple_api_var)
 ```
 
-## 
+## Complex Python Processing
 
-Complex Python Processing
-
-### 
-
-Advanced Web3 Usage
+### Advanced Web3 Usage
 
 Leverage Web3.py for complex blockchain interactions:
 
-```
+```python
 def analyze_contract_interactions(extracted_variables):
     from web3 import Web3
     import json
@@ -524,13 +490,11 @@ analysis_var = PythonProcessingVariable(
 agent.add_variable(analysis_var)
 ```
 
-### 
-
-Data Processing with Pandas
+### Data Processing with Pandas
 
 Use Pandas for complex data analysis:
 
-```
+```python
 def analyze_price_trends(extracted_variables):
     import pandas as pd
     import numpy as np
@@ -577,17 +541,13 @@ trend_var = PythonProcessingVariable(
 agent.add_variable(trend_var)
 ```
 
-## 
+## Multi-Chain Agents
 
-Multi-Chain Agents
-
-### 
-
-Cross-Chain Data Collection
+### Cross-Chain Data Collection
 
 Monitor multiple chains in a single agent:
 
-```
+```python
 def get_cross_chain_balances(extracted_variables):
     # Get balances across multiple chains
     address = extracted_variables["address"]
@@ -618,17 +578,13 @@ multi_chain_var = PythonProcessingVariable(
 agent.add_variable(multi_chain_var)
 ```
 
-## 
+## Historical Data Analysis
 
-Historical Data Analysis
-
-### 
-
-Time Series Analysis
+### Time Series Analysis
 
 Analyze patterns over time:
 
-```
+```python
 from invariantive.model.variable import HistoricalEventsVariable
 
 # Get historical events
@@ -682,17 +638,13 @@ pattern_var = PythonProcessingVariable(
 agent.add_variable(pattern_var)
 ```
 
-## 
+## Performance Optimization
 
-Performance Optimization
-
-### 
-
-Robust Python Processing
+### Robust Python Processing
 
 Handle errors gracefully in custom functions:
 
-```
+```python
 def robust_api_call(extracted_variables):
     import requests
     import time
@@ -747,13 +699,11 @@ process_var = PythonProcessingVariable(
 agent.add_variable(process_var)
 ```
 
-### 
-
-Alert Error Conditions
+### Alert Error Conditions
 
 Alert on error conditions:
 
-```
+```python
 def check_for_errors(extracted_variables):
     result = extracted_variables["api_result"]
     return "error" in result
@@ -773,20 +723,18 @@ error_alert = AlertConfig(
 agent.set_alert(error_alert)
 ```
 
-## 
+## Best Practices
 
-Best Practices
+1. **Variable Dependencies**: Order variables carefully since they execute sequentially
+2. **Error Handling**: Always handle potential errors in Python processing
+3. **Performance**: Cache expensive operations and API calls
+4. **Testing**: Test with various scenarios and edge cases
+5. **Logging**: Use descriptive variable names and alert messages
+6. **Security**: Use secret management for sensitive data
+7. **Documentation**: Comment complex logic and business rules
 
-1.  **Variable Dependencies**: Order variables carefully since they execute sequentially
-    
-2.  **Error Handling**: Always handle potential errors in Python processing
-    
-3.  **Performance**: Cache expensive operations and API calls
-    
-4.  **Testing**: Test with various scenarios and edge cases
-    
-5.  **Logging**: Use descriptive variable names and alert messages
-    
-6.  **Security**: Use secret management for sensitive data
-    
-7.  **Documentation**: Comment complex logic and business rules
+## Next Steps
+
+* Review Best Practices for production deployments
+* Check Troubleshooting for common issues
+* Explore the [Examples](examples.md) for more patterns

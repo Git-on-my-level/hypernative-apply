@@ -1,18 +1,19 @@
-# Examples | Hypernative Product Docs
+---
+description: >-
+  This section provides practical examples demonstrating common patterns and use
+  cases with the Invariantive SDK.
+icon: list-radio
+---
 
-### 
+# Examples
 
-Basic Monitoring
+### Basic Monitoring
 
-#### 
-
-Balance Monitoring
+#### Balance Monitoring
 
 Monitor a specific wallet's token balance:
 
-```
-
-
+```python
 # Set default chain
 set_default_chain(Chain.ethereum)
 
@@ -42,30 +43,18 @@ for f in findings["findings"]:
     print("extracted variables during the run:", f["extracted_variables"])
 
 # Deploy to production (uncomment when ready)
-
-
 # agent.deploy(
-
-
 #     agent_name="Binance_USDC_Balance_Monitor", 
-
-
 #     severity="High",
-
-
 #     channels_configurations=[{"id": 1337}]  # Replace with your channel ID
-
-
 # )
 ```
 
-#### 
-
-Token Balance Monitoring (Simplified)
+#### Token Balance Monitoring (Simplified)
 
 Monitor token balances using the dedicated TokenBalanceVariable for automatic decimal handling:
 
-```
+```python
 from invariantive.model.agent import Agent
 from invariantive.model.trigger import BlockTrigger
 from invariantive.model.variable import TokenBalanceVariable
@@ -114,34 +103,20 @@ for f in findings["findings"]:
     print("extracted variables during the run:", f["extracted_variables"])
 
 # Deploy to production (uncomment when ready)
-
-
 # agent.deploy(
-
-
 #     agent_name="Whale_Token_Balance_Monitor", 
-
-
 #     severity="High",
-
-
 #     channels_configurations=[{"id": 1337}]  # Replace with your channel ID
-
-
 # )
 ```
 
-### 
+### Event-Based Agents
 
-Event-Based Agents
-
-#### 
-
-Balancer Pool Creation Monitoring
+#### Balancer Pool Creation Monitoring
 
 Monitor new Balancer pool creations on Mode network:
 
-```
+```python
 from invariantive.model.agent import Agent
 from invariantive.model.trigger import EventTrigger
 from invariantive.model.variable import ContextVariable
@@ -188,34 +163,20 @@ for f in findings["findings"]:
     print("extracted variables during the run:", f["extracted_variables"])
 
 # Deploy to production (uncomment when ready)
-
-
 # agent.deploy(
-
-
 #     agent_name="Balancer_Pool_Creation_Monitor", 
-
-
 #     severity="Low",
-
-
 #     channels_configurations=[{"id": 1337}]  # Replace with your channel ID
-
-
 # )
 ```
 
-### 
+### Function Call Monitoring
 
-Function Call Monitoring
-
-#### 
-
-Aave Liquidation Monitoring
+#### Aave Liquidation Monitoring
 
 Monitor liquidations on Aave Protocol:
 
-```
+```python
 from invariantive.model.agent import Agent
 from invariantive.model.trigger import FunctionCallTrigger
 from invariantive.model.variable import ContextVariable
@@ -283,34 +244,20 @@ for f in findings["findings"]:
     print("extracted variables during the run:", f["extracted_variables"])
 
 # Deploy to production (uncomment when ready)
-
-
 # agent.deploy(
-
-
 #     agent_name="Aave_Liquidation_Monitor", 
-
-
 #     severity="High",
-
-
 #     channels_configurations=[{"id": 1337}]  # Replace with your channel ID
-
-
 # )
 ```
 
-### 
+### External API Integration
 
-External API Integration
-
-#### 
-
-Price Feed Integration
+#### Price Feed Integration
 
 Combine on-chain data with price feeds:
 
-```
+```python
 from invariantive.model.variable import PriceServiceVariable, PythonProcessingVariable
 
 # Get token balance
@@ -362,30 +309,18 @@ for f in findings["findings"]:
     print("extracted variables during the run:", f["extracted_variables"])
 
 # Deploy to production (uncomment when ready)
-
-
 # agent.deploy(
-
-
 #     agent_name="USDC_Balance_Value_Monitor", 
-
-
 #     severity="Medium",
-
-
 #     channels_configurations=[{"id": 1337}]  # Replace with your channel ID
-
-
 # )
 ```
 
-#### 
-
-Reputation Checking
+#### Reputation Checking
 
 Check address reputation using external APIs:
 
-```
+```python
 from invariantive.model.agent import Agent
 from invariantive.model.trigger import EventTrigger
 from invariantive.model.variable import ContextVariable, JsonEndpointVariable
@@ -456,34 +391,20 @@ for f in findings["findings"]:
     print("extracted variables during the run:", f["extracted_variables"])
 
 # Deploy to production (uncomment when ready)
-
-
 # agent.deploy(
-
-
 #     agent_name="Address_Reputation_Monitor", 
-
-
 #     severity="Medium",
-
-
 #     channels_configurations=[{"id": 1337}]  # Replace with your channel ID
-
-
 # )
 ```
 
-### 
+### Custom Python Logic
 
-Custom Python Logic
-
-#### 
-
-Complex Calculations
+#### Complex Calculations
 
 Perform custom analysis with Python:
 
-```
+```python
 def analyze_transaction_pattern(extracted_variables):
     import json
     
@@ -514,13 +435,11 @@ analysis_var = PythonProcessingVariable(
 agent.add_variable(analysis_var)
 ```
 
-#### 
-
-Web3 Integration
+#### Web3 Integration
 
 Use Web3.py for advanced contract interactions:
 
-```
+```python
 def get_advanced_token_data(extracted_variables):
     from web3 import Web3
     import json
@@ -557,19 +476,13 @@ web3_var = PythonProcessingVariable(
 agent.add_variable(web3_var)
 ```
 
-### 
+### Multi-Variable Agents
 
-Multi-Variable Agents
-
-#### 
-
-DeFi Protocol Monitoring
+#### DeFi Protocol Monitoring
 
 Monitor multiple aspects of a DeFi protocol:
 
-```
-
-
+```python
 # Monitor Aave protocol
 aave_address = "0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9"
 
@@ -625,17 +538,13 @@ alert = AlertConfig(
 agent.set_alert(alert)
 ```
 
-### 
+### Conditional Execution
 
-Conditional Execution
-
-#### 
-
-Conditional Variable Processing
+#### Conditional Variable Processing
 
 Use conditions to control execution flow:
 
-```
+```python
 from invariantive.model.trigger import Condition
 
 # Base agent setup
@@ -681,17 +590,13 @@ analysis_var = PythonProcessingVariable(
 agent.add_variable(analysis_var)
 ```
 
-### 
+### Historical Data Analysis
 
-Historical Data Analysis
-
-#### 
-
-Event History Analysis
+#### Event History Analysis
 
 Analyze historical events:
 
-```
+```python
 from invariantive.model.variable import HistoricalEventsVariable
 
 # Get historical Transfer events
@@ -730,17 +635,13 @@ pattern_var = PythonProcessingVariable(
 agent.add_variable(pattern_var)
 ```
 
-### 
+### Testing Examples
 
-Testing Examples
-
-#### 
-
-Comprehensive Testing
+#### Comprehensive Testing
 
 Test your agents thoroughly:
 
-```
+```python
 from invariantive.model.run import RunConfig
 
 # Test on multiple blocks
@@ -771,38 +672,24 @@ tx_findings = agent.run(tx_config)
 print("Transaction-specific findings:", tx_findings)
 
 # Deploy to production (uncomment when ready)
-
-
 # agent.deploy(
-
-
 #     agent_name="Comprehensive_Test_Agent", 
-
-
 #     severity="Medium",
-
-
 #     channels_configurations=[{"id": 1337}]  # Replace with your channel ID
-
-
 # )
 ```
 
-### 
-
-Non-EVM Chain Examples
+### Non-EVM Chain Examples
 
 The SDK supports multiple non-EVM blockchains, each with specific patterns for interaction.
 
-#### 
-
-Solana
+#### Solana
 
 Solana requires IDL (Interface Description Language) files to interact with programs. Here are common patterns:
 
 **Event Monitoring on Solana**
 
-```
+```python
 from invariantive.model.agent import Agent
 from invariantive.model.trigger import EventTrigger
 from invariantive.model.variable import ContextVariable
@@ -861,7 +748,7 @@ for f in findings["findings"]:
 
 **Function Call Monitoring on Solana**
 
-```
+```python
 from invariantive.model.trigger import FunctionCallTrigger
 from invariantive.model.variable import GenericContractReadVariable
 import json
@@ -919,7 +806,7 @@ for f in findings["findings"]:
 
 **Cross-Chain Solana Monitoring**
 
-```
+```python
 from invariantive.model.variable import JsonProcessingVariable
 
 # Monitor Solana state triggered by Ethereum blocks
@@ -951,13 +838,11 @@ ltv_var = JsonProcessingVariable(
 agent.add_variable(ltv_var)
 ```
 
-#### 
-
-Aptos
+#### Aptos
 
 Aptos uses Move modules for smart contracts. Key differences include module specification and Move-specific data types:
 
-```
+```python
 from invariantive.model.trigger import FunctionCallTrigger
 from invariantive.model.variable import GenericContractReadVariable
 
@@ -1006,13 +891,11 @@ for f in findings["findings"]:
     print("extracted variables during the run:", f["extracted_variables"])
 ```
 
-#### 
-
-StarkNet
+#### StarkNet
 
 StarkNet uses Cairo contracts with specific data type handling:
 
-```
+```python
 from invariantive.model.trigger import EventTrigger
 
 # Monitor StarkNet events
@@ -1053,13 +936,11 @@ for f in findings["findings"]:
     print("extracted variables during the run:", f["extracted_variables"])
 ```
 
-#### 
-
-Bitcoin
+#### Bitcoin
 
 Bitcoin monitoring focuses on transaction analysis using the `get_bitcoin_tx` global function:
 
-```
+```python
 from invariantive.model.variable import PythonProcessingVariable
 
 def monitor_bitcoin_transaction(extracted_variables):
@@ -1083,13 +964,11 @@ bitcoin_var = PythonProcessingVariable(
 )
 ```
 
-#### 
-
-Multi-Chain Patterns
+#### Multi-Chain Patterns
 
 Monitor related activity across different blockchain ecosystems:
 
-```
+```python
 def cross_chain_bridge_monitor(extracted_variables):
     # Monitor bridge activity across EVM and non-EVM chains
     evm_balance = extracted_variables.get("evm_token_balance", 0)
@@ -1108,28 +987,22 @@ def cross_chain_bridge_monitor(extracted_variables):
     }
 ```
 
-### 
+### Best Practices
 
-Best Practices
+1. **Start Simple**: Begin with basic monitoring and add complexity gradually
+2. **Test Thoroughly**: Use multiple test scenarios before deployment
+3. **Handle Errors**: Add error handling in Python processing functions
+4. **Use Descriptive Names**: Name variables clearly for easier debugging
+5. **Document Logic**: Comment complex calculations and business logic
+6. **Monitor Performance**: Consider the computational cost of complex operations
+7. **Chain-Specific Considerations**:
+   * **Solana**: Always provide IDL files for program interaction
+   * **Aptos**: Specify Move module names for function calls
+   * **StarkNet**: Use correct Cairo data types in output\_data\_type
+   * **Bitcoin**: Leverage `get_bitcoin_tx` for transaction analysis
 
-1.  **Start Simple**: Begin with basic monitoring and add complexity gradually
-    
-2.  **Test Thoroughly**: Use multiple test scenarios before deployment
-    
-3.  **Handle Errors**: Add error handling in Python processing functions
-    
-4.  **Use Descriptive Names**: Name variables clearly for easier debugging
-    
-5.  **Document Logic**: Comment complex calculations and business logic
-    
-6.  **Monitor Performance**: Consider the computational cost of complex operations
-    
-7.  **Chain-Specific Considerations**:
-    
-    -   **Solana**: Always provide IDL files for program interaction
-        
-    -   **Aptos**: Specify Move module names for function calls
-        
-    -   **StarkNet**: Use correct Cairo data types in output\_data\_type
-        
-    -   **Bitcoin**: Leverage `get_bitcoin_tx` for transaction analysis
+### Next Steps
+
+* Review the Model Reference for complete documentation
+* Learn about Advanced Features
+* Check Best Practices for production deployments

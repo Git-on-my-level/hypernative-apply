@@ -1,70 +1,50 @@
-# Core Concepts | Hypernative Product Docs
+---
+icon: face-thinking
+---
 
-### 
+# Core Concepts
 
-Overview
+### Overview
 
 The Invariantive SDK is a Python framework for creating blockchain monitoring and automation agents. It uses an object-oriented approach to build powerful agents that can monitor on-chain events, perform calculations, and trigger automated responses.
 
-### 
-
-Architecture
+### Architecture
 
 Every Invariantive agent consists of four main components:
 
-#### 
-
-1\. Trigger
+#### 1. Trigger
 
 Defines when your agent should execute. Four types are available:
 
--   **BlockTrigger**: Execute periodically (every N blocks or seconds)
-    
--   **EventTrigger**: Execute when specific events are emitted
-    
--   **FunctionCallTrigger**: Execute when specific functions are called
-    
--   **RITrigger**: Execute when specific Risk Insights alerts are triggered
-    
+* **BlockTrigger**: Execute periodically (every N blocks or seconds)
+* **EventTrigger**: Execute when specific events are emitted
+* **FunctionCallTrigger**: Execute when specific functions are called
+* **RITrigger**: Execute when specific Risk Insights alerts are triggered
 
-#### 
-
-2\. Variables
+#### 2. Variables
 
 Extract and process data from various sources:
 
--   **Context Variables**: Extract data from transactions and blocks
-    
--   **Contract Variables**: Read smart contract state
-    
--   **API Variables**: Fetch data from external APIs
-    
--   **Python Variables**: Custom logic and calculations
-    
+* **Context Variables**: Extract data from transactions and blocks
+* **Contract Variables**: Read smart contract state
+* **API Variables**: Fetch data from external APIs
+* **Python Variables**: Custom logic and calculations
 
-#### 
-
-3\. Conditions (Optional)
+#### 3. Conditions (Optional)
 
 Add additional filtering criteria for event and function call triggers.
 
-#### 
-
-4\. Alerts
+#### 4. Alerts
 
 Define when and how to notify about important conditions.
 
-### 
+### Key Classes
 
-Key Classes
-
-#### 
-
-Agent
+#### Agent
 
 The main orchestrator that coordinates all components:
 
-```
+```python
 from invariantive.model.agent import Agent
 from invariantive.model.trigger import BlockTrigger
 from invariantive.common.consts import Chain
@@ -78,13 +58,11 @@ trigger = BlockTrigger(period=1, period_unit="blocks")
 agent = Agent(trigger=trigger)
 ```
 
-#### 
-
-Triggers
+#### Triggers
 
 **BlockTrigger** - Time-based execution:
 
-```
+```python
 from invariantive.model.trigger import BlockTrigger
 from invariantive.common.consts import Chain
 
@@ -103,7 +81,7 @@ trigger = BlockTrigger(
 
 **EventTrigger** - Event-based execution:
 
-```
+```python
 from invariantive.model.trigger import EventTrigger
 from invariantive.common.consts import Chain
 
@@ -119,7 +97,7 @@ trigger = EventTrigger(
 
 **FunctionCallTrigger** - Function call-based execution:
 
-```
+```python
 from invariantive.model.trigger import FunctionCallTrigger
 from invariantive.common.consts import Chain
 
@@ -135,7 +113,7 @@ trigger = FunctionCallTrigger(
 
 **RITrigger** - Risk Insights alert-based execution:
 
-```
+```python
 from invariantive.model.trigger import RITrigger
 from invariantive.common.consts import Chain
 
@@ -146,29 +124,19 @@ trigger = RITrigger(
 )
 
 # Multiple alert types can be monitored:
-
-
 # A-4102: Exploit Suspected (M2)
-
-
 # A-4010: Potential Targets in unusual contract (High)  
-
-
 # TX-00011: Transaction Initiated (Guardian)
-
-
 # C-13956: Custom Agent alert
 ```
 
-#### 
-
-Variables
+#### Variables
 
 Variables are the building blocks for data extraction and processing:
 
 **ContextVariable** - Extract transaction/block data:
 
-```
+```python
 from invariantive.model.variable import ContextVariable
 
 # Get block number
@@ -186,7 +154,7 @@ sender_var = ContextVariable(
 
 **GenericContractReadVariable** - Read contract state:
 
-```
+```python
 from invariantive.model.variable import GenericContractReadVariable
 from invariantive.common.consts import Chain
 
@@ -202,7 +170,7 @@ supply_var = GenericContractReadVariable(
 
 **TokenBalanceVariable** - Simplified token balance monitoring:
 
-```
+```python
 from invariantive.model.variable import TokenBalanceVariable
 from invariantive.common.consts import Chain
 
@@ -223,7 +191,7 @@ eth_var = TokenBalanceVariable(
 
 **IsInListVariable** & **AddToListVariable** - Address list management:
 
-```
+```python
 from invariantive.model.variable import IsInListVariable, AddToListVariable
 
 # Check if address is in whitelist
@@ -243,7 +211,7 @@ add_to_watchlist = AddToListVariable(
 
 **PythonProcessingVariable** - Custom logic with global utilities:
 
-```
+```python
 from invariantive.model.variable import PythonProcessingVariable
 
 def calculate_percentage_change(extracted_variables):
@@ -260,17 +228,13 @@ python_var = PythonProcessingVariable(
 )
 
 # Global utility functions available in PythonProcessingVariable:
-
-
 # get_node(), get_price(), eth_call(), generic_function_call(), 
-
-
 # get_bitcoin_tx(), hn_api_get(), is_eoa(), and 9 more utilities
 ```
 
 **JsonEndpointVariable** - External API integration:
 
-```
+```python
 from invariantive.model.variable import JsonEndpointVariable
 
 # Get data from external API
@@ -283,13 +247,11 @@ api_var = JsonEndpointVariable(
 )
 ```
 
-#### 
-
-Alerts
+#### Alerts
 
 Define conditions that trigger notifications:
 
-```
+```python
 from invariantive.model.alert import AlertConfig
 
 alert = AlertConfig(
@@ -300,13 +262,11 @@ alert = AlertConfig(
 )
 ```
 
-#### 
-
-Run Configuration
+#### Run Configuration
 
 Configure how to execute your agent:
 
-```
+```python
 from invariantive.model.run import RunConfig
 from invariantive.common.consts import Chain
 
@@ -321,15 +281,11 @@ run_config = RunConfig(
 )
 ```
 
-### 
-
-Variable Dependencies
+### Variable Dependencies
 
 Variables are processed sequentially, allowing later variables to reference earlier ones:
 
-```
-
-
+```python
 # First, extract sender address
 sender_var = ContextVariable(
     output_index="tx_from",
@@ -346,9 +302,7 @@ balance_var = GenericContractReadVariable(
 )
 ```
 
-### 
-
-Supported Chains
+### Supported Chains
 
 The SDK supports 80+ blockchain networks across multiple ecosystems:
 
@@ -364,17 +318,15 @@ The SDK supports 80+ blockchain networks across multiple ecosystems:
 
 See the Chain enum in the Model Reference for the complete list of all 80+ supported chains.
 
-### 
+### Best Practices
 
-Best Practices
+1. **Use descriptive variable names** for better debugging
+2. **Order variables carefully** since they execute sequentially
+3. **Test locally** before deploying to production
+4. **Use type hints** for better IDE support
+5. **Handle errors gracefully** in Python processing functions
 
-1.  **Use descriptive variable names** for better debugging
-    
-2.  **Order variables carefully** since they execute sequentially
-    
-3.  **Test locally** before deploying to production
-    
-4.  **Use type hints** for better IDE support
-    
-5.  **Handle errors gracefully** in Python processing functions
-    
+### Next Steps
+
+* Explore [Examples](examples.md) for practical use cases
+* Review the [Model Reference](model-reference.md) for detailed documentation
